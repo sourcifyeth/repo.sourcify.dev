@@ -1,5 +1,6 @@
 import { ContractData } from "@/types/contract";
 import { formatTimestamp } from "@/utils/api";
+import CopyToClipboard from "./CopyToClipboard";
 
 interface ContractDetailsProps {
   contract: ContractData;
@@ -13,7 +14,10 @@ export default function ContractDetails({ contract, chainName }: ContractDetails
         <dl>
           <div className="bg-gray-50 px-4 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
             <dt className="text-sm font-medium text-gray-500">Contract Address</dt>
-            <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-mono">{contract.address}</dd>
+            <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-mono flex items-center">
+              {contract.address}
+              <CopyToClipboard text={contract.address} className="ml-2" />
+            </dd>
           </div>
           <div className="bg-white px-4 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
             <dt className="text-sm font-medium text-gray-500">Chain</dt>
@@ -31,14 +35,16 @@ export default function ContractDetails({ contract, chainName }: ContractDetails
             <>
               <div className="bg-gray-50 px-4 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500">Deployer</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-mono">
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-mono flex items-center">
                   {contract.deployment.deployer}
+                  <CopyToClipboard text={contract.deployment.deployer} className="ml-2" />
                 </dd>
               </div>
               <div className="bg-white px-4 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500">Transaction Hash</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-mono">
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-mono flex items-center">
                   {contract.deployment.transactionHash}
+                  <CopyToClipboard text={contract.deployment.transactionHash} className="ml-2" />
                 </dd>
               </div>
               <div className="bg-gray-50 px-4 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
@@ -65,7 +71,10 @@ export default function ContractDetails({ contract, chainName }: ContractDetails
                 {contract.proxyResolution.implementations.map((impl, index) => (
                   <div key={index} className="mt-2">
                     <span className="font-medium">Implementation {index + 1}:</span>{" "}
-                    <span className="font-mono">{impl.address}</span>
+                    <span className="font-mono flex items-center inline-flex">
+                      {impl.address}
+                      <CopyToClipboard text={impl.address} className="ml-2" />
+                    </span>
                     {impl.name && <span className="ml-2 text-gray-500">({impl.name})</span>}
                   </div>
                 ))}

@@ -43,12 +43,22 @@ export function formatAddress(address: string): string {
 }
 
 /**
- * Formats a timestamp for display
- * @param timestamp The timestamp to format
- * @returns The formatted timestamp
+ * Formats a timestamp in UTC
+ * e.g. 2024-08-08 13:20:07 UTC
  */
 export function formatTimestamp(timestamp: string): string {
-  return new Date(timestamp).toLocaleString();
+  // Use a fixed format instead of toLocaleString to ensure consistency between server and client
+  const date = new Date(timestamp);
+
+  // Format: YYYY-MM-DD HH:MM:SS (UTC)
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const hours = String(date.getUTCHours()).padStart(2, "0");
+  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+  const seconds = String(date.getUTCSeconds()).padStart(2, "0");
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds} UTC`;
 }
 
 /**

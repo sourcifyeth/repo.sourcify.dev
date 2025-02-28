@@ -5,6 +5,7 @@ import LoadingState from "@/components/LoadingState";
 import ServerNavigation from "@/components/ServerNavigation";
 import ErrorState from "@/components/ErrorState";
 import { IoCheckmarkDoneCircle, IoCheckmarkCircle } from "react-icons/io5";
+import CopyToClipboard from "@/components/CopyToClipboard";
 
 // This function runs on the server
 async function getContractData(chainId: string, address: string) {
@@ -27,7 +28,7 @@ async function getChainsData() {
 }
 
 export default async function ContractPage({ params }: { params: { chainId: string; address: string } }) {
-  const { chainId, address } = params;
+  const { chainId, address } = await params;
 
   // Fetch data in parallel
   const [contract, chains] = await Promise.all([getContractData(chainId, address), getChainsData()]);
@@ -55,15 +56,18 @@ export default async function ContractPage({ params }: { params: { chainId: stri
     <div>
       <ServerNavigation />
 
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold font-mono text-gray-900">{contract.address}</h1>
+      <div className="mt-3 mb-1">
+        <div className="flex items-center">
+          <h1 className="text-2xl font-bold font-mono text-gray-900">{contract.address}</h1>
+          <CopyToClipboard text={contract.address} className="ml-2" />
+        </div>
         <p className="text-gray-700 mt-1">on {chainName}</p>
       </div>
 
       {/* Match status */}
       <div className="mb-6">
-        <span className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-semibold border ${matchColor}`}>
-          {matchIcon} {matchLabel}
+        <span className={`inline-flex items-center px-3 py-1 rounded-md font-semibold border ${matchColor}`}>
+          <span className="mr-1">{matchIcon}</span> {matchLabel}
         </span>
       </div>
 

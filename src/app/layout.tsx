@@ -2,16 +2,19 @@ import type { Metadata } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import Footer from "@/components/Footer";
+import AppTooltip from "@/components/AppTooltip";
 
 const ibmPlexSans = IBM_Plex_Sans({
   weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
+  display: "swap",
   variable: "--font-ibm-plex-sans",
 });
 
 const ibmPlexMono = IBM_Plex_Mono({
   weight: ["400", "500", "600"],
   subsets: ["latin"],
+  display: "swap",
   variable: "--font-ibm-plex-mono",
 });
 
@@ -54,10 +57,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${ibmPlexSans.variable} ${ibmPlexMono.variable} antialiased bg-gray-50 min-h-screen flex flex-col font-sans`}
-      >
+    <html lang="en" className={`${ibmPlexSans.variable} ${ibmPlexMono.variable}`}>
+      <body className="antialiased bg-gray-50 min-h-screen flex flex-col font-sans">
         <header className="bg-white shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <h1 className="text-2xl font-bold text-gray-900">Sourcify Contract Viewer</h1>
@@ -65,6 +66,7 @@ export default function RootLayout({
         </header>
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow">{children}</main>
         <Footer />
+        <AppTooltip />
       </body>
     </html>
   );
