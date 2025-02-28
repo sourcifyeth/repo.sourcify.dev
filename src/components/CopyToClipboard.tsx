@@ -29,16 +29,14 @@ export default function CopyToClipboard({
   };
 
   return (
-    <div className="inline-block">
-      <button
-        onClick={handleCopy}
-        className={`inline-flex items-center justify-center transition-colors ${className}`}
-        aria-label="Copy to clipboard"
-        data-tooltip-id="global-tooltip"
-        data-tooltip-content={copied ? "Copied!" : "Copy to clipboard"}
-      >
-        {copied ? <IoIosCheckmark className={`${iconClassName}`} /> : <IoIosCopy className={iconClassName} />}
-      </button>
-    </div>
+    <button
+      onClick={handleCopy}
+      className={`inline-flex items-center justify-center transition-colors ${className}`}
+      aria-label="Copy to clipboard"
+      data-tooltip-id="global-tooltip"
+      data-tooltip-content={copied ? "Copied!" : "Copy to clipboard"}
+    >
+      {copied ? <IoIosCheckmark className={`${iconClassName}`} /> : <IoIosCopy className={iconClassName} />}
+    </button>
   );
 }
