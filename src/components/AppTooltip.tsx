@@ -9,12 +9,13 @@ export default function AppTooltip() {
     <Tooltip
       id="global-tooltip"
       place="top"
-      className="z-50 text-xs py-1 px-2"
+      className="z-50 py-1 px-2 max-w-xs"
       style={{
         backgroundColor: "#1a1a1a",
         color: "#ffffff",
         borderRadius: "4px",
         opacity: 1,
+        fontSize: "12px",
       }}
       opacity={1}
       arrowColor="#1a1a1a"

@@ -13,7 +13,7 @@ interface CopyToClipboardProps {
 export default function CopyToClipboard({
   text,
   className = "",
-  iconClassName = "text-lg text-gray-400 hover:text-gray-600 cursor-pointer",
+  iconClassName = "text-gray-400 hover:text-gray-600 cursor-pointer",
   successDuration = 1000,
 }: CopyToClipboardProps) {
   const [copied, setCopied] = useState(false);

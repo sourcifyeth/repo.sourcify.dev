@@ -6,6 +6,7 @@ import ServerNavigation from "@/components/ServerNavigation";
 import ErrorState from "@/components/ErrorState";
 import { IoCheckmarkDoneCircle, IoCheckmarkCircle } from "react-icons/io5";
 import CopyToClipboard from "@/components/CopyToClipboard";
+import InfoTooltip from "@/components/InfoTooltip";
 
 // This function runs on the server
 async function getContractData(chainId: string, address: string) {
@@ -52,11 +53,17 @@ export default async function ContractPage({ params }: { params: { chainId: stri
   const matchColor = "bg-green-100 text-green-800 border-green-200";
   const matchIcon = isExactMatch ? <IoCheckmarkDoneCircle /> : <IoCheckmarkCircle />;
 
+  // Tooltip content for match status
+  const matchTooltipContent = isExactMatch
+    ? "Exact match: The onchain and compiled bytecode match exactly, including the metadata hashes."
+    : "Match: The onchain and compiled bytecode match, but metadata hashes differ or don't exist.";
+  const matchTooltipHtml = `<p>${matchTooltipContent} <a href="https://docs.sourcify.dev/faq/match-types" target="_blank" rel="noopener noreferrer">Learn more</a></p>`;
+
   return (
     <div>
       <ServerNavigation />
 
-      <div className="mt-3 mb-1">
+      <div className="mt-3 mb-2">
         <div className="flex items-center">
           <h1 className="text-2xl font-bold font-mono text-gray-900">{contract.address}</h1>
           <CopyToClipboard text={contract.address} className="ml-2" />
@@ -65,10 +72,11 @@ export default async function ContractPage({ params }: { params: { chainId: stri
       </div>
 
       {/* Match status */}
-      <div className="mb-6">
+      <div className="mb-6 flex items-center">
         <span className={`inline-flex items-center px-3 py-1 rounded-md font-semibold border ${matchColor}`}>
-          <span className="mr-1">{matchIcon}</span> {matchLabel}
+          <span className="mr-1 text-2xl">{matchIcon}</span> {matchLabel}
         </span>
+        <InfoTooltip content={matchTooltipHtml} className="ml-2" html={true} />
       </div>
 
       <Suspense fallback={<LoadingState />}>
