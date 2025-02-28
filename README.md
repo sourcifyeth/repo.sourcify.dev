@@ -1,36 +1,102 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sourcify Contract Viewer
+
+A Next.js application for viewing verified smart contract details from the Sourcify API.
+
+## Features
+
+- View contract details, ABI, source code, and bytecode on a single page
+- Support for multiple blockchain networks with human-readable chain names
+- Clean and responsive UI with Tailwind CSS
+- Easy navigation between different contract sections
+- Hybrid rendering approach for optimal performance and SEO
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18.x or later
+- npm or yarn
+
+### Installation
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/yourusername/contract.sourcify.dev.git
+cd contract.sourcify.dev
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+# or
+yarn install
+```
+
+3. Run the development server:
 
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Usage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. On the home page, select a blockchain network from the dropdown menu.
+2. Enter a contract address in the input field.
+3. Click "View Contract" to see the contract details.
+4. Scroll down to view all contract information including details, ABI, source code, and bytecode.
 
-## Learn More
+## API Integration
 
-To learn more about Next.js, take a look at the following resources:
+The application integrates with the Sourcify API to fetch contract data. The main API endpoints used are:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `/server/v2/contract/{chainId}/{address}?fields=all` - Fetches all contract data including metadata, source files, and bytecode
+- `/server/chains` - Fetches the list of supported blockchain networks with their details
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deployment
 
-## Deploy on Vercel
+### Deploying to Google Cloud
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Install the Google Cloud SDK.
+2. Build the application:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run build
+# or
+yarn build
+```
+
+3. Deploy to Google Cloud Run:
+
+```bash
+gcloud run deploy contract-sourcify-dev --source .
+```
+
+## Project Structure
+
+- `src/app` - Next.js app router pages
+- `src/components` - React components
+- `src/types` - TypeScript type definitions
+- `src/utils` - Utility functions
+
+## Architecture
+
+The application uses a hybrid rendering approach:
+
+- **Server Components**: Initial data fetching happens on the server, improving performance and SEO.
+- **Client Components**: Interactive elements are rendered on the client for a responsive user experience.
+- **Suspense**: Used for smooth loading states during component transitions.
+- **Caching**:
+  - API responses for contract data are cached for 1 hour to reduce load on the Sourcify API.
+  - Chains data is cached for 24 hours as it changes less frequently.
+
+This architecture provides the best of both worlds - fast initial page loads with server-side rendering and rich interactivity with client-side components.
+
+## License
+
+MIT
