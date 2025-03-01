@@ -7,6 +7,7 @@ import ErrorState from "@/components/ErrorState";
 import { IoCheckmarkDoneCircle, IoCheckmarkCircle } from "react-icons/io5";
 import CopyToClipboard from "@/components/CopyToClipboard";
 import InfoTooltip from "@/components/InfoTooltip";
+import ContractDetails from "@/components/ContractDetails";
 
 // This function runs on the server
 async function getContractData(chainId: string, address: string) {
@@ -79,8 +80,14 @@ export default async function ContractPage({ params }: { params: { chainId: stri
         <InfoTooltip content={matchTooltipHtml} className="ml-2" html={true} />
       </div>
 
+      {/* Contract Details Section */}
+      <section className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Contract Details</h2>
+        <ContractDetails contract={contract} chainName={chainName} />
+      </section>
+
       <Suspense fallback={<LoadingState />}>
-        <ContractPageClient contract={contract} chainName={chainName} />
+        <ContractPageClient contract={contract} />
       </Suspense>
     </div>
   );

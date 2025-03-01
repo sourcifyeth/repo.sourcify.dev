@@ -14,12 +14,6 @@ interface ContractPageClientProps {
 export default function ContractPageClient({ contract, chainName }: ContractPageClientProps) {
   return (
     <>
-      {/* Contract Details Section */}
-      <section className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Contract Details</h2>
-        <ContractDetails contract={contract} chainName={chainName} />
-      </section>
-
       {/* Contract ABI Section */}
       <section className="mb-8">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">ABI</h2>
