@@ -107,7 +107,19 @@ export default async function ProxyResolution({ proxyResolution, chainId }: Prox
 
   return (
     <div className="mt-1">
-      <p className="text-sm text-gray-500">This contract is a {proxyResolution.proxyType} proxy</p>
+      <h2 className="text-xl font-semibold text-gray-800">Proxy</h2>
+      <p className="text-sm text-gray-500">
+        Proxy resolution by{" "}
+        <Link
+          href="https://github.com/shazow/whatsabi"
+          className="text-blue-600 hover:underline"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          WhatsABI
+        </Link>
+      </p>
+
       <div className="mt-4 bg-white shadow overflow-hidden sm:rounded-lg">
         <div className="border-t border-gray-200">
           <dl>
