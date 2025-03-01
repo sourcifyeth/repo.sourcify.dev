@@ -59,7 +59,7 @@ export default async function ContractPage({ params }: { params: { chainId: stri
   const matchTooltipContent = isExactMatch
     ? "Exact match: The onchain and compiled bytecode match exactly, including the metadata hashes."
     : "Match: The onchain and compiled bytecode match, but metadata hashes differ or don't exist.";
-  const matchTooltipHtml = `<p>${matchTooltipContent} <a href="https://docs.sourcify.dev/faq/match-types" target="_blank" rel="noopener noreferrer">Learn more</a></p>`;
+  const matchTooltipHtml = `<p>${matchTooltipContent} <a href="https://docs.sourcify.dev/docs/full-vs-partial-match/" target="_blank" rel="noopener noreferrer" class="underline">Learn more</a></p>`;
 
   return (
     <div>
