@@ -83,7 +83,9 @@ export default function ContractDetails({ contract, chainName }: ContractDetails
       </div>
 
       {/* Render proxy resolution component if available */}
-      {contract.proxyResolution && <ProxyResolution proxyResolution={contract.proxyResolution} />}
+      {contract.proxyResolution && (
+        <ProxyResolution proxyResolution={contract.proxyResolution} chainId={contract.chainId} />
+      )}
     </>
   );
 }

@@ -91,7 +91,7 @@ export default async function ContractPage({ params }: { params: { chainId: stri
       {contract.proxyResolution && contract.proxyResolution.isProxy && (
         <section className="mb-8">
           <h2 className="text-xl font-semibold text-gray-800">Proxy</h2>
-          <ProxyResolution proxyResolution={contract.proxyResolution} />
+          <ProxyResolution proxyResolution={contract.proxyResolution} chainId={chainId} />
         </section>
       )}
 
