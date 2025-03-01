@@ -21,8 +21,8 @@ const DetailRow = ({ label, value, isEven, copyValue }: DetailRowProps) => {
 
   return (
     <div className={`${bgColor} px-4 py-3 md:grid md:grid-cols-[150px_1fr] md:gap-4 md:px-6 md:items-center`}>
-      <dt className="text-sm font-bold text-gray-900 mb-1 sm:mb-0">{label}</dt>
-      <dd className="text-sm text-gray-900">
+      <dt className="font-bold text-gray-900 mb-1 sm:mb-0">{label}</dt>
+      <dd className="text-gray-900">
         {copyValue ? (
           <div className="font-mono flex items-center">
             {value}

@@ -108,7 +108,7 @@ export default async function ProxyResolution({ proxyResolution, chainId }: Prox
   return (
     <div className="mt-1">
       <h2 className="text-xl font-semibold text-gray-800">Proxy</h2>
-      <p className="text-sm text-gray-500">
+      <p className="text-gray-500">
         Proxy resolution by{" "}
         <Link
           href="https://github.com/shazow/whatsabi"
@@ -124,16 +124,16 @@ export default async function ProxyResolution({ proxyResolution, chainId }: Prox
         <div className="border-t border-gray-200">
           <dl>
             <div className="bg-gray-50 px-4 py-3 md:grid md:grid-cols-[150px_1fr] md:gap-4 md:px-6 md:items-center">
-              <dt className="text-sm font-bold text-gray-900 mb-1 md:mb-0">Proxy Type</dt>
-              <dd className="text-sm text-gray-900">{proxyResolution.proxyType}</dd>
+              <dt className="font-bold text-gray-900 mb-1 md:mb-0">Proxy Type</dt>
+              <dd className="text-gray-900">{proxyResolution.proxyType}</dd>
             </div>
 
             <div className="bg-white px-4 py-3 grid grid-cols-1 gap-4 md:px-6">
               <div className="font-bold text-gray-900">Implementations</div>
               {proxyResolution.implementations.map((impl, index) => (
                 <div key={index} className="md:grid md:grid-cols-[150px_1fr] md:gap-4 md:items-center ml-4">
-                  <dt className="text-sm font-bold text-gray-900 mb-1 md:mb-0">Implementation {index + 1}</dt>
-                  <dd className="text-sm text-gray-900">
+                  <dt className="font-bold text-gray-900 mb-1 md:mb-0">Implementation {index + 1}</dt>
+                  <dd className="text-gray-900">
                     <div className="flex flex-col">
                       <ImplementationItem
                         address={impl.address}
