@@ -7,7 +7,7 @@ import ErrorState from "@/components/ErrorState";
 import { IoCheckmarkDoneCircle, IoCheckmarkCircle } from "react-icons/io5";
 import CopyToClipboard from "@/components/CopyToClipboard";
 import InfoTooltip from "@/components/InfoTooltip";
-import ContractDetails from "@/components/ContractDetails";
+import ContractDetails from "@/app/[chainId]/[address]/sections/ContractDetails";
 
 // This function runs on the server
 async function getContractData(chainId: string, address: string) {

@@ -1,9 +1,9 @@
 "use client";
 
 import { ContractData } from "@/types/contract";
-import ContractAbi from "@/components/ContractAbi";
-import ContractSource from "@/components/ContractSource";
-import ContractBytecode from "@/components/ContractBytecode";
+import ContractAbi from "@/app/[chainId]/[address]/sections/ContractAbi";
+import ContractSource from "@/app/[chainId]/[address]/sections/ContractSource";
+import ContractBytecode from "@/app/[chainId]/[address]/sections/ContractBytecode";
 
 interface ContractPageClientProps {
   contract: ContractData;

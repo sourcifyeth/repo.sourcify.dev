@@ -1,5 +1,5 @@
 import { ContractData } from "@/types/contract";
-import CopyToClipboard from "./CopyToClipboard";
+import CopyToClipboard from "../../../../components/CopyToClipboard";
 
 interface ProxyResolutionProps {
   proxyResolution: ContractData["proxyResolution"];

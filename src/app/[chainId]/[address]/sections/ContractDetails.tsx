@@ -1,7 +1,7 @@
 import { ContractData } from "@/types/contract";
 import { formatTimestamp } from "@/utils/api";
-import CopyToClipboard from "./CopyToClipboard";
-import ProxyResolution from "../app/[chainId]/[address]/sections/ProxyResolution";
+import CopyToClipboard from "../../../../components/CopyToClipboard";
+import ProxyResolution from "./ProxyResolution";
 
 interface ContractDetailsProps {
   contract: ContractData;
