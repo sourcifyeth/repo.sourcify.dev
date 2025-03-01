@@ -5,7 +5,7 @@ export interface ContractData {
   verifiedAt: string;
   creationBytecode: BytecodeData;
   runtimeBytecode: BytecodeData;
-  deployment?: DeploymentData;
+  deployment: DeploymentData;
   sources: Record<string, SourceData>;
   compilation: CompilationData;
   abi: AbiItem[];

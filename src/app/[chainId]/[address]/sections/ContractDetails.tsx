@@ -11,7 +11,7 @@ interface ContractDetailsProps {
 // Helper component for detail rows
 interface DetailRowProps {
   label: string;
-  value: React.ReactNode;
+  value: string;
   isEven: boolean;
   copyValue?: string;
 }
@@ -20,9 +20,9 @@ const DetailRow = ({ label, value, isEven, copyValue }: DetailRowProps) => {
   const bgColor = isEven ? "bg-gray-50" : "bg-white";
 
   return (
-    <div className={`${bgColor} px-4 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6`}>
-      <dt className="text-sm font-medium text-gray-500">{label}</dt>
-      <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+    <div className={`${bgColor} px-4 py-3 md:grid md:grid-cols-[150px_1fr] md:gap-4 md:px-6 md:items-center`}>
+      <dt className="text-sm font-bold text-gray-900 mb-1 sm:mb-0">{label}</dt>
+      <dd className="text-sm text-gray-900">
         {copyValue ? (
           <div className="font-mono flex items-center">
             {value}
@@ -36,54 +36,40 @@ const DetailRow = ({ label, value, isEven, copyValue }: DetailRowProps) => {
   );
 };
 
-export default function ContractDetails({ contract, chainName }: ContractDetailsProps) {
+export default function ContractDetails({ contract }: ContractDetailsProps) {
   // Create an array of details to render
   const details = [
-    { label: "Contract Address", value: contract.address, copyValue: contract.address },
-    { label: "Chain", value: chainName },
-    { label: "Match Type", value: contract.match },
+    { label: "Contract Name", value: contract.compilation.name },
+    { label: "Compilation Target", value: contract.compilation.fullyQualifiedName },
+    { label: "Language", value: contract.compilation.language },
+    { label: "Compiler", value: `${contract.compilation.compiler} ${contract.compilation.compilerVersion}` },
+    { label: "EVM Version", value: contract.compilation.compilerSettings.evmVersion },
     { label: "Verified At", value: formatTimestamp(contract.verifiedAt) },
+    { label: "Deployer", value: contract.deployment.deployer, copyValue: contract.deployment.deployer },
+    {
+      label: "Deployment Transaction",
+      value: contract.deployment.transactionHash,
+      copyValue: contract.deployment.transactionHash,
+    },
+    { label: "Block Number", value: contract.deployment.blockNumber },
+    { label: "Transaction Index ", value: contract.deployment.transactionIndex },
   ];
 
-  // Add deployment details if available
-  if (contract.deployment) {
-    details.push(
-      { label: "Deployer", value: contract.deployment.deployer, copyValue: contract.deployment.deployer },
-      {
-        label: "Transaction Hash",
-        value: contract.deployment.transactionHash,
-        copyValue: contract.deployment.transactionHash,
-      },
-      { label: "Block Number", value: contract.deployment.blockNumber }
-    );
-  }
-
-  // Add compilation details
-  details.push(
-    { label: "Compiler", value: `${contract.compilation.compiler} ${contract.compilation.compilerVersion}` },
-    { label: "Language", value: contract.compilation.language }
-  );
-
   return (
-    <>
-      <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-        <div className="border-t border-gray-200">
-          <dl>
-            {details.map((detail, index) => (
-              <DetailRow
-                key={detail.label}
-                label={detail.label}
-                value={detail.value}
-                isEven={index % 2 === 0}
-                copyValue={detail.copyValue}
-              />
-            ))}
-          </dl>
-        </div>
+    <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+      <div className="border-t border-gray-200">
+        <dl>
+          {details.map((detail, index) => (
+            <DetailRow
+              key={detail.label}
+              label={detail.label}
+              value={detail.value}
+              isEven={index % 2 === 0}
+              copyValue={detail.copyValue}
+            />
+          ))}
+        </dl>
       </div>
-
-      {/* Render proxy resolution component if available */}
-      {contract.proxyResolution && <ProxyResolution proxyResolution={contract.proxyResolution} />}
-    </>
+    </div>
   );
 }

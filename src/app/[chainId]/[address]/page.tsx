@@ -8,6 +8,7 @@ import { IoCheckmarkDoneCircle, IoCheckmarkCircle } from "react-icons/io5";
 import CopyToClipboard from "@/components/CopyToClipboard";
 import InfoTooltip from "@/components/InfoTooltip";
 import ContractDetails from "@/app/[chainId]/[address]/sections/ContractDetails";
+import ProxyResolution from "./sections/ProxyResolution";
 
 // This function runs on the server
 async function getContractData(chainId: string, address: string) {
@@ -85,6 +86,14 @@ export default async function ContractPage({ params }: { params: { chainId: stri
         <h2 className="text-xl font-semibold text-gray-800 mb-4">Contract Details</h2>
         <ContractDetails contract={contract} chainName={chainName} />
       </section>
+
+      {/* Proxy Resolution Section */}
+      {contract.proxyResolution && contract.proxyResolution.isProxy && (
+        <section className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-800">Proxy</h2>
+          <ProxyResolution proxyResolution={contract.proxyResolution} />
+        </section>
+      )}
 
       <Suspense fallback={<LoadingState />}>
         <ContractPageClient contract={contract} />
