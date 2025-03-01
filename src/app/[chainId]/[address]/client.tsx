@@ -1,17 +1,15 @@
 "use client";
 
 import { ContractData } from "@/types/contract";
-import ContractDetails from "@/components/ContractDetails";
 import ContractAbi from "@/components/ContractAbi";
 import ContractSource from "@/components/ContractSource";
 import ContractBytecode from "@/components/ContractBytecode";
 
 interface ContractPageClientProps {
   contract: ContractData;
-  chainName: string;
 }
 
-export default function ContractPageClient({ contract, chainName }: ContractPageClientProps) {
+export default function ContractPageClient({ contract }: ContractPageClientProps) {
   return (
     <>
       {/* Contract ABI Section */}
