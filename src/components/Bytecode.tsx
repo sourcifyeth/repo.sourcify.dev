@@ -17,7 +17,7 @@ export default function Bytecode({ title, bytecodeData }: BytecodeProps) {
 
   // Calculate bytecode length
   const bytesLength = bytecode?.length
-    ? Math.floor(bytecode.length / 2) // Divide by 2 because each byte is represented by 2 hex characters
+    ? Math.floor(bytecode.length / 2) - 1 // Subtract 1 for 0x
     : 0;
 
   return (
