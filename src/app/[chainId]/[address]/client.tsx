@@ -3,7 +3,7 @@
 import { ContractData } from "@/types/contract";
 import ContractAbi from "@/app/[chainId]/[address]/sections/ContractAbi";
 import ContractSource from "@/app/[chainId]/[address]/sections/ContractSource";
-import ContractBytecode from "@/app/[chainId]/[address]/sections/ContractBytecode";
+import Bytecode from "@/components/Bytecode";
 
 interface ContractPageClientProps {
   contract: ContractData;
@@ -24,11 +24,11 @@ export default function ContractPageClient({ contract }: ContractPageClientProps
         <ContractSource contract={contract} />
       </section>
 
-      {/* Contract Bytecode Section */}
-      <section className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Bytecode</h2>
-        <ContractBytecode contract={contract} />
-      </section>
+      {/* Creation Bytecode Section */}
+      <Bytecode title="Creation Bytecode" bytecodeData={contract.creationBytecode} />
+
+      {/* Runtime Bytecode Section */}
+      <Bytecode title="Runtime Bytecode" bytecodeData={contract.runtimeBytecode} />
     </>
   );
 }
