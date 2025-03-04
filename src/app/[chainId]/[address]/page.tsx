@@ -10,6 +10,7 @@ import ContractDetails from "@/app/[chainId]/[address]/sections/ContractDetails"
 import ProxyResolution from "./sections/ProxyResolution";
 import ContractAbi from "./sections/ContractAbi";
 import ContractSource from "./sections/ContractSource";
+import JsonViewOnlyEditor from "@/components/JsonViewOnlyEditor";
 import Bytecode from "@/components/Bytecode";
 
 // This function runs on the server
@@ -109,6 +110,22 @@ export default async function ContractPage({ params }: { params: { chainId: stri
         <h2 className="text-xl font-semibold text-gray-800 mb-4">Source Code</h2>
         <Suspense fallback={<LoadingState />}>
           <ContractSource contract={contract} />
+        </Suspense>
+      </section>
+
+      {/* Compiler Settings Section */}
+      <section className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Compiler Settings</h2>
+        <Suspense fallback={<LoadingState />}>
+          <JsonViewOnlyEditor data={contract.compilation} />
+        </Suspense>
+      </section>
+
+      {/* Contract Metadata Section */}
+      <section className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Contract Metadata</h2>
+        <Suspense fallback={<LoadingState />}>
+          <JsonViewOnlyEditor data={contract.metadata} />
         </Suspense>
       </section>
 
