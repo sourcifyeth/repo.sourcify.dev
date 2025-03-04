@@ -1,3 +1,5 @@
+"use client";
+
 import { AbiItem } from "@/types/contract";
 import { useState } from "react";
 

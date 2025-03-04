@@ -1,8 +1,283 @@
 "use client";
 
 import { ContractData } from "@/types/contract";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Editor from "@monaco-editor/react";
+import type { editor } from "monaco-editor";
+
+// Define Monaco editor types
+type Monaco = typeof import("monaco-editor");
+
+// Define Solidity language configuration
+const configureSolidityLanguage = () => {
+  return {
+    beforeMount: (monaco: Monaco) => {
+      // Register Solidity language if it doesn't exist
+      if (!monaco.languages.getLanguages().some((lang) => lang.id === "solidity")) {
+        // Register the Solidity language
+        monaco.languages.register({ id: "solidity" });
+
+        // Define Solidity tokens and syntax highlighting rules
+        monaco.languages.setMonarchTokensProvider("solidity", {
+          defaultToken: "invalid",
+          tokenPostfix: ".sol",
+
+          keywords: [
+            "pragma",
+            "solidity",
+            "contract",
+            "library",
+            "interface",
+            "function",
+            "modifier",
+            "event",
+            "struct",
+            "enum",
+            "mapping",
+            "public",
+            "private",
+            "internal",
+            "external",
+            "pure",
+            "view",
+            "payable",
+            "constant",
+            "immutable",
+            "virtual",
+            "override",
+            "returns",
+            "memory",
+            "storage",
+            "calldata",
+            "if",
+            "else",
+            "for",
+            "while",
+            "do",
+            "break",
+            "continue",
+            "return",
+            "throw",
+            "emit",
+            "try",
+            "catch",
+            "revert",
+            "require",
+            "assert",
+            "using",
+            "new",
+            "delete",
+            "constructor",
+            "fallback",
+            "receive",
+            "abstract",
+            "is",
+            "indexed",
+            "import",
+            "from",
+            "as",
+            "type",
+            "assembly",
+          ],
+
+          typeKeywords: [
+            "address",
+            "bool",
+            "string",
+            "uint",
+            "uint8",
+            "uint16",
+            "uint32",
+            "uint64",
+            "uint128",
+            "uint256",
+            "int",
+            "int8",
+            "int16",
+            "int32",
+            "int64",
+            "int128",
+            "int256",
+            "bytes",
+            "bytes1",
+            "bytes2",
+            "bytes3",
+            "bytes4",
+            "bytes5",
+            "bytes6",
+            "bytes7",
+            "bytes8",
+            "bytes9",
+            "bytes10",
+            "bytes11",
+            "bytes12",
+            "bytes13",
+            "bytes14",
+            "bytes15",
+            "bytes16",
+            "bytes17",
+            "bytes18",
+            "bytes19",
+            "bytes20",
+            "bytes21",
+            "bytes22",
+            "bytes23",
+            "bytes24",
+            "bytes25",
+            "bytes26",
+            "bytes27",
+            "bytes28",
+            "bytes29",
+            "bytes30",
+            "bytes31",
+            "bytes32",
+            "fixed",
+            "ufixed",
+            "var",
+          ],
+
+          operators: [
+            "=",
+            ">",
+            "<",
+            "!",
+            "~",
+            "?",
+            ":",
+            "==",
+            "<=",
+            ">=",
+            "!=",
+            "&&",
+            "||",
+            "++",
+            "--",
+            "+",
+            "-",
+            "*",
+            "/",
+            "&",
+            "|",
+            "^",
+            "%",
+            "<<",
+            ">>",
+            ">>>",
+            "+=",
+            "-=",
+            "*=",
+            "/=",
+            "&=",
+            "|=",
+            "^=",
+            "%=",
+            "<<=",
+            ">>=",
+            ">>>=",
+          ],
+
+          symbols: /[=><!~?:&|+\-*\/\^%]+/,
+
+          tokenizer: {
+            root: [
+              // Identifiers and keywords
+              [
+                /[a-zA-Z_$][\w$]*/,
+                {
+                  cases: {
+                    "@keywords": "keyword",
+                    "@typeKeywords": "type",
+                    "@default": "identifier",
+                  },
+                },
+              ],
+
+              // Whitespace
+              { include: "@whitespace" },
+
+              // Delimiters and operators
+              [/[{}()\[\]]/, "@brackets"],
+              [/[<>](?!@symbols)/, "@brackets"],
+              [
+                /@symbols/,
+                {
+                  cases: {
+                    "@operators": "operator",
+                    "@default": "",
+                  },
+                },
+              ],
+
+              // Numbers
+              [/\d*\.\d+([eE][\-+]?\d+)?/, "number.float"],
+              [/0[xX][0-9a-fA-F]+/, "number.hex"],
+              [/\d+/, "number"],
+
+              // Delimiter
+              [/[;,.]/, "delimiter"],
+
+              // Strings
+              [/"([^"\\]|\\.)*$/, "string.invalid"],
+              [/"/, { token: "string.quote", bracket: "@open", next: "@string" }],
+            ],
+
+            comment: [
+              [/[^\/*]+/, "comment"],
+              [/\/\*/, "comment", "@push"],
+              ["\\*/", "comment", "@pop"],
+              [/[\/*]/, "comment"],
+            ],
+
+            string: [
+              [/[^\\"]+/, "string"],
+              [/\\./, "string.escape"],
+              [/"/, { token: "string.quote", bracket: "@close", next: "@pop" }],
+            ],
+
+            whitespace: [
+              [/[ \t\r\n]+/, "white"],
+              [/\/\*/, "comment", "@comment"],
+              [/\/\/.*$/, "comment"],
+            ],
+          },
+        });
+
+        // Define language configuration for editor features
+        monaco.languages.setLanguageConfiguration("solidity", {
+          comments: {
+            lineComment: "//",
+            blockComment: ["/*", "*/"],
+          },
+          brackets: [
+            ["{", "}"],
+            ["[", "]"],
+            ["(", ")"],
+          ],
+          autoClosingPairs: [
+            { open: "{", close: "}" },
+            { open: "[", close: "]" },
+            { open: "(", close: ")" },
+            { open: '"', close: '"' },
+            { open: "'", close: "'" },
+          ],
+          surroundingPairs: [
+            { open: "{", close: "}" },
+            { open: "[", close: "]" },
+            { open: "(", close: ")" },
+            { open: '"', close: '"' },
+            { open: "'", close: "'" },
+          ],
+          folding: {
+            markers: {
+              start: new RegExp("^\\s*//\\s*#?region\\b"),
+              end: new RegExp("^\\s*//\\s*#?endregion\\b"),
+            },
+          },
+        });
+      }
+    },
+  };
+};
 
 interface ContractSourceProps {
   contract: ContractData;
@@ -10,7 +285,9 @@ interface ContractSourceProps {
 
 export default function ContractSource({ contract }: ContractSourceProps) {
   const [activeFile, setActiveFile] = useState<string | null>(Object.keys(contract.sources)[0] || null);
-  const [language, setLanguage] = useState<string>("sol");
+  const [language, setLanguage] = useState<string>("solidity");
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const monacoRef = useRef<Monaco | null>(null);
 
   const fileNames = Object.keys(contract.sources);
 
@@ -19,7 +296,7 @@ export default function ContractSource({ contract }: ContractSourceProps) {
     if (activeFile) {
       const extension = activeFile.split(".").pop()?.toLowerCase();
       if (extension === "sol") {
-        setLanguage("sol");
+        setLanguage("solidity");
       } else if (extension === "vy") {
         setLanguage("elixir");
       } else {
@@ -27,6 +304,15 @@ export default function ContractSource({ contract }: ContractSourceProps) {
       }
     }
   }, [activeFile]);
+
+  // Handle editor mounting
+  const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor, monaco: Monaco) => {
+    editorRef.current = editor;
+    monacoRef.current = monaco;
+  };
+
+  // Configure Solidity language
+  const solidityConfig = configureSolidityLanguage();
 
   return (
     <div className="bg-white shadow overflow-hidden sm:rounded-lg">
@@ -56,7 +342,7 @@ export default function ContractSource({ contract }: ContractSourceProps) {
               <div className="h-[500px]">
                 <Editor
                   height="100%"
-                  defaultLanguage={language}
+                  language={language}
                   value={contract.sources[activeFile].content}
                   options={{
                     readOnly: true,
@@ -65,7 +351,23 @@ export default function ContractSource({ contract }: ContractSourceProps) {
                     fontSize: 14,
                     wordWrap: "on",
                     automaticLayout: true,
+                    scrollbar: {
+                      useShadows: false,
+                      verticalHasArrows: true,
+                      horizontalHasArrows: true,
+                      vertical: "visible",
+                      horizontal: "visible",
+                      verticalScrollbarSize: 12,
+                      horizontalScrollbarSize: 12,
+                    },
+                    lineNumbers: "on",
+                    glyphMargin: true,
+                    folding: true,
+                    renderLineHighlight: "all",
                   }}
+                  beforeMount={solidityConfig.beforeMount}
+                  onMount={handleEditorDidMount}
+                  theme="vs-dark"
                 />
               </div>
             ) : (

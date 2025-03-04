@@ -1,6 +1,5 @@
 import { fetchContractData, fetchChains, getChainName } from "@/utils/api";
 import { Suspense } from "react";
-import ContractPageClient from "./client";
 import LoadingState from "@/components/LoadingState";
 import ServerNavigation from "@/components/ServerNavigation";
 import ErrorState from "@/components/ErrorState";
@@ -9,6 +8,9 @@ import CopyToClipboard from "@/components/CopyToClipboard";
 import InfoTooltip from "@/components/InfoTooltip";
 import ContractDetails from "@/app/[chainId]/[address]/sections/ContractDetails";
 import ProxyResolution from "./sections/ProxyResolution";
+import ContractAbi from "./sections/ContractAbi";
+import ContractSource from "./sections/ContractSource";
+import Bytecode from "@/components/Bytecode";
 
 // This function runs on the server
 async function getContractData(chainId: string, address: string) {
@@ -94,8 +96,30 @@ export default async function ContractPage({ params }: { params: { chainId: stri
         </section>
       )}
 
+      {/* Contract ABI Section */}
+      <section className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">ABI</h2>
+        <Suspense fallback={<LoadingState />}>
+          <ContractAbi abi={contract.abi} />
+        </Suspense>
+      </section>
+
+      {/* Contract Source Code Section */}
+      <section className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Source Code</h2>
+        <Suspense fallback={<LoadingState />}>
+          <ContractSource contract={contract} />
+        </Suspense>
+      </section>
+
+      {/* Creation Bytecode Section */}
       <Suspense fallback={<LoadingState />}>
-        <ContractPageClient contract={contract} />
+        <Bytecode title="Creation Bytecode" bytecodeData={contract.creationBytecode} />
+      </Suspense>
+
+      {/* Runtime Bytecode Section */}
+      <Suspense fallback={<LoadingState />}>
+        <Bytecode title="Runtime Bytecode" bytecodeData={contract.runtimeBytecode} />
       </Suspense>
     </div>
   );
