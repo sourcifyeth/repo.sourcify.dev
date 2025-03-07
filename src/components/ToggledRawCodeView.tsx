@@ -7,17 +7,16 @@ import CopyToClipboard from "./CopyToClipboard";
 interface CodeData {
   name: string;
   value: string;
-  tooltipContent?: string;
 }
 
 interface ToggledRawCodeViewProps {
-  title: string;
   data1: CodeData;
   data2: CodeData;
-  generalTooltipContent?: string;
+  tooltipContent?: string;
+  className?: string;
 }
 
-export default function ToggledRawCodeView({ title, data1, data2, generalTooltipContent }: ToggledRawCodeViewProps) {
+export default function ToggledRawCodeView({ data1, data2, tooltipContent, className }: ToggledRawCodeViewProps) {
   const [showFirstOption, setShowFirstOption] = useState(true);
 
   const currentData = showFirstOption ? data1 : data2;
@@ -27,15 +26,8 @@ export default function ToggledRawCodeView({ title, data1, data2, generalTooltip
     ? Math.floor(currentData.value.length / 2) - (currentData.value.startsWith("0x") ? 1 : 0) // Subtract 1 for 0x if present
     : 0;
 
-  // Determine which tooltip content to show
-  const tooltipContent = showFirstOption
-    ? data1.tooltipContent || generalTooltipContent
-    : data2.tooltipContent || generalTooltipContent;
-
   return (
-    <section className="mb-8">
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">{title}</h2>
-
+    <div className={`${className}`}>
       <div className="mb-2 flex items-center">
         <span className={`mr-2 text-sm ${showFirstOption ? "font-medium" : "text-gray-500"}`}>{data1.name}</span>
 
@@ -64,6 +56,6 @@ export default function ToggledRawCodeView({ title, data1, data2, generalTooltip
         value={currentData.value}
         readOnly
       />
-    </section>
+    </div>
   );
 }

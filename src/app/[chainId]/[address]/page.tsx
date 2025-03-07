@@ -134,42 +134,40 @@ export default async function ContractPage({ params }: { params: { chainId: stri
       </section>
 
       {/* Creation Bytecode Section */}
-      <Suspense fallback={<LoadingState />}>
-        <ToggledRawCodeView
-          title="Creation Bytecode"
-          data1={{
-            name: "on-chain bytecode",
-            value: contract.creationBytecode.onchainBytecode,
-            tooltipContent: "On-chain bytecode is retrieved directly from the blockchain.",
-          }}
-          data2={{
-            name: "recompiled bytecode",
-            value: contract.creationBytecode.recompiledBytecode,
-            tooltipContent:
-              "Recompiled bytecode is generated from the source code using the original compiler settings.",
-          }}
-          generalTooltipContent="Bytecode is the compiled binary code that runs on the Ethereum Virtual Machine (EVM)."
-        />
-      </Suspense>
+      <section className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Creation Bytecode</h2>
+        <Suspense fallback={<LoadingState />}>
+          <ToggledRawCodeView
+            data1={{
+              name: "on-chain bytecode",
+              value: contract.creationBytecode.onchainBytecode,
+            }}
+            data2={{
+              name: "recompiled bytecode",
+              value: contract.creationBytecode.recompiledBytecode,
+            }}
+            tooltipContent="On-chain bytecode is retrieved from the blockchain. Recompiled bytecode is generated from the source code."
+          />
+        </Suspense>
+      </section>
 
       {/* Runtime Bytecode Section */}
-      <Suspense fallback={<LoadingState />}>
-        <ToggledRawCodeView
-          title="Runtime Bytecode"
-          data1={{
-            name: "on-chain bytecode",
-            value: contract.runtimeBytecode.onchainBytecode,
-            tooltipContent: "On-chain runtime bytecode is the deployed code that executes when the contract is called.",
-          }}
-          data2={{
-            name: "recompiled bytecode",
-            value: contract.runtimeBytecode.recompiledBytecode,
-            tooltipContent:
-              "Recompiled runtime bytecode is generated from the source code and should match the on-chain code.",
-          }}
-          generalTooltipContent="Runtime bytecode is the code that actually runs when the contract is called, excluding the constructor code."
-        />
-      </Suspense>
+      <section className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Runtime Bytecode</h2>
+        <Suspense fallback={<LoadingState />}>
+          <ToggledRawCodeView
+            data1={{
+              name: "on-chain bytecode",
+              value: contract.runtimeBytecode.onchainBytecode,
+            }}
+            data2={{
+              name: "recompiled bytecode",
+              value: contract.runtimeBytecode.recompiledBytecode,
+            }}
+            tooltipContent="On-chain bytecode is retrieved from the blockchain. Recompiled bytecode is generated from the source code."
+          />
+        </Suspense>
+      </section>
     </div>
   );
 }
