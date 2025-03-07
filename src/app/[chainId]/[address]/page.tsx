@@ -173,6 +173,7 @@ export default async function ContractPage({ params }: { params: { chainId: stri
                         null,
                         2
                       ),
+                      notBytes: true,
                     }}
                   />
                 </Suspense>

@@ -7,6 +7,7 @@ import CopyToClipboard from "./CopyToClipboard";
 interface CodeData {
   name: string;
   value: string;
+  notBytes?: boolean;
 }
 
 interface ToggledRawCodeViewProps {
@@ -46,10 +47,12 @@ export default function ToggledRawCodeView({ data1, data2, tooltipContent, class
         {tooltipContent && <InfoTooltip content={tooltipContent} className="ml-2" />}
       </div>
 
-      <div className="mb-1 mr-2 flex items-center justify-between">
-        <span className="text-sm text-gray-500">Length: {bytesLength} bytes</span>
-        <CopyToClipboard text={currentData.value} className="ml-2" />
-      </div>
+      {!currentData.notBytes && (
+        <div className="mb-1 mr-2 flex items-center justify-between">
+          <span className="text-sm text-gray-500">Length: {bytesLength} bytes</span>
+          <CopyToClipboard text={currentData.value} className="ml-2" />
+        </div>
+      )}
 
       <div className="w-full max-h-64 p-3 bg-gray-50 rounded text-xs font-mono border border-gray-200 cursor-text break-words overflow-y-auto whitespace-pre-wrap">
         {currentData.value}
