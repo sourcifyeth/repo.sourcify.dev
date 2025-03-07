@@ -11,7 +11,7 @@ import ProxyResolution from "./sections/ProxyResolution";
 import ContractAbi from "./sections/ContractAbi";
 import ContractSource from "./sections/ContractSource";
 import JsonViewOnlyEditor from "@/components/JsonViewOnlyEditor";
-import Bytecode from "@/components/Bytecode";
+import ToggledRawCodeView from "@/components/ToggledRawCodeView";
 
 // This function runs on the server
 async function getContractData(chainId: string, address: string) {
@@ -116,27 +116,59 @@ export default async function ContractPage({ params }: { params: { chainId: stri
       {/* Compiler Settings Section */}
       <section className="mb-8">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">Compiler Settings</h2>
-        <Suspense fallback={<LoadingState />}>
-          <JsonViewOnlyEditor data={contract.compilation} />
-        </Suspense>
+        <div className="bg-white shadow overflow-hidden sm:rounded-lg p-4">
+          <Suspense fallback={<LoadingState />}>
+            <JsonViewOnlyEditor data={contract.compilation} />
+          </Suspense>
+        </div>
       </section>
 
       {/* Contract Metadata Section */}
       <section className="mb-8">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">Contract Metadata</h2>
-        <Suspense fallback={<LoadingState />}>
-          <JsonViewOnlyEditor data={contract.metadata} />
-        </Suspense>
+        <div className="bg-white shadow overflow-hidden sm:rounded-lg p-4">
+          <Suspense fallback={<LoadingState />}>
+            <JsonViewOnlyEditor data={contract.metadata} />
+          </Suspense>
+        </div>
       </section>
 
       {/* Creation Bytecode Section */}
       <Suspense fallback={<LoadingState />}>
-        <Bytecode title="Creation Bytecode" bytecodeData={contract.creationBytecode} />
+        <ToggledRawCodeView
+          title="Creation Bytecode"
+          data1={{
+            name: "on-chain bytecode",
+            value: contract.creationBytecode.onchainBytecode,
+            tooltipContent: "On-chain bytecode is retrieved directly from the blockchain.",
+          }}
+          data2={{
+            name: "recompiled bytecode",
+            value: contract.creationBytecode.recompiledBytecode,
+            tooltipContent:
+              "Recompiled bytecode is generated from the source code using the original compiler settings.",
+          }}
+          generalTooltipContent="Bytecode is the compiled binary code that runs on the Ethereum Virtual Machine (EVM)."
+        />
       </Suspense>
 
       {/* Runtime Bytecode Section */}
       <Suspense fallback={<LoadingState />}>
-        <Bytecode title="Runtime Bytecode" bytecodeData={contract.runtimeBytecode} />
+        <ToggledRawCodeView
+          title="Runtime Bytecode"
+          data1={{
+            name: "on-chain bytecode",
+            value: contract.runtimeBytecode.onchainBytecode,
+            tooltipContent: "On-chain runtime bytecode is the deployed code that executes when the contract is called.",
+          }}
+          data2={{
+            name: "recompiled bytecode",
+            value: contract.runtimeBytecode.recompiledBytecode,
+            tooltipContent:
+              "Recompiled runtime bytecode is generated from the source code and should match the on-chain code.",
+          }}
+          generalTooltipContent="Runtime bytecode is the code that actually runs when the contract is called, excluding the constructor code."
+        />
       </Suspense>
     </div>
   );
