@@ -26,7 +26,13 @@ export interface BytecodeData {
   recompiledBytecode: string;
   sourceMap: string;
   linkReferences: Record<string, unknown>;
-  cborAuxdata?: Record<string, unknown>;
+  cborAuxdata?: Record<
+    string,
+    {
+      value: string;
+      offset: number;
+    }
+  >;
   immutableReferences?: Record<string, unknown>;
   transformations?: Array<Record<string, unknown>>;
   transformationValues?: Record<string, unknown>;

@@ -51,11 +51,9 @@ export default function ToggledRawCodeView({ data1, data2, tooltipContent, class
         <CopyToClipboard text={currentData.value} className="ml-2" />
       </div>
 
-      <textarea
-        className="w-full h-64 p-3 bg-gray-50 rounded text-xs font-mono border border-gray-200"
-        value={currentData.value}
-        readOnly
-      />
+      <div className="w-full max-h-64 p-3 bg-gray-50 rounded text-xs font-mono border border-gray-200 cursor-text break-words overflow-y-auto whitespace-pre-wrap">
+        {currentData.value}
+      </div>
     </div>
   );
 }
