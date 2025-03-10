@@ -201,47 +201,47 @@ export default async function ContractPage({ params }: { params: { chainId: stri
             ))}
           </div>
         )}
-      </section>
 
-      {/* CBOR Auxdata Section */}
-      {contract.creationBytecode.cborAuxdata &&
-        Object.keys(contract.creationBytecode.cborAuxdata).length > 0 &&
-        contract.creationBytecode.cborAuxdata.value && (
-          <section className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">CBOR Auxdata</h2>
+        {/* CBOR Auxdata Section */}
+        {contract.creationBytecode.cborAuxdata &&
+          Object.keys(contract.creationBytecode.cborAuxdata).length > 0 &&
+          contract.creationBytecode.cborAuxdata.value && (
+            <section className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">CBOR Auxdata</h2>
+              <Suspense fallback={<LoadingState />}>
+                <ToggledRawCodeView
+                  data1={{
+                    name: "Raw CBOR",
+                    value:
+                      typeof contract.creationBytecode.cborAuxdata.value === "string"
+                        ? contract.creationBytecode.cborAuxdata.value
+                        : JSON.stringify(contract.creationBytecode.cborAuxdata.value || {}),
+                  }}
+                  data2={{
+                    name: "Decoded CBOR",
+                    value: JSON.stringify(contract.creationBytecode.cborAuxdata.decoded || {}, null, 2),
+                  }}
+                  tooltipContent="CBOR Auxdata contains metadata about the contract compilation, including IPFS hashes of source files"
+                  className="bg-white shadow overflow-hidden sm:rounded-lg p-4"
+                />
+              </Suspense>
+            </section>
+          )}
+
+        {/* Library Transformations Section */}
+        {contract.creationBytecode.transformations && contract.creationBytecode.transformations.length > 0 && (
+          <section className="mb-8 ml-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Transformations</h2>
             <Suspense fallback={<LoadingState />}>
-              <ToggledRawCodeView
-                data1={{
-                  name: "Raw CBOR",
-                  value:
-                    typeof contract.creationBytecode.cborAuxdata.value === "string"
-                      ? contract.creationBytecode.cborAuxdata.value
-                      : JSON.stringify(contract.creationBytecode.cborAuxdata.value || {}),
-                }}
-                data2={{
-                  name: "Decoded CBOR",
-                  value: JSON.stringify(contract.creationBytecode.cborAuxdata.decoded || {}, null, 2),
-                }}
-                tooltipContent="CBOR Auxdata contains metadata about the contract compilation, including IPFS hashes of source files"
-                className="bg-white shadow overflow-hidden sm:rounded-lg p-4"
+              <LibraryTransformations
+                transformations={contract.creationBytecode.transformations}
+                transformationValues={contract.creationBytecode.transformationValues}
+                chainId={chainId}
               />
             </Suspense>
           </section>
         )}
-
-      {/* Library Transformations Section */}
-      {contract.creationBytecode.transformations && contract.creationBytecode.transformations.length > 0 && (
-        <section className="mb-8 ml-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Transformations</h2>
-          <Suspense fallback={<LoadingState />}>
-            <LibraryTransformations
-              transformations={contract.creationBytecode.transformations}
-              transformationValues={contract.creationBytecode.transformationValues}
-              chainId={chainId}
-            />
-          </Suspense>
-        </section>
-      )}
+      </section>
 
       {/* Runtime Bytecode Section */}
       <section className="mb-8">
