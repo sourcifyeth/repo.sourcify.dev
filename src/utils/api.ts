@@ -37,7 +37,7 @@ export async function fetchContractData(
  * @param address The address to format
  * @returns The formatted address
  */
-export function formatAddress(address: string): string {
+export function shortenAddress(address: string): string {
   if (!address || address.length < 10) return address;
   return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
 }
@@ -111,4 +111,42 @@ export function getChainName(chainId: string | number, chains: ChainData[]): str
     return `${chain.name} (${chain.chainId})`;
   }
   return `Chain ${chainId}`;
+}
+
+// Type for verification response
+interface VerificationResponse {
+  match: string | null;
+  creationMatch: string | null;
+  runtimeMatch: string | null;
+  chainId: string;
+  address: string;
+}
+
+/**
+ * Checks if a contract is verified on Sourcify
+ * @param chainId The chain ID
+ * @param address The contract address
+ * @param environment The environment (staging or production)
+ * @returns A boolean indicating if the contract is verified
+ */
+export async function checkVerification(
+  chainId: string,
+  address: string,
+  environment: "staging" | "production" = "production"
+): Promise<boolean> {
+  try {
+    // Determine base URL based on environment
+    const isStaging = environment === "staging";
+    const baseUrl = isStaging ? "https://staging.sourcify.dev/server/v2" : "https://sourcify.dev/server/v2";
+
+    const url = `${baseUrl}/contract/${chainId}/${address}`;
+    const response = await fetch(url, { next: { revalidate: 3600 } }); // Cache for 1 hour
+    const data = (await response.json()) as VerificationResponse;
+
+    // Check if the contract is verified (match field is not null)
+    return data.match !== null;
+  } catch (error) {
+    console.error(`Error checking verification for ${address}:`, error);
+    return false;
+  }
 }

@@ -3,19 +3,11 @@ import CopyToClipboard from "../../../../components/CopyToClipboard";
 import { IoCheckmarkCircle, IoCloseCircle } from "react-icons/io5";
 import InfoTooltip from "@/components/InfoTooltip";
 import Link from "next/link";
+import { checkVerification, shortenAddress } from "@/utils/api";
 
 interface ProxyResolutionProps {
   proxyResolution: ContractData["proxyResolution"];
   chainId: string;
-}
-
-// Type for verification response
-interface VerificationResponse {
-  match: string | null;
-  creationMatch: string | null;
-  runtimeMatch: string | null;
-  chainId: string;
-  address: string;
 }
 
 // Helper component for implementation items
@@ -29,12 +21,12 @@ interface ImplementationItemProps {
 
 const ImplementationItem = ({ address, name, isVerified, chainId }: ImplementationItemProps) => {
   // Create shortened address display
-  const shortenedAddress = `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+  const shortenedAddress = shortenAddress(address);
 
   // Create the address display component that will be used in both cases
   const addressDisplay = (
     <span className="font-mono inline-flex items-center">
-      {address}
+      {shortenedAddress}
       <CopyToClipboard text={address} className="ml-2" />
     </span>
   );
@@ -56,7 +48,7 @@ const ImplementationItem = ({ address, name, isVerified, chainId }: Implementati
       <div className="ml-2">
         {isVerified ? (
           <div className="flex items-center">
-            <IoCheckmarkCircle className="text-green-500 text-xl" />
+            <IoCheckmarkCircle className="text-green-600 text-xl" />
             <InfoTooltip
               content={`Implementation <span style="word-break: break-all;">${shortenedAddress}</span> verified on Sourcify`}
               className="ml-1"
@@ -65,7 +57,7 @@ const ImplementationItem = ({ address, name, isVerified, chainId }: Implementati
           </div>
         ) : (
           <div className="flex items-center">
-            <IoCloseCircle className="text-red-500 text-xl" />
+            <IoCloseCircle className="text-red-600 text-xl" />
             <InfoTooltip
               content={`Implementation <span style="word-break: break-all;">${shortenedAddress}</span> not verified on Sourcify`}
               className="ml-1"
@@ -77,25 +69,6 @@ const ImplementationItem = ({ address, name, isVerified, chainId }: Implementati
     </div>
   );
 };
-
-// Server-side function to check if a contract is verified
-async function checkVerification(chainId: string, address: string): Promise<boolean> {
-  try {
-    // Determine environment based on NODE_ENV
-    const isStaging = process.env.NEXT_PUBLIC_ENVIRONMENT === "staging";
-    const baseUrl = isStaging ? "https://staging.sourcify.dev/server/v2" : "https://sourcify.dev/server/v2";
-
-    const url = `${baseUrl}/contract/${chainId}/${address}`;
-    const response = await fetch(url, { next: { revalidate: 3600 } }); // Cache for 1 hour
-    const data = (await response.json()) as VerificationResponse;
-
-    // Check if the contract is verified (match field is not null)
-    return data.match !== null;
-  } catch (error) {
-    console.error("Error checking implementation verification:", error);
-    return false;
-  }
-}
 
 export default async function ProxyResolution({ proxyResolution, chainId }: ProxyResolutionProps) {
   if (!proxyResolution) return null;
