@@ -35,14 +35,16 @@ export interface BytecodeData {
   >;
   immutableReferences?: Record<string, unknown>;
   transformations?: Transformations;
-  transformationValues?: Record<string, TransformationValues>;
+  transformationValues?: TransformationValues;
 }
 
-export type Transformations = LibraryTransformation[];
+export type Transformations = Array<LibraryTransformation | ConstructorArgumentTransformation>;
 
 export interface TransformationValues {
   libraries?: Record<string, string>;
+  constructorArguments?: string;
 }
+
 interface Transformation {
   reason: string;
   type: "insert" | "replace";
@@ -51,7 +53,13 @@ interface Transformation {
 
 interface LibraryTransformation extends Transformation {
   type: "replace";
+  reason: "library";
   id: string;
+}
+
+export interface ConstructorArgumentTransformation extends Transformation {
+  type: "insert";
+  reason: "constructorArguments";
 }
 
 export interface DeploymentData {

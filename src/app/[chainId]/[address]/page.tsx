@@ -14,6 +14,7 @@ import ContractSource from "./sections/ContractSource";
 import JsonViewOnlyEditor from "@/components/JsonViewOnlyEditor";
 import ToggledRawCodeView from "@/components/ToggledRawCodeView";
 import LibraryTransformations from "./sections/LibraryTransformations";
+import ConstructorArguments from "./sections/ConstructorArguments";
 import { formatCborAuxdata } from "@/utils/format";
 
 // This function runs on the server
@@ -230,13 +231,25 @@ export default async function ContractPage({ params }: { params: { chainId: stri
 
         {/* Library Transformations Section */}
         {contract.creationBytecode.transformations && contract.creationBytecode.transformations.length > 0 && (
-          <section className="mb-8 ml-6">
+          <section className="mt-8 ml-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Transformations</h2>
             <Suspense fallback={<LoadingState />}>
               <LibraryTransformations
                 transformations={contract.creationBytecode.transformations}
                 transformationValues={contract.creationBytecode.transformationValues}
                 chainId={chainId}
+              />
+            </Suspense>
+          </section>
+        )}
+
+        {/* Constructor Arguments Section */}
+        {contract.creationBytecode.transformationValues?.constructorArguments && (
+          <section className="mb-8 ml-6">
+            <Suspense fallback={<LoadingState />}>
+              <ConstructorArguments
+                constructorArguments={contract.creationBytecode.transformationValues.constructorArguments}
+                abi={contract.abi}
               />
             </Suspense>
           </section>
