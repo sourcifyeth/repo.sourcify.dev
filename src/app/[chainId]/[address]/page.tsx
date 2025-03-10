@@ -1,5 +1,6 @@
 import { fetchContractData, fetchChains, getChainName } from "@/utils/api";
 import { Suspense } from "react";
+import { Metadata } from "next";
 import LoadingState from "@/components/LoadingState";
 import ServerNavigation from "@/components/ServerNavigation";
 import ErrorState from "@/components/ErrorState";
@@ -32,6 +33,24 @@ async function getChainsData() {
     console.error("Error fetching chains data:", error);
     return [];
   }
+}
+
+// Generate dynamic metadata for the page
+export async function generateMetadata({
+  params,
+}: {
+  params: { chainId: string; address: string };
+}): Promise<Metadata> {
+  const { chainId, address } = params;
+
+  // Fetch chains data to get the network name
+  const chains = await getChainsData();
+  const chainName = getChainName(chainId, chains);
+
+  return {
+    title: `${address} on ${chainName} - Sourcify Verified Contract Repository`,
+    description: `Sourcify Repository view for the verified contract ${address} on ${chainName} network`,
+  };
 }
 
 export default async function ContractPage({ params }: { params: { chainId: string; address: string } }) {
