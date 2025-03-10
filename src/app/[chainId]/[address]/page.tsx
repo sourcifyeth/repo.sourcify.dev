@@ -42,7 +42,7 @@ export async function generateMetadata({
 }: {
   params: { chainId: string; address: string };
 }): Promise<Metadata> {
-  const { chainId, address } = params;
+  const { chainId, address } = await params;
 
   // Fetch chains data to get the network name
   const chains = await getChainsData();
