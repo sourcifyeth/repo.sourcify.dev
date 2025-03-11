@@ -9,7 +9,7 @@ import CopyToClipboard from "@/components/CopyToClipboard";
 import InfoTooltip from "@/components/InfoTooltip";
 import ContractDetails from "@/app/[chainId]/[address]/sections/ContractDetails";
 import ProxyResolution from "./sections/ProxyResolution";
-import ContractAbi from "./sections/ContractAbi";
+import ContractAbi from "./sections/ABI";
 import ContractSource from "./sections/ContractSource";
 import JsonViewOnlyEditor from "@/components/JsonViewOnlyEditor";
 import ToggledRawCodeView from "@/components/ToggledRawCodeView";
@@ -123,7 +123,6 @@ export default async function ContractPage({ params }: { params: { chainId: stri
 
       {/* Contract ABI Section */}
       <section className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">ABI</h2>
         <Suspense fallback={<LoadingState />}>
           <ContractAbi abi={contract.abi} />
         </Suspense>
