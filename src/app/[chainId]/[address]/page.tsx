@@ -139,21 +139,17 @@ export default async function ContractPage({ params }: { params: { chainId: stri
       {/* Compiler Settings Section */}
       <section className="mb-8">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">Compiler Settings</h2>
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg p-4">
-          <Suspense fallback={<LoadingState />}>
-            <JsonViewOnlyEditor data={contract.compilation} />
-          </Suspense>
-        </div>
+        <Suspense fallback={<LoadingState />}>
+          <JsonViewOnlyEditor data={contract.compilation} />
+        </Suspense>
       </section>
 
       {/* Contract Metadata Section */}
       <section className="mb-8">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">Contract Metadata</h2>
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg p-4">
-          <Suspense fallback={<LoadingState />}>
-            <JsonViewOnlyEditor data={contract.metadata} />
-          </Suspense>
-        </div>
+        <Suspense fallback={<LoadingState />}>
+          <JsonViewOnlyEditor data={contract.metadata} />
+        </Suspense>
       </section>
 
       {/* Creation Bytecode Section */}
