@@ -74,18 +74,13 @@ export function truncateString(str: string, maxLength: number = 100): string {
   return `${str.substring(0, maxLength)}...`;
 }
 
-/**
- * Fetches the list of chains from Sourcify API
- * @param environment The environment to use (staging or production)
- * @returns The chains data
- */
 export async function fetchChains(): Promise<ChainData[]> {
   const baseUrl = getSourcifyServerUrl();
   const url = `${baseUrl}/chains`;
 
   try {
     const response = await fetch(url, {
-      next: { revalidate: 86400 }, // Cache for 24 hours
+      next: { revalidate: 3600 }, // Cache for 1 hour
     });
 
     if (!response.ok) {
@@ -123,13 +118,6 @@ interface VerificationResponse {
   address: string;
 }
 
-/**
- * Checks if a contract is verified on Sourcify
- * @param chainId The chain ID
- * @param address The contract address
- * @param environment The environment (staging or production)
- * @returns A boolean indicating if the contract is verified
- */
 export async function checkVerification(chainId: string, address: string): Promise<boolean> {
   try {
     const baseUrl = getSourcifyServerUrl();

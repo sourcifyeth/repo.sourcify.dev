@@ -2,6 +2,9 @@ import HomeClient from "@/components/HomeClient";
 import ServerNavigation from "@/components/ServerNavigation";
 import { fetchChains } from "@/utils/api";
 
+// Force dynamic rendering to avoid passing SOURCIFY_SERVER_URL env var as a build arg
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const chains = await fetchChains();
   return (
