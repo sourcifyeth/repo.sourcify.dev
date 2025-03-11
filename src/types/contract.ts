@@ -10,7 +10,7 @@ export interface ContractData {
   compilation: CompilationData;
   abi: AbiItem[];
   metadata: Record<string, unknown>;
-  storageLayout: StorageLayoutData;
+  storageLayout: StorageLayoutData | null;
   userdoc: Record<string, unknown>;
   devdoc: Record<string, unknown>;
   stdJsonInput: Record<string, unknown>;
