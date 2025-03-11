@@ -1,6 +1,14 @@
 import { ContractData } from "@/types/contract";
 import { ChainData, ChainsResponse } from "@/types/chain";
 
+const getSourcifyServerUrl = () => {
+  const serverUrl = process.env.SOURCIFY_SERVER_URL;
+  if (!serverUrl) {
+    throw new Error("SOURCIFY_SERVER_URL is not set");
+  }
+  return `${serverUrl}`;
+};
+
 /**
  * Fetches contract data from the Sourcify API
  * @param chainId The chain ID
@@ -8,15 +16,9 @@ import { ChainData, ChainsResponse } from "@/types/chain";
  * @param environment The environment to use (staging or production)
  * @returns The contract data
  */
-export async function fetchContractData(
-  chainId: string,
-  address: string,
-  environment: "staging" | "production" = "production"
-): Promise<ContractData> {
-  const baseUrl =
-    environment === "production" ? "https://sourcify.dev/server/v2" : "https://staging.sourcify.dev/server/v2";
-
-  const url = `${baseUrl}/contract/${chainId}/${address}?fields=all`;
+export async function fetchContractData(chainId: string, address: string): Promise<ContractData> {
+  const baseUrl = getSourcifyServerUrl();
+  const url = `${baseUrl}/v2/contract/${chainId}/${address}?fields=all`;
 
   try {
     const response = await fetch(url, { next: { revalidate: 3600 } }); // Cache for 1 hour
@@ -77,9 +79,8 @@ export function truncateString(str: string, maxLength: number = 100): string {
  * @param environment The environment to use (staging or production)
  * @returns The chains data
  */
-export async function fetchChains(environment: "staging" | "production" = "production"): Promise<ChainData[]> {
-  const baseUrl = environment === "production" ? "https://sourcify.dev/server" : "https://staging.sourcify.dev/server";
-
+export async function fetchChains(): Promise<ChainData[]> {
+  const baseUrl = getSourcifyServerUrl();
   const url = `${baseUrl}/chains`;
 
   try {
@@ -129,15 +130,9 @@ interface VerificationResponse {
  * @param environment The environment (staging or production)
  * @returns A boolean indicating if the contract is verified
  */
-export async function checkVerification(
-  chainId: string,
-  address: string,
-  environment: "staging" | "production" = "production"
-): Promise<boolean> {
+export async function checkVerification(chainId: string, address: string): Promise<boolean> {
   try {
-    // Determine base URL based on environment
-    const isStaging = environment === "staging";
-    const baseUrl = isStaging ? "https://staging.sourcify.dev/server/v2" : "https://sourcify.dev/server/v2";
+    const baseUrl = getSourcifyServerUrl();
 
     const url = `${baseUrl}/contract/${chainId}/${address}`;
     const response = await fetch(url, { next: { revalidate: 3600 } }); // Cache for 1 hour
