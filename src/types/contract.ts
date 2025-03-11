@@ -39,19 +39,25 @@ export interface BytecodeData {
 }
 
 export type Transformations = Array<
-  LibraryTransformation | ConstructorArgumentTransformation | ImmutableTransformation
+  LibraryTransformation | ConstructorArgumentTransformation | ImmutableTransformation | CallProtectionTransformation
 >;
 
 export interface TransformationValues {
   libraries?: Record<string, string>;
   constructorArguments?: string;
   immutables?: Record<string, string>;
+  callProtection?: string;
 }
 
 interface Transformation {
   reason: string;
   type: "insert" | "replace";
   offset: number;
+}
+
+interface CallProtectionTransformation extends Transformation {
+  type: "replace";
+  reason: "callProtection";
 }
 
 interface LibraryTransformation extends Transformation {
