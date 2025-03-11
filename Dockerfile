@@ -27,7 +27,12 @@ COPY . .
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
 # Uncomment the following line in case you want to disable telemetry during the build.
-# ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Accept build arg
+ARG SOURCIFY_SERVER_URL
+# Set it as env var during build
+ENV SOURCIFY_SERVER_URL=$SOURCIFY_SERVER_URL
 
 RUN \
   if [ -f yarn.lock ]; then yarn run build; \
@@ -59,7 +64,6 @@ USER nextjs
 EXPOSE 3000
 
 ENV PORT=3000
-ENV SOURCIFY_SERVER_URL=https://sourcify.dev/server
 
 # server.js is created by next build from the standalone output
 # https://nextjs.org/docs/pages/api-reference/config/next-config-js/output
