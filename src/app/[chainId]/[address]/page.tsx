@@ -367,7 +367,7 @@ export default async function ContractPage({ params }: { params: { chainId: stri
         <div className="sticky top-0 z-10 bg-gray-100 py-4">
           <h2 className="text-xl font-semibold text-gray-800">Standard JSON Input</h2>
           <p className="text-gray-700 text-sm">
-            This isn't the original compiler JSON data. Generated for compatibility.
+            This isn&apos;t the original compiler JSON data. Generated for compatibility.
           </p>
         </div>
         <Suspense fallback={<LoadingState />}>
@@ -380,7 +380,7 @@ export default async function ContractPage({ params }: { params: { chainId: stri
         <div className="sticky top-0 z-10 bg-gray-100 py-4">
           <h2 className="text-xl font-semibold text-gray-800">Standard JSON Output</h2>
           <p className="text-gray-700 text-sm">
-            This isn't the original compiler JSON data. Generated for compatibility.
+            This isn&apos;t the original compiler JSON data. Generated for compatibility.
           </p>
         </div>
         <Suspense fallback={<LoadingState />}>
