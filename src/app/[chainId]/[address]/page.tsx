@@ -344,6 +344,28 @@ export default async function ContractPage({ params }: { params: { chainId: stri
           <StorageLayout storageLayout={contract.storageLayout} />
         </section>
       )}
+
+      {/* Standard JSON Input Section */}
+      <section className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-800">Standard JSON Input</h2>
+        <p className="text-gray-700 mb-2 text-sm">
+          This isn’t the original compiler JSON data. Generated for compatibility.
+        </p>
+        <Suspense fallback={<LoadingState />}>
+          <JsonViewOnlyEditor data={contract.stdJsonInput} />
+        </Suspense>
+      </section>
+
+      {/* Standard JSON Output Section */}
+      <section className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-800">Standard JSON Output</h2>
+        <p className="text-gray-700 mb-2 text-sm">
+          This isn’t the original compiler JSON data. Generated for compatibility.
+        </p>
+        <Suspense fallback={<LoadingState />}>
+          <JsonViewOnlyEditor data={contract.stdJsonOutput} />
+        </Suspense>
+      </section>
     </div>
   );
 }
