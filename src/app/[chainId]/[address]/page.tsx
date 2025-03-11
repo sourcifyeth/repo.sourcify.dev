@@ -55,6 +55,9 @@ export async function generateMetadata({
   return {
     title: `${address} on ${chainName} (${chainId})`,
     description: `View contract ${address} on ${chainName} network`,
+    icons: {
+      icon: "/favicon-verified.ico",
+    },
   };
 }
 

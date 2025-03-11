@@ -19,15 +19,15 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sourcify Contract Viewer",
+  title: "repo.sourcify.dev",
   description: "View verified smart contract details, ABI, source code, and bytecode from Sourcify",
   keywords: ["Ethereum", "Smart Contracts", "Sourcify", "Blockchain", "Solidity", "Contract Verification"],
   authors: [{ name: "Sourcify" }],
   openGraph: {
-    title: "Sourcify Contract Viewer",
+    title: "repo.sourcify.dev",
     description: "View verified smart contract details, ABI, source code, and bytecode from Sourcify",
-    url: "https://contract.sourcify.dev",
-    siteName: "Sourcify Contract Viewer",
+    url: "https://repo.sourcify.dev",
+    siteName: "repo.sourcify.dev",
     images: [
       {
         url: "https://sourcify.dev/sourcify-logo.svg",
@@ -36,12 +36,11 @@ export const metadata: Metadata = {
         alt: "Sourcify Contract Viewer",
       },
     ],
-    locale: "en_US",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sourcify Contract Viewer",
+    title: "repo.sourcify.dev",
     description: "View verified smart contract details, ABI, source code, and bytecode from Sourcify",
     images: ["https://sourcify.dev/sourcify-logo.svg"],
   },
