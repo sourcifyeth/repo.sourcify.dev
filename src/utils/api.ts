@@ -134,7 +134,7 @@ export async function checkVerification(chainId: string, address: string): Promi
   try {
     const baseUrl = getSourcifyServerUrl();
 
-    const url = `${baseUrl}/contract/${chainId}/${address}`;
+    const url = `${baseUrl}/v2/contract/${chainId}/${address}`;
     const response = await fetch(url, { next: { revalidate: 3600 } }); // Cache for 1 hour
     const data = (await response.json()) as VerificationResponse;
 
