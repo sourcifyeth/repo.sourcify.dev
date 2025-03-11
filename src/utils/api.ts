@@ -6,7 +6,7 @@ const getSourcifyServerUrl = () => {
   if (!serverUrl) {
     throw new Error("SOURCIFY_SERVER_URL is not set");
   }
-  return `${serverUrl}`;
+  return serverUrl;
 };
 
 /**

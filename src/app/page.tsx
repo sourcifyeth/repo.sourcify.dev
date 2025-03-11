@@ -1,7 +1,9 @@
 import HomeClient from "@/components/HomeClient";
 import ServerNavigation from "@/components/ServerNavigation";
+import { fetchChains } from "@/utils/api";
 
-export default function Home() {
+export default async function Home() {
+  const chains = await fetchChains();
   return (
     <div className="max-w-3xl mx-auto">
       <ServerNavigation isHomePage={true} />
@@ -11,7 +13,7 @@ export default function Home() {
           <div className="mt-2 max-w-xl text-sm text-gray-500">
             <p>Enter a chain ID and contract address to view verified contract details from Sourcify.</p>
           </div>
-          <HomeClient />
+          <HomeClient chains={chains} />
         </div>
       </div>
     </div>
