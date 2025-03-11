@@ -14,6 +14,7 @@ import ContractSource from "./sections/ContractSource";
 import JsonViewOnlyEditor from "@/components/JsonViewOnlyEditor";
 import ToggledRawCodeView from "@/components/ToggledRawCodeView";
 import LibraryTransformations from "./sections/LibraryTransformations";
+import ImmutableTransformations from "./sections/ImmutableTransformations";
 import ConstructorArguments from "./sections/ConstructorArguments";
 import { formatCborAuxdata } from "@/utils/format";
 
@@ -317,6 +318,16 @@ export default async function ContractPage({ params }: { params: { chainId: stri
                 chainId={chainId}
               />
             </Suspense>
+
+            {contract.runtimeBytecode.transformationValues?.immutables && (
+              <div className="mt-8">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Immutables</h3>
+                <ImmutableTransformations
+                  transformations={contract.runtimeBytecode.transformations}
+                  transformationValues={contract.runtimeBytecode.transformationValues}
+                />
+              </div>
+            )}
           </section>
         )}
       </section>
