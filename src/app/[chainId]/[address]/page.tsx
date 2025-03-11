@@ -272,6 +272,53 @@ export default async function ContractPage({ params }: { params: { chainId: stri
             tooltipContent="On-chain bytecode is retrieved from the blockchain. Recompiled bytecode is generated from the source code."
           />
         </Suspense>
+
+        {/* Runtime CBOR Auxdata Section */}
+        {contract.runtimeBytecode.cborAuxdata && Object.keys(contract.runtimeBytecode.cborAuxdata).length > 0 && (
+          <div className="mt-6 ml-6">
+            <h3 className="text-xl font-semibold text-gray-800 mt-2">CBOR Auxdata</h3>
+            <p className="text-gray-700 mb-2 text-sm">
+              These values are from the recompiled bytecode. If these values are different in the on-chain bytecode,
+              they will show up in Transformations section.
+            </p>
+            {Object.entries(contract.runtimeBytecode.cborAuxdata).map(([key, cborAuxdataObj]) => (
+              <div key={key} className="mb-4">
+                <h4 className="text-md font-medium text-gray-700 mb-2">CBOR Auxdata id: {key}</h4>
+                <Suspense fallback={<LoadingState />}>
+                  <ToggledRawCodeView
+                    data1={{
+                      name: "Raw",
+                      value: cborAuxdataObj.value,
+                    }}
+                    data2={{
+                      name: "Decoded",
+                      value: JSON.stringify(
+                        formatCborAuxdata(cborAuxdataObj.value, contract.compilation.language),
+                        null,
+                        2
+                      ),
+                      notBytes: true,
+                    }}
+                  />
+                </Suspense>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Runtime Library Transformations Section */}
+        {contract.runtimeBytecode.transformations && contract.runtimeBytecode.transformations.length > 0 && (
+          <section className="mt-8 ml-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Transformations</h2>
+            <Suspense fallback={<LoadingState />}>
+              <LibraryTransformations
+                transformations={contract.runtimeBytecode.transformations}
+                transformationValues={contract.runtimeBytecode.transformationValues}
+                chainId={chainId}
+              />
+            </Suspense>
+          </section>
+        )}
       </section>
     </div>
   );
