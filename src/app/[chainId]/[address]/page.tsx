@@ -44,7 +44,7 @@ async function getChainsData() {
 export async function generateMetadata({
   params,
 }: {
-  params: { chainId: string; address: string };
+  params: Promise<{ chainId: string; address: string }>;
 }): Promise<Metadata> {
   const { chainId, address } = await params;
 
@@ -61,7 +61,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function ContractPage({ params }: { params: { chainId: string; address: string } }) {
+export default async function ContractPage({ params }: { params: Promise<{ chainId: string; address: string }> }) {
   const { chainId, address } = await params;
 
   // Fetch data in parallel
