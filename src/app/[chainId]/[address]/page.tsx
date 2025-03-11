@@ -17,6 +17,7 @@ import LibraryTransformations from "./sections/LibraryTransformations";
 import ImmutableTransformations from "./sections/ImmutableTransformations";
 import CallProtectionTransformation from "./sections/CallProtectionTransformation";
 import ConstructorArguments from "./sections/ConstructorArguments";
+import StorageLayout from "./sections/StorageLayout";
 import { formatCborAuxdata } from "@/utils/format";
 
 // This function runs on the server
@@ -336,6 +337,13 @@ export default async function ContractPage({ params }: { params: { chainId: stri
           </section>
         )}
       </section>
+
+      {/* Storage Layout Section */}
+      {contract.storageLayout.types && (
+        <section className="mb-8">
+          <StorageLayout storageLayout={contract.storageLayout} />
+        </section>
+      )}
     </div>
   );
 }

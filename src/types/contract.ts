@@ -10,7 +10,7 @@ export interface ContractData {
   compilation: CompilationData;
   abi: AbiItem[];
   metadata: Record<string, unknown>;
-  storageLayout: Record<string, unknown> | null;
+  storageLayout: StorageLayoutData;
   userdoc: Record<string, unknown>;
   devdoc: Record<string, unknown>;
   stdJsonInput: Record<string, unknown>;
@@ -128,4 +128,30 @@ export interface ProxyResolutionData {
 export interface ProxyImplementation {
   address: string;
   name: string;
+}
+
+export interface StorageLayoutType {
+  label: string;
+  encoding: string;
+  numberOfBytes: string;
+  key?: string;
+  value?: string;
+  members?: Array<{
+    slot: string;
+    type: string;
+    label: string;
+    offset: number;
+    contract: string;
+  }>;
+}
+
+export interface StorageLayoutData {
+  types: Record<string, StorageLayoutType> | null;
+  storage: Array<{
+    slot: string;
+    type: string;
+    label: string;
+    offset: number;
+    contract: string;
+  }>;
 }
