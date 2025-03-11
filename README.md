@@ -2,101 +2,75 @@
 
 A Next.js application for viewing verified smart contract details from the Sourcify API.
 
-## Features
-
-- View contract details, ABI, source code, and bytecode on a single page
-- Support for multiple blockchain networks with human-readable chain names
-- Clean and responsive UI with Tailwind CSS
-- Easy navigation between different contract sections
-- Hybrid rendering approach for optimal performance and SEO
-
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18.x or later
+- Node.js 20.x or later
 - npm or yarn
+- Docker (optional, for containerized deployment)
 
-### Installation
+### Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```
+SOURCIFY_SERVER_URL=https://sourcify.dev/server
+```
+
+### Running Locally
 
 1. Clone the repository:
 
-```bash
-git clone https://github.com/yourusername/contract.sourcify.dev.git
-cd contract.sourcify.dev
-```
+   ```bash
+   git clone https://github.com/sourcifyeth/repo.sourcify.dev.git
+   cd repo.sourcify.dev
+   ```
 
 2. Install dependencies:
 
-```bash
-npm install
-# or
-yarn install
-```
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
 
 3. Run the development server:
 
-```bash
-npm run dev
-# or
-yarn dev
-```
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
 
 4. Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
 
-## Usage
-
-1. On the home page, select a blockchain network from the dropdown menu.
-2. Enter a contract address in the input field.
-3. Click "View Contract" to see the contract details.
-4. Scroll down to view all contract information including details, ABI, source code, and bytecode.
-
-## API Integration
-
-The application integrates with the Sourcify API to fetch contract data. The main API endpoints used are:
-
-- `/server/v2/contract/{chainId}/{address}?fields=all` - Fetches all contract data including metadata, source files, and bytecode
-- `/server/chains` - Fetches the list of supported blockchain networks with their details
-
-## Deployment
-
-### Deploying to Google Cloud
-
-1. Install the Google Cloud SDK.
-2. Build the application:
+### Building for Production
 
 ```bash
 npm run build
+npm start
 # or
 yarn build
+yarn start
 ```
 
-3. Deploy to Google Cloud Run:
+## Docker Deployment
 
-```bash
-gcloud run deploy contract-sourcify-dev --source .
-```
+The project includes a Dockerfile based on the official Next.js Docker example.
 
-## Project Structure
+### Building and Running with Docker
 
-- `src/app` - Next.js app router pages
-- `src/components` - React components
-- `src/types` - TypeScript type definitions
-- `src/utils` - Utility functions
+1. Build the Docker image:
 
-## Architecture
+   ```bash
+   docker build -t repo-sourcify .
+   ```
 
-The application uses a hybrid rendering approach:
+2. Run the container:
 
-- **Server Components**: Initial data fetching happens on the server, improving performance and SEO.
-- **Client Components**: Interactive elements are rendered on the client for a responsive user experience.
-- **Suspense**: Used for smooth loading states during component transitions.
-- **Caching**:
-  - API responses for contract data are cached for 1 hour to reduce load on the Sourcify API.
-  - Chains data is cached for 24 hours as it changes less frequently.
+   ```bash
+   docker run -p 3000:3000 -e SOURCIFY_SERVER_URL=https://sourcify.dev/server sourcify-contract-viewer
+   ```
 
-This architecture provides the best of both worlds - fast initial page loads with server-side rendering and rich interactivity with client-side components.
-
-## License
-
-MIT
+3. Access the application at [http://localhost:3000](http://localhost:3000).
