@@ -110,7 +110,6 @@ export default async function ContractPage({ params }: { params: { chainId: stri
 
       {/* Contract Details Section */}
       <section className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Contract Details</h2>
         <ContractDetails contract={contract} chainName={chainName} />
       </section>
 
