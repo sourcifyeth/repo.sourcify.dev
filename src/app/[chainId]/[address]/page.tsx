@@ -117,7 +117,9 @@ export default async function ContractPage({ params }: { params: { chainId: stri
       {/* Proxy Resolution Section */}
       {contract.proxyResolution && contract.proxyResolution.isProxy && (
         <section className="mb-8">
-          <ProxyResolution proxyResolution={contract.proxyResolution} chainId={chainId} />
+          <div className="sticky top-0 z-10 bg-gray-100 py-4">
+            <ProxyResolution proxyResolution={contract.proxyResolution} chainId={chainId} />
+          </div>
         </section>
       )}
 
@@ -130,7 +132,9 @@ export default async function ContractPage({ params }: { params: { chainId: stri
 
       {/* Contract Source Code Section */}
       <section className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Source Code</h2>
+        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+          <h2 className="text-xl font-semibold text-gray-800">Source Code</h2>
+        </div>
         <Suspense fallback={<LoadingState />}>
           <ContractSource contract={contract} />
         </Suspense>
@@ -138,7 +142,9 @@ export default async function ContractPage({ params }: { params: { chainId: stri
 
       {/* Compiler Settings Section */}
       <section className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Compiler Settings</h2>
+        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+          <h2 className="text-xl font-semibold text-gray-800">Compiler Settings</h2>
+        </div>
         <Suspense fallback={<LoadingState />}>
           <JsonViewOnlyEditor data={contract.compilation} />
         </Suspense>
@@ -146,7 +152,9 @@ export default async function ContractPage({ params }: { params: { chainId: stri
 
       {/* Contract Metadata Section */}
       <section className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Contract Metadata</h2>
+        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+          <h2 className="text-xl font-semibold text-gray-800">Contract Metadata</h2>
+        </div>
         <Suspense fallback={<LoadingState />}>
           <JsonViewOnlyEditor data={contract.metadata} />
         </Suspense>
@@ -154,7 +162,9 @@ export default async function ContractPage({ params }: { params: { chainId: stri
 
       {/* Creation Bytecode Section */}
       <section className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Creation Bytecode</h2>
+        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+          <h2 className="text-xl font-semibold text-gray-800">Creation Bytecode</h2>
+        </div>
         <Suspense fallback={<LoadingState />}>
           <ToggledRawCodeView
             data1={{
@@ -170,7 +180,7 @@ export default async function ContractPage({ params }: { params: { chainId: stri
         </Suspense>
         {contract.creationBytecode.cborAuxdata && Object.keys(contract.creationBytecode.cborAuxdata).length > 0 && (
           <div className="mt-6 ml-6">
-            <h3 className="text-xl font-semibold text-gray-800 mt-2">CBOR Auxdata</h3>
+            <h3 className="text-xl font-semibold text-gray-800">CBOR Auxdata</h3>
             <p className="text-gray-700 mb-2 text-sm">
               These values are from the recompiled bytecode. If these values are different in the on-chain bytecode,
               they will show up in Transformations section.
@@ -255,7 +265,9 @@ export default async function ContractPage({ params }: { params: { chainId: stri
 
       {/* Runtime Bytecode Section */}
       <section className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Runtime Bytecode</h2>
+        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+          <h2 className="text-xl font-semibold text-gray-800">Runtime Bytecode</h2>
+        </div>
         <Suspense fallback={<LoadingState />}>
           <ToggledRawCodeView
             data1={{
@@ -340,16 +352,21 @@ export default async function ContractPage({ params }: { params: { chainId: stri
       {/* Storage Layout Section */}
       {contract.storageLayout.types && (
         <section className="mb-8">
+          <div className="sticky top-0 z-10 bg-gray-100 py-4">
+            <h2 className="text-xl font-semibold text-gray-800">Storage Layout</h2>
+          </div>
           <StorageLayout storageLayout={contract.storageLayout} />
         </section>
       )}
 
       {/* Standard JSON Input Section */}
       <section className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-800">Standard JSON Input</h2>
-        <p className="text-gray-700 mb-2 text-sm">
-          This isn’t the original compiler JSON data. Generated for compatibility.
-        </p>
+        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+          <h2 className="text-xl font-semibold text-gray-800">Standard JSON Input</h2>
+          <p className="text-gray-700 text-sm">
+            This isn't the original compiler JSON data. Generated for compatibility.
+          </p>
+        </div>
         <Suspense fallback={<LoadingState />}>
           <JsonViewOnlyEditor data={contract.stdJsonInput} />
         </Suspense>
@@ -357,10 +374,12 @@ export default async function ContractPage({ params }: { params: { chainId: stri
 
       {/* Standard JSON Output Section */}
       <section className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-800">Standard JSON Output</h2>
-        <p className="text-gray-700 mb-2 text-sm">
-          This isn’t the original compiler JSON data. Generated for compatibility.
-        </p>
+        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+          <h2 className="text-xl font-semibold text-gray-800">Standard JSON Output</h2>
+          <p className="text-gray-700 text-sm">
+            This isn't the original compiler JSON data. Generated for compatibility.
+          </p>
+        </div>
         <Suspense fallback={<LoadingState />}>
           <JsonViewOnlyEditor data={contract.stdJsonOutput} />
         </Suspense>

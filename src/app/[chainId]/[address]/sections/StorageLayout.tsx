@@ -24,9 +24,6 @@ export default function StorageLayout({ storageLayout }: StorageLayoutProps) {
 
   return (
     <div>
-      <div className="flex items-center mb-4">
-        <h2 className="text-xl font-semibold text-gray-800">Storage Layout</h2>
-      </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
