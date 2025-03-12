@@ -29,11 +29,6 @@ COPY . .
 # Uncomment the following line in case you want to disable telemetry during the build.
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Accept build arg
-ARG SOURCIFY_SERVER_URL
-# Set it as env var during build
-ENV SOURCIFY_SERVER_URL=$SOURCIFY_SERVER_URL
-
 RUN \
   if [ -f yarn.lock ]; then yarn run build; \
   elif [ -f package-lock.json ]; then npm run build; \
