@@ -92,7 +92,7 @@ export default function HomeClient({ chains }: HomeClientProps) {
                 router.push("/1/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
               }}
             >
-              USDC (0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48)
+              USDC Proxy (0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48)
             </button>
           </li>
           <li>
@@ -112,11 +112,11 @@ export default function HomeClient({ chains }: HomeClientProps) {
               className="text-blue-600 hover:text-blue-800"
               onClick={() => {
                 setChainId("100");
-                setAddress("0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d");
-                router.push("/100/0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d");
+                setAddress("0x6018F5a151d43a8Da47829d329fa7D8C4dBa79db");
+                router.push("/10/0x6018F5a151d43a8Da47829d329fa7D8C4dBa79db");
               }}
             >
-              wxDAI on Gnosis (0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d)
+              ERC721 on Optimism (10) (0x6018F5a151d43a8Da47829d329fa7D8C4dBa79db)
             </button>
           </li>
         </ul>
