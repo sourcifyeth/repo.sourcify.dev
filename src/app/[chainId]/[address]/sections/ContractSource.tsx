@@ -324,7 +324,7 @@ export default function ContractSource({ contract }: ContractSourceProps) {
               {fileNames.map((fileName) => (
                 <li
                   key={fileName}
-                  className={`px-4 py-3 cursor-pointer hover:bg-gray-50 text-sm truncate ${
+                  className={`px-4 py-3 cursor-pointer hover:bg-gray-50 text-sm  ${
                     activeFile === fileName ? "bg-gray-100 border-l-4 border-gray-500 font-medium" : ""
                   }`}
                   onClick={() => setActiveFile(fileName)}
@@ -348,7 +348,7 @@ export default function ContractSource({ contract }: ContractSourceProps) {
                     readOnly: true,
                     minimap: { enabled: true },
                     scrollBeyondLastLine: false,
-                    fontSize: 14,
+                    fontSize: 12,
                     wordWrap: "on",
                     automaticLayout: true,
                     scrollbar: {
