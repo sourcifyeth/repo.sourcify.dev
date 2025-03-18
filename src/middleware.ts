@@ -22,7 +22,14 @@ export function middleware(request: NextRequest) {
   if (staticFileMatch) {
     const [, matchType, chainId, address, filePath, ext] = staticFileMatch;
     const destination = `${serverUrl}/repository/contracts/${matchType}/${chainId}/${address}/${filePath}.${ext}`;
-    return NextResponse.redirect(new URL(destination));
+    const response = NextResponse.redirect(new URL(destination));
+
+    // Add CORS headers
+    response.headers.set("Access-Control-Allow-Origin", "*");
+    response.headers.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+    response.headers.set("Access-Control-Allow-Headers", "Content-Type");
+
+    return response;
   }
 
   // Fallback rule: redirect any other paths under /contracts/(full_match|partial_match)/:chainId/:address/ to /:chainId/:address/
@@ -36,7 +43,14 @@ export function middleware(request: NextRequest) {
   if (fallbackMatch) {
     const [, , chainId, address] = fallbackMatch;
     const destination = `/${chainId}/${address}/`;
-    return NextResponse.redirect(new URL(destination, request.url));
+    const response = NextResponse.redirect(new URL(destination, request.url));
+
+    // Add CORS headers
+    response.headers.set("Access-Control-Allow-Origin", "*");
+    response.headers.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+    response.headers.set("Access-Control-Allow-Headers", "Content-Type");
+
+    return response;
   }
 
   // Continue to the application for all other requests
