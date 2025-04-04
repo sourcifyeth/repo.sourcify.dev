@@ -58,7 +58,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${ibmPlexSans.variable} ${ibmPlexMono.variable}`}>
-      <body className="antialiased bg-gray-50 min-h-screen flex flex-col font-sans">
+      <body className={`antialiased bg-gray-50 min-h-screen flex flex-col ${ibmPlexSans.className}`}>
         <header className="bg-white shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center">
             <Image src="/sourcify.png" alt="Sourcify Logo" className="h-8 w-auto mr-3" width={32} height={32} />
