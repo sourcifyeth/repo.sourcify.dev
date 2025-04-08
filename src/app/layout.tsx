@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import Footer from "@/components/Footer";
 import AppTooltip from "@/components/AppTooltip";
@@ -59,6 +60,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${ibmPlexSans.variable} ${ibmPlexMono.variable}`}>
       <body className={`antialiased bg-gray-50 min-h-screen flex flex-col ${ibmPlexSans.className}`}>
+        {" "}
+        <Script
+          src="https://cloud.umami.is/script.js"
+          data-website-id="efba6a4b-bf9f-4bb8-9441-a748eca7465c"
+          strategy="afterInteractive"
+        />
         <header className="bg-white shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center">
             <Image src="/sourcify.png" alt="Sourcify Logo" className="h-8 w-auto mr-3" width={32} height={32} />
