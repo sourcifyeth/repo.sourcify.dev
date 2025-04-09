@@ -2,7 +2,6 @@ import { fetchContractData, fetchChains, getChainName } from "@/utils/api";
 import { Suspense } from "react";
 import { Metadata } from "next";
 import LoadingState from "@/components/LoadingState";
-import ServerNavigation from "@/components/ServerNavigation";
 import ErrorState from "@/components/ErrorState";
 import { IoCheckmarkDoneCircle, IoCheckmarkCircle } from "react-icons/io5";
 import CopyToClipboard from "@/components/CopyToClipboard";
@@ -94,8 +93,6 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
 
   return (
     <div>
-      <ServerNavigation />
-
       <div className="mt-3 mb-2">
         <div className="flex items-center">
           <h1 className="text-2xl font-bold font-mono text-gray-900">{contract.address}</h1>
