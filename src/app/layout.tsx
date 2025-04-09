@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { IBM_Plex_Sans, IBM_Plex_Mono, VT323 } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import Footer from "@/components/Footer";
@@ -18,6 +18,13 @@ const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-ibm-plex-mono",
+});
+
+const vt323 = VT323({
+  weight: ["400"],
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-vt-323",
 });
 
 export const metadata: Metadata = {
@@ -58,8 +65,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${ibmPlexSans.variable} ${ibmPlexMono.variable}`}>
-      <body className={`antialiased bg-gray-50 min-h-screen flex flex-col ${ibmPlexSans.className}`}>
+    <html lang="en" className={``}>
+      <body
+        className={`antialiased bg-gray-50 min-h-screen flex flex-col font-sans ${ibmPlexSans.variable} ${ibmPlexMono.variable} ${vt323.variable}`}
+      >
         {" "}
         <Script
           src="https://cloud.umami.is/script.js"
@@ -69,7 +78,7 @@ export default function RootLayout({
         <header className="bg-white shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center">
             <Image src="/sourcify.png" alt="Sourcify Logo" className="h-8 w-auto mr-3" width={32} height={32} />
-            <h1 className="text-2xl font-bold text-gray-900">Sourcify Contract Viewer</h1>
+            <h1 className="text-lg font-bold text-gray-900">repo.sourcify.dev</h1>
           </div>
         </header>
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow">{children}</main>

@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: "IBM Plex Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+  --font-vt323: "VT323", monospace;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
