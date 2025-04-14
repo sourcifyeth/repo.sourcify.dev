@@ -7,15 +7,10 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const chains = await fetchChains();
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="bg-white shadow sm:rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">Sourcify Contract Viewer</h3>
-          <div className="mt-2 max-w-xl text-sm text-gray-500">
-            <p>Enter a chain ID and contract address to view verified contract details from Sourcify.</p>
-          </div>
-          <HomeClient chains={chains} />
-        </div>
+    <div className="w-full mx-auto">
+      <div className="px-4 py-5 sm:p-6 text-center flex flex-col items-center">
+        <h1 className="font-medium text-gray-700  font-vt323 text-5xl">Sourcify Verified Contract Repository</h1>
+        <HomeClient chains={chains} />
       </div>
     </div>
   );
