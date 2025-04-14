@@ -5,6 +5,7 @@ import "./globals.css";
 import Footer from "@/components/Footer";
 import AppTooltip from "@/components/AppTooltip";
 import Image from "next/image";
+import Link from "next/link";
 
 const ibmPlexSans = IBM_Plex_Sans({
   weight: ["400", "500", "600", "700"],
@@ -67,7 +68,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={``}>
       <body
-        className={`antialiased bg-gray-50 min-h-screen flex flex-col font-sans ${ibmPlexSans.variable} ${ibmPlexMono.variable} ${vt323.variable}`}
+        className={`bg-gray-50 min-h-screen flex flex-col font-sans ${ibmPlexSans.variable} ${ibmPlexMono.variable} ${vt323.variable}`}
       >
         {" "}
         <Script
@@ -75,13 +76,15 @@ export default function RootLayout({
           data-website-id="efba6a4b-bf9f-4bb8-9441-a748eca7465c"
           strategy="afterInteractive"
         />
-        <header className="bg-white shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center">
-            <Image src="/sourcify.png" alt="Sourcify Logo" className="h-8 w-auto mr-3" width={32} height={32} />
-            <h1 className="text-lg font-bold text-gray-900">repo.sourcify.dev</h1>
+        <header className="shadow-sm">
+          <div className="mx-auto py-4 flex items-center w-full px-8 md:px-12 lg:px-12 xl:px-24">
+            <Link href="/" className="flex items-center">
+              <Image src="/sourcify.png" alt="Sourcify Logo" className="h-10 w-auto mr-3" width={32} height={32} />
+              <span className="text-gray-700 font-vt323 text-2xl">sourcify.eth</span>
+            </Link>
           </div>
         </header>
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow">{children}</main>
+        <main className="w-full px-8 md:px-12 lg:px-12 xl:px-24 py-6 flex-grow">{children}</main>
         <Footer />
         <AppTooltip />
       </body>

@@ -72,7 +72,6 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
   if (!contract) {
     return (
       <>
-        <ServerNavigation />
         <ErrorState message="Failed to load contract data or contract not found" />
       </>
     );
