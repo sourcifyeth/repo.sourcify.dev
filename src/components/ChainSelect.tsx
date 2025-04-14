@@ -109,6 +109,7 @@ export default function ChainSelect({ value, handleChainIdChange, className, cha
                 }}
               >
                 {chain.title || chain.name} ({chain.chainId})
+                {!chain.supported && <span className="text-gray-500 text-xs"> - verification deprecated</span>}
               </div>
             ))}
           </div>

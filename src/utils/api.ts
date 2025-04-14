@@ -89,8 +89,6 @@ export async function fetchChains(): Promise<ChainData[]> {
     const data = (await response.json()) as ChainsResponse;
     console.log(data);
 
-    // Convert the object to an array and sort by chainId
-    // return Object.values(data).sort((a, b) => a.chainId - b.chainId);
     return Object.values(data);
   } catch (error) {
     console.error("Error fetching chains data:", error);
