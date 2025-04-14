@@ -10,6 +10,30 @@ interface HomeFormProps {
   chains: ChainData[];
 }
 
+interface ExampleContract {
+  name: string;
+  address: string;
+  chainId: string;
+}
+
+const EXAMPLE_CONTRACTS: ExampleContract[] = [
+  {
+    name: "USDC Proxy",
+    address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    chainId: "1",
+  },
+  {
+    name: "DAI",
+    address: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+    chainId: "1",
+  },
+  {
+    name: "CreateX on Optimism",
+    address: "0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed",
+    chainId: "10",
+  },
+];
+
 export default function HomeForm({ chains }: HomeFormProps) {
   const router = useRouter();
   const [chainId, setChainId] = useState("1");
@@ -44,6 +68,13 @@ export default function HomeForm({ chains }: HomeFormProps) {
     } else {
       setError(null);
     }
+  };
+
+  const handleExampleClick = (contract: ExampleContract) => {
+    setChainId(contract.chainId);
+    setAddress(contract.address);
+    setError(null);
+    router.push(`/${contract.chainId}/${contract.address}`);
   };
 
   return (
@@ -100,42 +131,16 @@ export default function HomeForm({ chains }: HomeFormProps) {
       <div className="mt-8">
         <h4 className="text-md font-medium text-gray-700">Example Contracts</h4>
         <ul className="mt-2 space-y-2 text-sm text-gray-600">
-          <li>
-            <button
-              className="text-blue-600 hover:text-blue-800"
-              onClick={() => {
-                setChainId("1");
-                setAddress("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
-                setError(null);
-              }}
-            >
-              USDC Proxy (0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48)
-            </button>
-          </li>
-          <li>
-            <button
-              className="text-blue-600 hover:text-blue-800"
-              onClick={() => {
-                setChainId("1");
-                setAddress("0x6B175474E89094C44Da98b954EedeAC495271d0F");
-                setError(null);
-              }}
-            >
-              DAI (0x6B175474E89094C44Da98b954EedeAC495271d0F)
-            </button>
-          </li>
-          <li>
-            <button
-              className="text-blue-600 hover:text-blue-800"
-              onClick={() => {
-                setChainId("100");
-                setAddress("0x6018F5a151d43a8Da47829d329fa7D8C4dBa79db");
-                setError(null);
-              }}
-            >
-              ERC721 on Optimism (10) (0x6018F5a151d43a8Da47829d329fa7D8C4dBa79db)
-            </button>
-          </li>
+          {EXAMPLE_CONTRACTS.map((contract) => (
+            <li key={contract.address}>
+              <button
+                className="text-blue-600 hover:text-blue-800 cursor-pointer"
+                onClick={() => handleExampleClick(contract)}
+              >
+                {contract.name} ({contract.address})
+              </button>
+            </li>
+          ))}
         </ul>
       </div>
     </>
