@@ -97,7 +97,12 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           <h1 className="text-2xl font-bold font-mono text-gray-900">{contract.address}</h1>
           <CopyToClipboard text={contract.address} className="ml-2" />
         </div>
-        <p className="text-gray-700 mt-1">on {chainName}</p>
+        <p className="text-gray-700 mt-1">
+          on {chainName}
+          {chains.find((c) => c.chainId.toString() === chainId)?.supported === false && (
+            <span className="text-gray-500 text-sm ml-2"> (verification on this chain is deprecated)</span>
+          )}
+        </p>
       </div>
 
       {/* Match status */}
