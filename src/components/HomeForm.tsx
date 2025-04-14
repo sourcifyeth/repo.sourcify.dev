@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChainData } from "@/types/chain";
+import ChainSelect from "./ChainSelect";
 
-interface HomeClientProps {
+interface HomeFormProps {
   chains: ChainData[];
 }
 
-export default function HomeClient({ chains }: HomeClientProps) {
+export default function HomeForm({ chains }: HomeFormProps) {
   const router = useRouter();
   const [chainId, setChainId] = useState("1");
   const [address, setAddress] = useState("");
@@ -17,21 +18,14 @@ export default function HomeClient({ chains }: HomeClientProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Basic validation
     if (!address) {
       setError("Please enter a contract address");
       return;
     }
 
-    // Clear any previous errors
     setError(null);
-
-    // Navigate to the contract page
     router.push(`/${chainId}/${address}`);
   };
-
-  // Filter chains to only show supported ones
-  const supportedChains = chains.filter((chain) => chain.supported);
 
   return (
     <>
@@ -41,19 +35,12 @@ export default function HomeClient({ chains }: HomeClientProps) {
             <label htmlFor="chainId" className="block text-lg font-medium text-gray-700">
               Chain
             </label>
-            <select
-              id="chainId"
-              name="chainId"
-              className="mt-1 block w-full pl-3 pr-10 py-3 text-base bg-cerulean-blue-100 border-2 border-cerulean-blue-300 hover:border-cerulean-blue-400 rounded-md cursor-pointer text-cerulean-blue-600"
+            <ChainSelect
               value={chainId}
-              onChange={(e) => setChainId(e.target.value)}
-            >
-              {supportedChains.map((chain) => (
-                <option key={chain.chainId} value={chain.chainId.toString()}>
-                  {chain.name} ({chain.chainId})
-                </option>
-              ))}
-            </select>
+              handleChainIdChange={(value: string | string[]) => setChainId(value as string)}
+              chains={chains}
+              className="mt-1 block w-full pl-3 pr-10 py-3 text-base bg-cerulean-blue-100 border-2 border-cerulean-blue-300 hover:border-cerulean-blue-400 rounded-md cursor-pointer text-cerulean-blue-600"
+            />
           </div>
           <div>
             <label htmlFor="address" className="block text-lg font-medium text-gray-700">
