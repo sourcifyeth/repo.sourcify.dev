@@ -20,6 +20,7 @@ import StorageLayout from "./sections/StorageLayout";
 import Image from "next/image";
 import RemixLogo from "@/assets/remix.svg";
 import DownloadSourcesButton from "@/components/DownloadSourcesButton";
+import DownloadFileButton from "@/components/DownloadFileButton";
 import CborAuxdataSection from "@/components/sections/CborAuxdataSection";
 
 // Fetch chains data
@@ -160,9 +161,17 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       <section className="mb-8">
         <div className="sticky top-0 z-10 bg-gray-100 py-4">
           <h2 className="text-xl font-semibold text-gray-800">Compiler Settings</h2>
+          <div className="flex items-center">
+            <DownloadFileButton
+              data={contract.compilation.compilerSettings}
+              fileName="compiler-settings"
+              chainId={contract.chainId}
+              address={contract.address}
+            />
+          </div>
         </div>
         <Suspense fallback={<LoadingState />}>
-          <JsonViewOnlyEditor data={contract.compilation} />
+          <JsonViewOnlyEditor data={contract.compilation.compilerSettings} />
         </Suspense>
       </section>
 
@@ -170,6 +179,14 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       <section className="mb-8">
         <div className="sticky top-0 z-10 bg-gray-100 py-4">
           <h2 className="text-xl font-semibold text-gray-800">Contract Metadata</h2>
+          <div className="flex items-center">
+            <DownloadFileButton
+              data={contract.metadata}
+              fileName="metadata"
+              chainId={contract.chainId}
+              address={contract.address}
+            />
+          </div>
         </div>
         <Suspense fallback={<LoadingState />}>
           <JsonViewOnlyEditor data={contract.metadata} />
@@ -308,6 +325,14 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           <p className="text-gray-700 text-sm">
             This isn&apos;t the original compiler JSON data. Generated for compatibility.
           </p>
+          <div className="flex items-center">
+            <DownloadFileButton
+              data={contract.stdJsonInput}
+              fileName="std-json-input"
+              chainId={contract.chainId}
+              address={contract.address}
+            />
+          </div>
         </div>
         <Suspense fallback={<LoadingState />}>
           <JsonViewOnlyEditor data={contract.stdJsonInput} />
@@ -321,6 +346,14 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           <p className="text-gray-700 text-sm">
             This isn&apos;t the original compiler JSON data. Generated for compatibility.
           </p>
+          <div className="flex items-center">
+            <DownloadFileButton
+              data={contract.stdJsonOutput}
+              fileName="std-json-output"
+              chainId={contract.chainId}
+              address={contract.address}
+            />
+          </div>
         </div>
         <Suspense fallback={<LoadingState />}>
           <JsonViewOnlyEditor data={contract.stdJsonOutput} />
