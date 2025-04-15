@@ -131,24 +131,26 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       {/* Contract Source Code Section */}
       <section className="mb-8">
         <div className="sticky top-0 z-10 bg-gray-100 pt-4 pb-2">
-          <h2 className="text-xl font-semibold text-gray-800">Source Code</h2>
-          <div className="flex items-center">
-            <a
-              href={`https://remix.ethereum.org/?#activate=contract-verification&call=contract-verification/lookupAndSave//sourcify//${contract.chainId}//${contract.address}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="my-2 inline-flex items-center gap-2 text-xs bg-white rounded-md p-2 shadow-sm border border-gray-200 hover:bg-gray-100 transition-colors duration-200"
-            >
-              <Image
-                src={RemixLogo}
-                alt="Remix IDE Logo"
-                width={20}
-                height={20}
-                className="hover:scale-110 transition-transform duration-200"
-              />
-              View on Remix IDE
-            </a>
-            <DownloadSourcesButton sources={contract.sources} chainId={contract.chainId} address={contract.address} />
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-800">Source Code</h2>
+            <div className="flex items-center gap-2">
+              <a
+                href={`https://remix.ethereum.org/?#activate=contract-verification&call=contract-verification/lookupAndSave//sourcify//${contract.chainId}//${contract.address}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs bg-white rounded-md px-2 py-1 shadow-sm border border-gray-200 hover:bg-gray-100 transition-colors duration-200"
+              >
+                <Image
+                  src={RemixLogo}
+                  alt="Remix IDE Logo"
+                  width={16}
+                  height={16}
+                  className="hover:scale-110 transition-transform duration-200"
+                />
+                View on Remix IDE
+              </a>
+              <DownloadSourcesButton sources={contract.sources} chainId={contract.chainId} address={contract.address} />
+            </div>
           </div>
         </div>
 
@@ -160,10 +162,10 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       {/* Compiler Settings Section */}
       <section className="mb-8">
         <div className="sticky top-0 z-10 bg-gray-100 py-4">
-          <h2 className="text-xl font-semibold text-gray-800">Compiler Settings</h2>
-          <div className="flex items-center">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-800">Compiler Settings</h2>
             <DownloadFileButton
-              data={contract.compilation.compilerSettings}
+              data={contract.compilation}
               fileName="compiler-settings"
               chainId={contract.chainId}
               address={contract.address}
@@ -171,15 +173,15 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           </div>
         </div>
         <Suspense fallback={<LoadingState />}>
-          <JsonViewOnlyEditor data={contract.compilation.compilerSettings} />
+          <JsonViewOnlyEditor data={contract.compilation} />
         </Suspense>
       </section>
 
       {/* Contract Metadata Section */}
       <section className="mb-8">
         <div className="sticky top-0 z-10 bg-gray-100 py-4">
-          <h2 className="text-xl font-semibold text-gray-800">Contract Metadata</h2>
-          <div className="flex items-center">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-800">Contract Metadata</h2>
             <DownloadFileButton
               data={contract.metadata}
               fileName="metadata"
@@ -321,14 +323,16 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       {/* Standard JSON Input Section */}
       <section className="mb-8">
         <div className="sticky top-0 z-10 bg-gray-100 py-4">
-          <h2 className="text-xl font-semibold text-gray-800">Standard JSON Input</h2>
-          <p className="text-gray-700 text-sm">
-            This isn&apos;t the original compiler JSON data. Generated for compatibility.
-          </p>
-          <div className="flex items-center">
+          <div className="flex items-end justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800">Standard JSON Input</h2>
+              <p className="text-gray-700 text-sm">
+                This isn&apos;t the original compiler JSON data. Generated for compatibility.
+              </p>
+            </div>
             <DownloadFileButton
               data={contract.stdJsonInput}
-              fileName="std-json-input"
+              fileName="standard-json-input"
               chainId={contract.chainId}
               address={contract.address}
             />
@@ -342,14 +346,16 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       {/* Standard JSON Output Section */}
       <section className="mb-8">
         <div className="sticky top-0 z-10 bg-gray-100 py-4">
-          <h2 className="text-xl font-semibold text-gray-800">Standard JSON Output</h2>
-          <p className="text-gray-700 text-sm">
-            This isn&apos;t the original compiler JSON data. Generated for compatibility.
-          </p>
-          <div className="flex items-center">
+          <div className="flex items-end justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800">Standard JSON Output</h2>
+              <p className="text-gray-700 text-sm">
+                This isn&apos;t the original compiler JSON data. Generated for compatibility.
+              </p>
+            </div>
             <DownloadFileButton
               data={contract.stdJsonOutput}
-              fileName="std-json-output"
+              fileName="standard-json-output"
               chainId={contract.chainId}
               address={contract.address}
             />

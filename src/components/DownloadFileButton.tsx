@@ -3,7 +3,7 @@
 import { FiDownload } from "react-icons/fi";
 
 interface DownloadFileButtonProps {
-  data: Record<string, unknown>;
+  data: unknown;
   fileName: string;
   chainId: string;
   address: string;
@@ -26,9 +26,9 @@ export default function DownloadFileButton({ data, fileName, chainId, address }:
   return (
     <button
       onClick={handleDownload}
-      className="mt-2 inline-flex items-center gap-2 text-xs bg-white rounded-md p-2 shadow-sm border border-gray-200 hover:bg-gray-100 transition-colors duration-200 cursor-pointer"
+      className="inline-flex items-center gap-1 text-xs bg-white rounded-md px-2 py-1 shadow-sm border border-gray-200 hover:bg-gray-100 transition-colors duration-200 cursor-pointer"
     >
-      <FiDownload className="w-5 h-5 text-gray-700" />
+      <FiDownload className="w-4 h-4 text-gray-700" />
       Download
     </button>
   );
