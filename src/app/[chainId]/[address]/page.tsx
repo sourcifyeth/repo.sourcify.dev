@@ -196,7 +196,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </section>
 
       {/* Creation Bytecode Section */}
-      <section className="mb-8">
+      <section className="mb-8 border border-gray-200 rounded-lg p-2">
         <div className="sticky top-0 z-10 bg-gray-100 py-4">
           <h2 className="text-xl font-semibold text-gray-800">Creation Bytecode</h2>
         </div>
@@ -224,7 +224,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
 
         {/* Library Transformations Section */}
         {contract.creationBytecode.transformations && contract.creationBytecode.transformations.length > 0 && (
-          <section className="mt-8 ml-6">
+          <section className="mt-8 ml-6 border border-gray-200 rounded-lg p-2">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Transformations</h2>
             <Suspense fallback={<LoadingState />}>
               <LibraryTransformations
@@ -238,7 +238,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
 
         {/* Constructor Arguments Section */}
         {contract.creationBytecode.transformationValues?.constructorArguments && (
-          <section className="mb-8 ml-6">
+          <section className="mb-8 ml-6 border border-gray-200 rounded-lg p-2">
             <Suspense fallback={<LoadingState />}>
               <ConstructorArguments
                 constructorArguments={contract.creationBytecode.transformationValues.constructorArguments}
@@ -250,7 +250,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </section>
 
       {/* Runtime Bytecode Section */}
-      <section className="mb-8">
+      <section className="mb-8 border border-gray-200 rounded-lg p-2">
         <div className="sticky top-0 z-10 bg-gray-100 py-4">
           <h2 className="text-xl font-semibold text-gray-800">Runtime Bytecode</h2>
         </div>
@@ -278,7 +278,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
 
         {/* Runtime Library Transformations Section */}
         {contract.runtimeBytecode.transformations && contract.runtimeBytecode.transformations.length > 0 && (
-          <section className="mt-8 ml-6">
+          <section className="mt-8 ml-6 border border-gray-200 rounded-lg p-2">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Transformations</h2>
             <Suspense fallback={<LoadingState />}>
               <LibraryTransformations
@@ -312,7 +312,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
 
       {/* Storage Layout Section */}
       {contract.storageLayout?.types && (
-        <section className="mb-8">
+        <section className="mb-8 border border-gray-200 rounded-lg p-2">
           <div className="sticky top-0 z-10 bg-gray-100 py-4">
             <h2 className="text-xl font-semibold text-gray-800">Storage Layout</h2>
           </div>

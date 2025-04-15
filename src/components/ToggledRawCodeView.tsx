@@ -53,7 +53,16 @@ export default function ToggledRawCodeView({ data1, data2, tooltipContent, class
           <CopyToClipboard text={currentData.value} className="ml-2" />
         </div>
       )}
-
+      {currentData.value ==
+        "0x2121212121212121212121202d20636861696e207761732064657072656361746564206174207468652074696d65206f6620766572696669636174696f6e" && (
+        <div className="w-full text-sm my-2">
+          <div>
+            <span>
+              Chain was deprecated at the time of verification. The onchain bytecode below is a placeholder in database
+            </span>
+          </div>
+        </div>
+      )}
       <div className="w-full max-h-64 p-3 bg-gray-50 rounded text-xs font-mono border border-gray-200 cursor-text break-words overflow-y-auto whitespace-pre-wrap">
         {currentData.value}
       </div>
