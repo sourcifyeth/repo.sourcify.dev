@@ -19,17 +19,8 @@ import ConstructorArguments from "./sections/ConstructorArguments";
 import StorageLayout from "./sections/StorageLayout";
 import Image from "next/image";
 import RemixLogo from "@/assets/remix.svg";
+import DownloadSourcesButton from "@/components/DownloadSourcesButton";
 import CborAuxdataSection from "@/components/sections/CborAuxdataSection";
-
-// This function runs on the server
-async function getContractData(chainId: string, address: string) {
-  try {
-    return await fetchContractData(chainId, address);
-  } catch (error) {
-    console.error("Error fetching contract data:", error);
-    return null;
-  }
-}
 
 // Fetch chains data
 async function getChainsData() {
@@ -140,21 +131,24 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       <section className="mb-8">
         <div className="sticky top-0 z-10 bg-gray-100 pt-4 pb-2">
           <h2 className="text-xl font-semibold text-gray-800">Source Code</h2>
-          <a
-            href={`https://remix.ethereum.org/?#activate=contract-verification&call=contract-verification//lookupAndSave//sourcify//${contract.chainId}//${contract.address}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="my-2 inline-flex items-center gap-2 text-xs bg-white rounded-md p-2 shadow-sm border border-gray-200 hover:bg-gray-100 transition-colors duration-200"
-          >
-            <Image
-              src={RemixLogo}
-              alt="Remix IDE Logo"
-              width={20}
-              height={20}
-              className="hover:scale-110 transition-transform duration-200"
-            />
-            View on Remix IDE
-          </a>
+          <div className="flex items-center">
+            <a
+              href={`https://remix.ethereum.org/?#activate=contract-verification&call=contract-verification/lookupAndSave//sourcify//${contract.chainId}//${contract.address}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="my-2 inline-flex items-center gap-2 text-xs bg-white rounded-md p-2 shadow-sm border border-gray-200 hover:bg-gray-100 transition-colors duration-200"
+            >
+              <Image
+                src={RemixLogo}
+                alt="Remix IDE Logo"
+                width={20}
+                height={20}
+                className="hover:scale-110 transition-transform duration-200"
+              />
+              View on Remix IDE
+            </a>
+            <DownloadSourcesButton sources={contract.sources} chainId={contract.chainId} address={contract.address} />
+          </div>
         </div>
 
         <Suspense fallback={<LoadingState />}>
@@ -334,4 +328,14 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </section>
     </div>
   );
+}
+
+// This function runs on the server
+async function getContractData(chainId: string, address: string) {
+  try {
+    return await fetchContractData(chainId, address);
+  } catch (error) {
+    console.error("Error fetching contract data:", error);
+    return null;
+  }
 }
