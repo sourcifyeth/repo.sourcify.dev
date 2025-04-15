@@ -17,9 +17,8 @@ import ImmutableTransformations from "./sections/ImmutableTransformations";
 import CallProtectionTransformation from "./sections/CallProtectionTransformation";
 import ConstructorArguments from "./sections/ConstructorArguments";
 import StorageLayout from "./sections/StorageLayout";
-import { SolidityDecodedObject } from "@ethereum-sourcify/bytecode-utils";
 import Image from "next/image";
-import ipfsLogo from "@/assets/ipfs.png";
+import RemixLogo from "@/assets/remix.svg";
 import CborAuxdataSection from "@/components/sections/CborAuxdataSection";
 
 // This function runs on the server
@@ -139,9 +138,25 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
 
       {/* Contract Source Code Section */}
       <section className="mb-8">
-        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+        <div className="sticky top-0 z-10 bg-gray-100 pt-4 pb-2">
           <h2 className="text-xl font-semibold text-gray-800">Source Code</h2>
+          <a
+            href={`https://remix.ethereum.org/?#activate=contract-verification&call=contract-verification//lookupAndSave//sourcify//${contract.chainId}//${contract.address}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="my-2 inline-flex items-center gap-2 text-xs bg-white rounded-md p-2 shadow-sm border border-gray-200 hover:bg-gray-100 transition-colors duration-200"
+          >
+            <Image
+              src={RemixLogo}
+              alt="Remix IDE Logo"
+              width={20}
+              height={20}
+              className="hover:scale-110 transition-transform duration-200"
+            />
+            View on Remix IDE
+          </a>
         </div>
+
         <Suspense fallback={<LoadingState />}>
           <ContractSource contract={contract} />
         </Suspense>
