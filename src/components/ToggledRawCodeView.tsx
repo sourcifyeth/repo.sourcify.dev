@@ -3,6 +3,7 @@
 import { useState } from "react";
 import InfoTooltip from "./InfoTooltip";
 import CopyToClipboard from "./CopyToClipboard";
+import CodeDisplay from "./CodeDisplay";
 
 interface CodeData {
   name: string;
@@ -63,9 +64,7 @@ export default function ToggledRawCodeView({ data1, data2, tooltipContent, class
           </div>
         </div>
       )}
-      <div className="w-full max-h-64 p-3 bg-gray-50 rounded text-xs font-mono border border-gray-200 cursor-text break-words overflow-y-auto whitespace-pre-wrap">
-        {currentData.value}
-      </div>
+      <CodeDisplay value={currentData.value} />
     </div>
   );
 }

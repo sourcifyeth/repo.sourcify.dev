@@ -11,7 +11,7 @@ import ProxyResolution from "./sections/ProxyResolution";
 import ContractAbi from "./sections/ABI";
 import ContractSource from "./sections/ContractSource";
 import JsonViewOnlyEditor from "@/components/JsonViewOnlyEditor";
-import ToggledRawCodeView from "@/components/ToggledRawCodeView";
+import BytecodeDiffView from "@/components/BytecodeDiffView";
 import LibraryTransformations from "./sections/LibraryTransformations";
 import ImmutableTransformations from "./sections/ImmutableTransformations";
 import CallProtectionTransformation from "./sections/CallProtectionTransformation";
@@ -201,16 +201,10 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           <h2 className="text-xl font-semibold text-gray-800">Creation Bytecode</h2>
         </div>
         <Suspense fallback={<LoadingState />}>
-          <ToggledRawCodeView
-            data1={{
-              name: "on-chain bytecode",
-              value: contract.creationBytecode.onchainBytecode,
-            }}
-            data2={{
-              name: "recompiled bytecode",
-              value: contract.creationBytecode.recompiledBytecode,
-            }}
-            tooltipContent="On-chain bytecode is retrieved from the blockchain. Recompiled bytecode is generated from the source code."
+          <BytecodeDiffView
+            onchainBytecode={contract.creationBytecode.onchainBytecode}
+            recompiledBytecode={contract.creationBytecode.recompiledBytecode}
+            id="creation"
           />
         </Suspense>
 
@@ -255,16 +249,10 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           <h2 className="text-xl font-semibold text-gray-800">Runtime Bytecode</h2>
         </div>
         <Suspense fallback={<LoadingState />}>
-          <ToggledRawCodeView
-            data1={{
-              name: "on-chain bytecode",
-              value: contract.runtimeBytecode.onchainBytecode,
-            }}
-            data2={{
-              name: "recompiled bytecode",
-              value: contract.runtimeBytecode.recompiledBytecode,
-            }}
-            tooltipContent="On-chain bytecode is retrieved from the blockchain. Recompiled bytecode is generated from the source code."
+          <BytecodeDiffView
+            onchainBytecode={contract.runtimeBytecode.onchainBytecode}
+            recompiledBytecode={contract.runtimeBytecode.recompiledBytecode}
+            id="runtime"
           />
         </Suspense>
 
