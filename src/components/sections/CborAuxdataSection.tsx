@@ -18,7 +18,7 @@ export default function CborAuxdataSection({ cborAuxdata, language }: CborAuxdat
   }
 
   return (
-    <div className="mt-6 ml-6">
+    <div className="mt-6 ml-2">
       <h3 className="text-xl font-semibold text-gray-800 mt-2">CBOR Auxdata</h3>
       <p className="text-gray-700 mb-2 text-xs">
         These values are from the recompiled bytecode. If these values are different in the on-chain bytecode, they will

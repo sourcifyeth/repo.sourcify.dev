@@ -202,8 +202,8 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </section>
 
       {/* Creation Bytecode Section */}
-      <section className="mb-8 border border-gray-200 rounded-lg p-2">
-        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+      <section className="mb-8 border border-gray-200 rounded-lg p-6">
+        <div className="sticky top-0 z-10 bg-gray-100">
           <h2 className="text-xl font-semibold text-gray-800">Creation Bytecode</h2>
         </div>
         <Suspense fallback={<LoadingState />}>
@@ -252,8 +252,8 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </section>
 
       {/* Runtime Bytecode Section */}
-      <section className="mb-8 border border-gray-200 rounded-lg p-2">
-        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+      <section className="mb-8 border border-gray-200 rounded-lg p-6">
+        <div className="sticky top-0 z-10 bg-gray-100">
           <h2 className="text-xl font-semibold text-gray-800">Runtime Bytecode</h2>
         </div>
         <Suspense fallback={<LoadingState />}>
