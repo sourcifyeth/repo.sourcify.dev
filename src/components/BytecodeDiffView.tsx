@@ -109,21 +109,21 @@ export default function BytecodeDiffView({
             render={() => (
               <div className="text-xs flex flex-col gap-1 font-sans">
                 <div className="flex  gap-1">
-                  <span className="text-gray-500">Reason:</span>
+                  <span className="text-gray-400">Reason:</span>
                   <span className="font-mono ml-1">{transformation.reason}</span>
                 </div>
                 {originalValue && (
                   <div className="flex  gap-1">
-                    <span className="text-gray-500">Original:</span>
+                    <span className="text-gray-400">Original:</span>
                     <span className="font-mono ml-1 break-all">0x{originalValue}</span>
                   </div>
                 )}
                 <div className="flex  gap-1">
-                  <span className="text-gray-500">Transformed:</span>
+                  <span className="text-gray-400">Transformed:</span>
                   <span className="font-mono ml-1 break-all">0x{value}</span>
                 </div>
                 <div className="flex  gap-1">
-                  <span className="text-gray-500">Offset:</span>
+                  <span className="text-gray-400">Offset:</span>
                   <span className="font-mono ml-1 break-all">{transformation.offset} bytes</span>
                 </div>
               </div>
