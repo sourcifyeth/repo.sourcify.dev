@@ -84,6 +84,12 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
     : "Match: The onchain and compiled bytecode match, but metadata hashes differ or don't exist.";
   const matchTooltipHtml = `<p>${matchTooltipContent} <a href="https://docs.sourcify.dev/docs/full-vs-partial-match/" target="_blank" rel="noopener noreferrer" class="underline">Learn more</a></p>`;
 
+  // Log creation and runtime transformations
+  console.log("Creation transformation:", contract.creationBytecode.transformations);
+  console.log("Creation values", contract.creationBytecode.transformationValues);
+  console.log("Runtime transformation:", contract.runtimeBytecode.transformations);
+  console.log("Runtime values", contract.runtimeBytecode.transformationValues);
+
   return (
     <div>
       <div className="mt-3 mb-2">
@@ -205,6 +211,8 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
             onchainBytecode={contract.creationBytecode.onchainBytecode}
             recompiledBytecode={contract.creationBytecode.recompiledBytecode}
             id="creation"
+            transformations={contract.creationBytecode.transformations}
+            transformationValues={contract.creationBytecode.transformationValues}
           />
         </Suspense>
 
@@ -217,7 +225,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
         }
 
         {/* Library Transformations Section */}
-        {contract.creationBytecode.transformations && contract.creationBytecode.transformations.length > 0 && (
+        {contract.creationBytecode.transformationValues?.libraries && (
           <section className="mt-8 ml-6 border border-gray-200 rounded-lg p-2">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Transformations</h2>
             <Suspense fallback={<LoadingState />}>
@@ -253,6 +261,8 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
             onchainBytecode={contract.runtimeBytecode.onchainBytecode}
             recompiledBytecode={contract.runtimeBytecode.recompiledBytecode}
             id="runtime"
+            transformations={contract.runtimeBytecode.transformations}
+            transformationValues={contract.runtimeBytecode.transformationValues}
           />
         </Suspense>
 

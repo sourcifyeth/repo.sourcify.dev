@@ -87,7 +87,6 @@ export async function fetchChains(): Promise<ChainData[]> {
     }
 
     const data = (await response.json()) as ChainsResponse;
-    console.log(data);
 
     return Object.values(data);
   } catch (error) {
