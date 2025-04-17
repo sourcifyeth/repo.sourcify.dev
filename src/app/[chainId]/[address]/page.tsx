@@ -42,14 +42,15 @@ export async function generateMetadata({
   const { chainId, address } = await params;
 
   // Fetch chains data to get the network name
-  const chains = await getChainsData();
+  const [chains, contract] = await Promise.all([getChainsData(), getContractData(chainId, address)]);
+
   const chainName = getChainName(chainId, chains);
 
   return {
     title: `${address} on ${chainName}`,
     description: `View contract ${address} on ${chainName} network`,
     icons: {
-      icon: "/favicon-verified.ico",
+      icon: contract ? "/favicon-verified.ico" : "/favicon.ico",
     },
   };
 }
