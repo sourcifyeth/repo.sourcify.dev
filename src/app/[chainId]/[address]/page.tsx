@@ -85,10 +85,9 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
   const matchTooltipHtml = `<p>${matchTooltipContent} <a href="https://docs.sourcify.dev/docs/full-vs-partial-match/" target="_blank" rel="noopener noreferrer" class="underline">Learn more</a></p>`;
 
   // Log creation and runtime transformations
-  console.log("Creation transformation:", contract.creationBytecode.transformations);
-  console.log("Creation values", contract.creationBytecode.transformationValues);
-  console.log("Runtime transformation:", contract.runtimeBytecode.transformations);
-  console.log("Runtime values", contract.runtimeBytecode.transformationValues);
+  console.log("Address", contract.address);
+  console.log("Creation match", contract.creationMatch);
+  console.log("Runtime match", contract.runtimeMatch);
 
   return (
     <div>
@@ -106,11 +105,23 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </div>
 
       {/* Match status */}
-      <div className="mb-6 flex items-center">
-        <span className={`inline-flex items-center px-3 py-1 rounded-md font-semibold border ${matchColor}`}>
-          <span className="mr-1 text-2xl">{matchIcon}</span> {matchLabel}
-        </span>
-        <InfoTooltip content={matchTooltipHtml} className="ml-2" html={true} />
+      <div className="mb-6 flex flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <span className={`inline-flex items-center px-3 py-1 rounded-md font-semibold border ${matchColor}`}>
+            <span className="mr-1 text-2xl">{matchIcon}</span> {matchLabel}
+          </span>
+          <InfoTooltip content={matchTooltipHtml} className="ml-2" html={true} />
+        </div>
+        <div className="text-xs text-gray-500">
+          Matched with
+          <span className="text-gray-500">
+            {contract.creationMatch && contract.runtimeMatch
+              ? " both the creation and runtime bytecodes"
+              : contract.creationMatch
+              ? " the creation bytecode"
+              : " the runtime bytecode"}
+          </span>
+        </div>
       </div>
 
       {/* Contract Details Section */}
@@ -203,109 +214,125 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
 
       {/* Creation Bytecode Section */}
       <section className="mb-8 border border-gray-200 rounded-lg p-6">
-        <div className="sticky top-0 z-10 bg-gray-100">
-          <h2 className="text-xl font-semibold text-gray-800">Creation Bytecode</h2>
+        {!contract.creationMatch && (
+          <div className="mb-4 text-sm text-gray-700 bg-yellow-50 border border-yellow-200 p-3 rounded">
+            Contract couldn&apos;t be verified with the creation bytecode but with the runtime bytecode. Below is what
+            was found at the time of verification.
+          </div>
+        )}
+        <div className={`${!contract.creationMatch ? "opacity-60" : ""}`}>
+          <div className="sticky top-0 z-10 bg-gray-100">
+            <h2 className="text-xl font-semibold text-gray-800">Creation Bytecode</h2>
+          </div>
+          <Suspense fallback={<LoadingState />}>
+            <BytecodeDiffView
+              onchainBytecode={contract.creationBytecode.onchainBytecode}
+              recompiledBytecode={contract.creationBytecode.recompiledBytecode}
+              id="creation"
+              transformations={contract.creationBytecode.transformations}
+              transformationValues={contract.creationBytecode.transformationValues}
+            />
+          </Suspense>
+
+          {/* CBOR Auxdata Section */}
+          {
+            <CborAuxdataSection
+              cborAuxdata={contract.creationBytecode.cborAuxdata}
+              language={contract.compilation.language}
+            />
+          }
+
+          {/* Library Transformations Section */}
+          {contract.creationBytecode.transformationValues?.libraries && (
+            <section className="mt-8 ml-6 border border-gray-200 rounded-lg p-2">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Transformations</h2>
+              <Suspense fallback={<LoadingState />}>
+                <LibraryTransformations
+                  transformations={contract.creationBytecode.transformations}
+                  transformationValues={contract.creationBytecode.transformationValues}
+                  chainId={chainId}
+                />
+              </Suspense>
+            </section>
+          )}
+
+          {/* Constructor Arguments Section */}
+          {contract.creationBytecode.transformationValues?.constructorArguments && (
+            <section className="mb-8 border border-gray-200 rounded-lg p-4">
+              <Suspense fallback={<LoadingState />}>
+                <ConstructorArguments
+                  constructorArguments={contract.creationBytecode.transformationValues.constructorArguments}
+                  abi={contract.abi}
+                />
+              </Suspense>
+            </section>
+          )}
         </div>
-        <Suspense fallback={<LoadingState />}>
-          <BytecodeDiffView
-            onchainBytecode={contract.creationBytecode.onchainBytecode}
-            recompiledBytecode={contract.creationBytecode.recompiledBytecode}
-            id="creation"
-            transformations={contract.creationBytecode.transformations}
-            transformationValues={contract.creationBytecode.transformationValues}
-          />
-        </Suspense>
-
-        {/* CBOR Auxdata Section */}
-        {
-          <CborAuxdataSection
-            cborAuxdata={contract.creationBytecode.cborAuxdata}
-            language={contract.compilation.language}
-          />
-        }
-
-        {/* Library Transformations Section */}
-        {contract.creationBytecode.transformationValues?.libraries && (
-          <section className="mt-8 ml-6 border border-gray-200 rounded-lg p-2">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Transformations</h2>
-            <Suspense fallback={<LoadingState />}>
-              <LibraryTransformations
-                transformations={contract.creationBytecode.transformations}
-                transformationValues={contract.creationBytecode.transformationValues}
-                chainId={chainId}
-              />
-            </Suspense>
-          </section>
-        )}
-
-        {/* Constructor Arguments Section */}
-        {contract.creationBytecode.transformationValues?.constructorArguments && (
-          <section className="mb-8 border border-gray-200 rounded-lg p-4">
-            <Suspense fallback={<LoadingState />}>
-              <ConstructorArguments
-                constructorArguments={contract.creationBytecode.transformationValues.constructorArguments}
-                abi={contract.abi}
-              />
-            </Suspense>
-          </section>
-        )}
       </section>
 
       {/* Runtime Bytecode Section */}
       <section className="mb-8 border border-gray-200 rounded-lg p-6">
-        <div className="sticky top-0 z-10 bg-gray-100">
-          <h2 className="text-xl font-semibold text-gray-800">Runtime Bytecode</h2>
-        </div>
-        <Suspense fallback={<LoadingState />}>
-          <BytecodeDiffView
-            onchainBytecode={contract.runtimeBytecode.onchainBytecode}
-            recompiledBytecode={contract.runtimeBytecode.recompiledBytecode}
-            id="runtime"
-            transformations={contract.runtimeBytecode.transformations}
-            transformationValues={contract.runtimeBytecode.transformationValues}
-          />
-        </Suspense>
-
-        {/* Runtime CBOR Auxdata Section */}
-        {
-          <CborAuxdataSection
-            cborAuxdata={contract.runtimeBytecode.cborAuxdata}
-            language={contract.compilation.language}
-          />
-        }
-
-        {/* Runtime Library Transformations Section */}
-        {contract.runtimeBytecode.transformations && contract.runtimeBytecode.transformations.length > 0 && (
-          <section className="mt-8 ml-6 border border-gray-200 rounded-lg p-2">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Transformations</h2>
-            <Suspense fallback={<LoadingState />}>
-              <LibraryTransformations
-                transformations={contract.runtimeBytecode.transformations}
-                transformationValues={contract.runtimeBytecode.transformationValues}
-                chainId={chainId}
-              />
-            </Suspense>
-
-            {contract.runtimeBytecode.transformationValues?.immutables && (
-              <div className="mt-8">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Immutables</h3>
-                <ImmutableTransformations
-                  transformations={contract.runtimeBytecode.transformations}
-                  transformationValues={contract.runtimeBytecode.transformationValues}
-                />
-              </div>
-            )}
-
-            {contract.runtimeBytecode.transformationValues?.callProtection && (
-              <div className="mt-8">
-                <CallProtectionTransformation
-                  transformations={contract.runtimeBytecode.transformations}
-                  transformationValues={contract.runtimeBytecode.transformationValues}
-                />
-              </div>
-            )}
-          </section>
+        {!contract.runtimeMatch && (
+          <div className="mb-4 text-sm text-gray-700 bg-yellow-50 border border-yellow-200 p-3 rounded">
+            Contract couldn&apos;t be verified with the runtime bytecode but with the creation bytecode. Below is what
+            was found at the time of verification.
+          </div>
         )}
+        <div className={`${!contract.runtimeMatch ? "opacity-60" : ""}`}>
+          <div className="sticky top-0 z-10 bg-gray-100">
+            <h2 className="text-xl font-semibold text-gray-800">Runtime Bytecode</h2>
+          </div>
+          <Suspense fallback={<LoadingState />}>
+            <BytecodeDiffView
+              onchainBytecode={contract.runtimeBytecode.onchainBytecode}
+              recompiledBytecode={contract.runtimeBytecode.recompiledBytecode}
+              id="runtime"
+              transformations={contract.runtimeBytecode.transformations}
+              transformationValues={contract.runtimeBytecode.transformationValues}
+            />
+          </Suspense>
+
+          {/* Runtime CBOR Auxdata Section */}
+          {
+            <CborAuxdataSection
+              cborAuxdata={contract.runtimeBytecode.cborAuxdata}
+              language={contract.compilation.language}
+            />
+          }
+
+          {/* Runtime Library Transformations Section */}
+          {contract.runtimeBytecode.transformations && contract.runtimeBytecode.transformations.length > 0 && (
+            <div className="mt-8 ml-6 border border-gray-200 rounded-lg p-2">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Transformations</h2>
+              <Suspense fallback={<LoadingState />}>
+                <LibraryTransformations
+                  transformations={contract.runtimeBytecode.transformations}
+                  transformationValues={contract.runtimeBytecode.transformationValues}
+                  chainId={chainId}
+                />
+              </Suspense>
+
+              {contract.runtimeBytecode.transformationValues?.immutables && (
+                <div className="mt-8">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Immutables</h3>
+                  <ImmutableTransformations
+                    transformations={contract.runtimeBytecode.transformations}
+                    transformationValues={contract.runtimeBytecode.transformationValues}
+                  />
+                </div>
+              )}
+
+              {contract.runtimeBytecode.transformationValues?.callProtection && (
+                <div className="mt-8">
+                  <CallProtectionTransformation
+                    transformations={contract.runtimeBytecode.transformations}
+                    transformationValues={contract.runtimeBytecode.transformationValues}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Storage Layout Section */}

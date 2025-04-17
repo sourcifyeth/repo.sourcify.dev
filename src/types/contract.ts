@@ -1,7 +1,7 @@
 export interface ContractData {
   matchId: string;
-  creationMatch: string;
-  runtimeMatch: string;
+  creationMatch: string | null;
+  runtimeMatch: string | null;
   verifiedAt: string;
   creationBytecode: BytecodeData;
   runtimeBytecode: BytecodeData;
