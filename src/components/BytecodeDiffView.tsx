@@ -100,7 +100,7 @@ export default function BytecodeDiffView({
       result.push(
         <span
           key={`transformed-${index}`}
-          className="bg-cyan-200 text-cyan-900 cursor-help "
+          className="bg-cyan-200 text-cyan-900 cursor-help border border-cyan-700 rounded-xs"
           data-tooltip-id="global-tooltip"
           data-tooltip-html={getTransformationTooltip(transformation)}
         >
@@ -135,7 +135,7 @@ export default function BytecodeDiffView({
   return (
     <div>
       {!isOnchainRecompiledSame && (
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center gap-4 my-2">
           {transformations && transformations.length > 0 && (
             <div className="flex items-center gap-2">
               <input

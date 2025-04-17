@@ -240,7 +240,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
 
         {/* Constructor Arguments Section */}
         {contract.creationBytecode.transformationValues?.constructorArguments && (
-          <section className="mb-8 ml-6 border border-gray-200 rounded-lg p-2">
+          <section className="mb-8 border border-gray-200 rounded-lg p-4">
             <Suspense fallback={<LoadingState />}>
               <ConstructorArguments
                 constructorArguments={contract.creationBytecode.transformationValues.constructorArguments}

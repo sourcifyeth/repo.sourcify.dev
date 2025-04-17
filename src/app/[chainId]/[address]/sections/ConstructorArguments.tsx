@@ -19,11 +19,7 @@ export default function ConstructorArguments({ constructorArguments, abi }: Cons
 
   return (
     <div>
-      <h3 className="text-base font-semibold text-gray-800 mt-2">Constructor Arguments</h3>
-      <p className="text-gray-700 mb-2 text-sm">
-        These are the arguments passed to the contract&apos;s constructor during deployment, in the onchain creation
-        bytecode.
-      </p>
+      <h3 className="text-base font-semibold text-gray-800 mb-2">Constructor Arguments</h3>
       <ToggledRawCodeView
         data1={{
           name: "Raw",

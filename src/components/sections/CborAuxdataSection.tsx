@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Image from "next/image";
-import { BytecodeData, ContractData } from "@/types/contract";
+import { BytecodeData } from "@/types/contract";
 import { SolidityDecodedObject } from "@ethereum-sourcify/bytecode-utils";
 import { formatCborAuxdata } from "@/utils/format";
 import ToggledRawCodeView from "../ToggledRawCodeView";
@@ -27,7 +27,7 @@ export default function CborAuxdataSection({ cborAuxdata, language }: CborAuxdat
       {Object.entries(cborAuxdata).map(([key, cborAuxdataObj]) => {
         const decodedCborAuxdata = formatCborAuxdata(cborAuxdataObj.value, language);
         return (
-          <div key={key} className="mb-4 rounded-lg border border-gray-200 p-4">
+          <div key={key} className="mb-4 rounded-lg border border-gray-200 p-4 ml-4">
             <h4 className="text-md font-medium">CBOR Auxdata id: {key}</h4>
             {(decodedCborAuxdata as SolidityDecodedObject)?.ipfs && (
               <div className="my-2">
