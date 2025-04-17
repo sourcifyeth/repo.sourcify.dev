@@ -89,7 +89,7 @@ export default function BytecodeDiffView({
       let originalValue = "";
       if (transformation.reason !== "constructorArguments") {
         const charOffset = transformation.offset * 2 + 2; // Add 2 for "0x" prefix
-        originalValue = recompiledBytecode.slice(charOffset, charOffset + value.length * 2);
+        originalValue = recompiledBytecode.slice(charOffset, charOffset + value.length);
       }
 
       const tooltipId = `transformation-${id}-${index}`;
