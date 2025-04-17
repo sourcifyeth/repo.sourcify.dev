@@ -110,7 +110,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           <span className={`inline-flex items-center px-3 py-1 rounded-md font-semibold border ${matchColor}`}>
             <span className="mr-1 text-2xl">{matchIcon}</span> {matchLabel}
           </span>
-          <InfoTooltip content={matchTooltipHtml} className="ml-2" html={true} />
+          <InfoTooltip content={matchTooltipHtml} className="ml-0" html={true} />
         </div>
         <div className="text-xs text-gray-500">
           Matched with
