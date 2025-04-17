@@ -235,16 +235,14 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           </Suspense>
 
           {/* CBOR Auxdata Section */}
-          {
-            <CborAuxdataSection
-              cborAuxdata={contract.creationBytecode.cborAuxdata}
-              language={contract.compilation.language}
-            />
-          }
+          <CborAuxdataSection
+            cborAuxdata={contract.creationBytecode.cborAuxdata}
+            language={contract.compilation.language}
+          />
 
           {/* Library Transformations Section */}
           {contract.creationBytecode.transformationValues?.libraries && (
-            <section className="mt-8 ml-6 border border-gray-200 rounded-lg p-2">
+            <section className="mt-8 border border-gray-200 rounded-lg p-2">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Transformations</h2>
               <Suspense fallback={<LoadingState />}>
                 <LibraryTransformations
@@ -293,16 +291,14 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           </Suspense>
 
           {/* Runtime CBOR Auxdata Section */}
-          {
-            <CborAuxdataSection
-              cborAuxdata={contract.runtimeBytecode.cborAuxdata}
-              language={contract.compilation.language}
-            />
-          }
+          <CborAuxdataSection
+            cborAuxdata={contract.runtimeBytecode.cborAuxdata}
+            language={contract.compilation.language}
+          />
 
           {/* Runtime Library Transformations Section */}
           {contract.runtimeBytecode.transformations && contract.runtimeBytecode.transformations.length > 0 && (
-            <div className="mt-8 ml-6 border border-gray-200 rounded-lg p-2">
+            <div className="mt-8 border border-gray-200 rounded-lg p-2">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Transformations</h2>
               <Suspense fallback={<LoadingState />}>
                 <LibraryTransformations
