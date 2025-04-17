@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import InfoTooltip from "./InfoTooltip";
+import { Tooltip } from "react-tooltip";
 import { Transformations, TransformationValues } from "@/types/contract";
 
 interface BytecodeDiffViewProps {
@@ -33,16 +34,6 @@ export default function BytecodeDiffView({
       setCurrentView(recompiledBytecode);
     }
   }, [viewMode, onchainBytecode, recompiledBytecode]);
-
-  const getTransformationTooltip = (transformation: Transformations[number]) => {
-    return `
-      <div class="text-sm">
-        ${"id" in transformation ? `<p>id: ${transformation.id}</p>` : ""}
-        <p>Reason: ${transformation.reason}</p>
-        <p>Offset: ${transformation.offset} bytes</p>
-      </div>
-    `;
-  };
 
   const renderTransformations = () => {
     if (!transformations || !transformationValues) return onchainBytecode;
@@ -89,22 +80,55 @@ export default function BytecodeDiffView({
         value = transformationValues.cborAuxdata[transformation.id];
       }
 
-      console.log("transformation", transformation);
-      console.log("value", value);
-
       // Remove 0x prefix if present
       if (value && value.startsWith("0x")) {
         value = value.slice(2);
       }
 
+      // Get the original value from the recompiled bytecode
+      let originalValue = "";
+      if (transformation.reason !== "constructorArguments") {
+        const charOffset = transformation.offset * 2 + 2; // Add 2 for "0x" prefix
+        originalValue = recompiledBytecode.slice(charOffset, charOffset + value.length * 2);
+      }
+
+      const tooltipId = `transformation-${id}-${index}`;
       result.push(
         <span
           key={`transformed-${index}`}
-          className="bg-cyan-200 text-cyan-900 cursor-help border border-cyan-700 rounded-xs"
-          data-tooltip-id="global-tooltip"
-          data-tooltip-html={getTransformationTooltip(transformation)}
+          className="bg-cyan-200 text-cyan-900 cursor-help border border-cyan-700 rounded-xs hover:bg-cyan-400"
+          data-tooltip-id={tooltipId}
         >
           {value}
+          <Tooltip
+            id={tooltipId}
+            className="!p-3 !max-w-md lg:!max-w-4xl !z-50"
+            place="top"
+            delayShow={0}
+            delayHide={0}
+            render={() => (
+              <div className="text-xs flex flex-col gap-1 font-sans">
+                <div className="flex  gap-1">
+                  <span className="text-gray-500">Reason:</span>
+                  <span className="font-mono ml-1">{transformation.reason}</span>
+                </div>
+                {originalValue && (
+                  <div className="flex  gap-1">
+                    <span className="text-gray-500">Original:</span>
+                    <span className="font-mono ml-1 break-all">0x{originalValue}</span>
+                  </div>
+                )}
+                <div className="flex  gap-1">
+                  <span className="text-gray-500">Transformed:</span>
+                  <span className="font-mono ml-1 break-all">0x{value}</span>
+                </div>
+                <div className="flex  gap-1">
+                  <span className="text-gray-500">Offset:</span>
+                  <span className="font-mono ml-1 break-all">{transformation.offset} bytes</span>
+                </div>
+              </div>
+            )}
+          />
         </span>
       );
       // Update currentIndex based on the length of the value in characters
