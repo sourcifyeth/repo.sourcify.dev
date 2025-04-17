@@ -1,8 +1,8 @@
 import { fetchContractData, fetchChains, getChainName } from "@/utils/api";
 import { Suspense } from "react";
 import { Metadata } from "next";
+import { notFound } from "next/navigation";
 import LoadingState from "@/components/LoadingState";
-import ErrorState from "@/components/ErrorState";
 import { IoCheckmarkDoneCircle, IoCheckmarkCircle } from "react-icons/io5";
 import CopyToClipboard from "@/components/CopyToClipboard";
 import InfoTooltip from "@/components/InfoTooltip";
@@ -44,13 +44,17 @@ export async function generateMetadata({
   // Fetch chains data to get the network name
   const [chains, contract] = await Promise.all([getChainsData(), getContractData(chainId, address)]);
 
+  if (!contract) {
+    notFound();
+  }
+
   const chainName = getChainName(chainId, chains);
 
   return {
     title: `${address} on ${chainName}`,
     description: `View contract ${address} on ${chainName} network`,
     icons: {
-      icon: contract ? "/favicon-verified.ico" : "/favicon.ico",
+      icon: "/favicon-verified.ico",
     },
   };
 }
@@ -61,16 +65,12 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
   // Fetch data in parallel
   const [contract, chains] = await Promise.all([getContractData(chainId, address), getChainsData()]);
 
+  if (!contract) {
+    notFound();
+  }
+
   // Get human-readable chain name
   const chainName = getChainName(chainId, chains);
-
-  if (!contract) {
-    return (
-      <>
-        <ErrorState message="Failed to load contract data or contract not found" />
-      </>
-    );
-  }
 
   // Determine if this is an exact match
   const isExactMatch = contract.creationMatch === "exact_match" || contract.runtimeMatch === "exact_match";
