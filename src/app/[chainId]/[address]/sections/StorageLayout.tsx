@@ -72,7 +72,7 @@ export default function StorageLayout({ storageLayout }: StorageLayoutProps) {
               const typeInfo = storageLayout.types?.[item.type];
               const isEvenSlot = Number(item.slot) % 2 === 0;
               return (
-                <tr key={index} className={`${isEvenSlot ? "bg-white" : "bg-gray-50"}`}>
+                <tr key={index} className={`${isEvenSlot ? "bg-white" : "bg-gray-100"}`}>
                   <td className="px-2 py-2 text-center whitespace-nowrap text-sm text-gray-500">{item.slot}</td>
                   <td className="px-2 py-2 text-center whitespace-nowrap text-sm text-gray-500">{item.offset}</td>
                   <td className="px-2 py-2 text-center whitespace-nowrap text-sm text-gray-500">
