@@ -158,6 +158,17 @@ export default function BytecodeDiffView({
 
   return (
     <div>
+      {onchainBytecode ===
+        "0x2121212121212121212121202d20636861696e207761732064657072656361746564206174207468652074696d65206f6620766572696669636174696f6e" && (
+        <div className="w-full text-sm my-2">
+          <div>
+            <span>
+              Chain was deprecated at the time of verification but sources were verified on an early Sourcify version.
+              The onchain bytecode below is a placeholder in database
+            </span>
+          </div>
+        </div>
+      )}
       {!isOnchainRecompiledSame && (
         <div className="flex items-center gap-4 my-2">
           {transformations && transformations.length > 0 && (
