@@ -60,9 +60,25 @@ export default function LibraryTransformations({
     return null;
   }
 
-  const libraryTransformations = transformations
-    .sort((a, b) => a.offset - b.offset)
-    .filter((transformation) => transformation.reason === "library");
+  // Create a map of library ID to its offsets
+  const libraryOffsets = transformations
+    .filter((t) => t.reason === "library")
+    .reduce<Record<string, number[]>>((acc, t) => {
+      if (!acc[t.id]) {
+        acc[t.id] = [];
+      }
+      acc[t.id].push(t.offset);
+      return acc;
+    }, {});
+
+  // Sort libraries by their fully qualified names
+  const sortedLibraries = Object.entries(transformationValues.libraries)
+    .sort(([idA], [idB]) => idA.localeCompare(idB))
+    .map(([id, address]) => ({
+      id,
+      address,
+      offsets: libraryOffsets[id]?.sort((a, b) => a - b) || [],
+    }));
 
   return (
     <div className="bg-white shadow overflow-hidden sm:rounded-lg">
@@ -75,7 +91,7 @@ export default function LibraryTransformations({
                 scope="col"
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
-                Byte Offsets
+                Fully Qualified Name
               </th>
               <th
                 scope="col"
@@ -87,62 +103,58 @@ export default function LibraryTransformations({
                 scope="col"
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
-                Fully Qualified Name
+                Byte Offsets
               </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {libraryTransformations.map((transformation) => {
-              const libraries = transformationValues?.libraries || {};
-              const libraryAddress = libraries[transformation.id] || "";
-              const isVerified = verificationStatus[libraryAddress];
+            {sortedLibraries.map(({ id, address, offsets }) => {
+              const isVerified = verificationStatus[address];
 
               return (
-                // Use offset as id as ids can be shared by multiple transformations
-                <tr key={transformation.offset}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-mono">{transformation.offset}</td>
-
+                <tr key={id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{id}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-mono">
                     <div className="flex items-center">
-                      {libraryAddress && (
+                      {address && (
                         <>
                           {isVerified ? (
                             <a
-                              href={`/${chainId}/${libraryAddress.toLowerCase()}`}
+                              href={`/${chainId}/${address.toLowerCase()}`}
                               className="text-blue-600 hover:text-blue-800 hover:underline"
                             >
-                              {libraryAddress}
+                              {address}
                             </a>
                           ) : (
-                            <span>{libraryAddress}</span>
+                            <span>{address}</span>
                           )}
                           <span className="ml-2">
                             {isVerified === undefined ? (
                               <div
                                 className="animate-spin rounded-full h-5 w-5 border-2 border-gray-400 border-t-gray-600"
                                 data-tooltip-id="global-tooltip"
-                                data-tooltip-content={`Fetching the verification status of ${libraryAddress}`}
+                                data-tooltip-content={`Fetching the verification status of ${address}`}
                               />
                             ) : isVerified ? (
                               <IoCheckmarkCircle
                                 className="text-green-600 text-xl"
                                 data-tooltip-id="global-tooltip"
-                                data-tooltip-content={`${libraryAddress} is verified on Sourcify`}
+                                data-tooltip-content={`${address} is verified on Sourcify`}
                               />
                             ) : (
                               <IoCloseCircle
                                 className="text-red-600 text-xl"
                                 data-tooltip-id="global-tooltip"
-                                data-tooltip-content={`${libraryAddress} is not verified on Sourcify`}
+                                data-tooltip-content={`${address} is not verified on Sourcify`}
                               />
                             )}
                           </span>
-                          <CopyToClipboard text={libraryAddress} className="ml-2" />
+                          <CopyToClipboard text={address} className="ml-2" />
                         </>
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{transformation.id}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-xs font-mono">{offsets.join(",")}</td>
                 </tr>
               );
             })}
