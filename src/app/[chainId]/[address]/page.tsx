@@ -46,7 +46,7 @@ export async function generateMetadata({
   const chainName = getChainName(chainId, chains);
 
   return {
-    title: `${address} on ${chainName} (${chainId})`,
+    title: `${address} on ${chainName}`,
     description: `View contract ${address} on ${chainName} network`,
     icons: {
       icon: "/favicon-verified.ico",
