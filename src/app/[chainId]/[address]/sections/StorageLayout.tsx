@@ -22,6 +22,18 @@ export default function StorageLayout({ storageLayout }: StorageLayoutProps) {
     return typeInfo.label;
   };
 
+  // Track background colors based on slot changes
+  let currentSlot: string | null = null;
+  let isCurrentSlotWhite = true;
+
+  const getBackgroundColor = (slot: string) => {
+    if (slot !== currentSlot) {
+      currentSlot = slot;
+      isCurrentSlotWhite = !isCurrentSlotWhite;
+    }
+    return isCurrentSlotWhite ? "bg-white" : "bg-gray-100";
+  };
+
   return (
     <div>
       <div className="overflow-x-auto">
@@ -70,9 +82,10 @@ export default function StorageLayout({ storageLayout }: StorageLayoutProps) {
           <tbody className="bg-white divide-y divide-gray-200">
             {storageLayout.storage.map((item, index) => {
               const typeInfo = storageLayout.types?.[item.type];
-              const isEvenSlot = Number(item.slot) % 2 === 0;
+              const bgColor = getBackgroundColor(item.slot);
+
               return (
-                <tr key={index} className={`${isEvenSlot ? "bg-white" : "bg-gray-100"}`}>
+                <tr key={index} className={bgColor}>
                   <td className="px-2 py-2 text-center whitespace-nowrap text-sm text-gray-500">{item.slot}</td>
                   <td className="px-2 py-2 text-center whitespace-nowrap text-sm text-gray-500">{item.offset}</td>
                   <td className="px-2 py-2 text-center whitespace-nowrap text-sm text-gray-500">
