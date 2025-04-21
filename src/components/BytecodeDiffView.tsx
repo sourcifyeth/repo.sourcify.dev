@@ -35,6 +35,23 @@ export default function BytecodeDiffView({
     }
   }, [viewMode, onchainBytecode, recompiledBytecode]);
 
+  const getTransformationColor = (reason: string) => {
+    switch (reason) {
+      case "library":
+        return "bg-blue-200 text-blue-900 border-blue-700";
+      case "immutable":
+        return "bg-purple-200 text-purple-900 border-purple-700";
+      case "callProtection":
+        return "bg-amber-200 text-amber-900 border-amber-700";
+      case "constructorArguments":
+        return "bg-green-200 text-green-900 border-green-700";
+      case "cborAuxdata":
+        return "bg-cyan-200 text-cyan-900 border-cyan-700";
+      default:
+        return "bg-gray-200 text-gray-900 border-gray-700";
+    }
+  };
+
   const renderTransformations = () => {
     if (!transformations || !transformationValues) return onchainBytecode;
 
@@ -93,36 +110,37 @@ export default function BytecodeDiffView({
       }
 
       const tooltipId = `transformation-${id}-${index}`;
+      const colorClasses = getTransformationColor(transformation.reason);
       result.push(
         <span
           key={`transformed-${index}`}
-          className="bg-cyan-200 text-cyan-900 cursor-help border border-cyan-700 rounded-xs hover:bg-cyan-400"
+          className={`${colorClasses} cursor-help border rounded-xs hover:brightness-110 transition-all duration-200`}
           data-tooltip-id={tooltipId}
         >
           {value}
           <Tooltip
             id={tooltipId}
-            className="!p-3 !max-w-md lg:!max-w-4xl !z-50"
-            place="top"
+            className="!p-3 !max-w-md lg:!max-w-4xl !z-100"
+            place="top-end"
             delayShow={0}
             delayHide={0}
             render={() => (
               <div className="text-xs flex flex-col gap-1 font-sans">
-                <div className="flex  gap-1">
+                <div className="flex gap-1">
                   <span className="text-gray-400">Reason:</span>
                   <span className="font-mono ml-1">{transformation.reason}</span>
                 </div>
                 {originalValue && (
-                  <div className="flex  gap-1">
+                  <div className="flex gap-1">
                     <span className="text-gray-400">Original:</span>
                     <span className="font-mono ml-1 break-all">0x{originalValue}</span>
                   </div>
                 )}
-                <div className="flex  gap-1">
+                <div className="flex gap-1">
                   <span className="text-gray-400">Transformed:</span>
                   <span className="font-mono ml-1 break-all">0x{value}</span>
                 </div>
-                <div className="flex  gap-1">
+                <div className="flex gap-1">
                   <span className="text-gray-400">Offset:</span>
                   <span className="font-mono ml-1 break-all">{transformation.offset} bytes</span>
                 </div>
@@ -151,7 +169,11 @@ export default function BytecodeDiffView({
     <p>This view shows the transformations applied to the recompiled bytecode to match the on-chain bytecode.</p>
     <ul class="mt-2">
       <li class="text-gray-800 bg-gray-100 px-2 py-1 rounded">Black: Unchanged bytecode</li>
-      <li class="bg-cyan-200 text-cyan-900 px-2 py-1 rounded">Cyan: Transformed sections</li>
+      <li class="bg-blue-200 text-blue-900 px-2 py-1 rounded">Blue: Library addresses</li>
+      <li class="bg-purple-200 text-purple-900 px-2 py-1 rounded">Purple: Immutable values</li>
+      <li class="bg-amber-200 text-amber-900 px-2 py-1 rounded">Amber: Call protection</li>
+      <li class="bg-green-200 text-green-900 px-2 py-1 rounded">Green: Constructor arguments</li>
+      <li class="bg-cyan-200 text-cyan-900 px-2 py-1 rounded">Cyan: CBOR Auxdata</li>
     </ul>
     <p class="mt-2">Hover over the colored sections to see transformation details.</p>
   `;
