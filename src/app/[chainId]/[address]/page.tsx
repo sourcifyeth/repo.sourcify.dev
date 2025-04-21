@@ -192,7 +192,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           </div>
         </div>
         <Suspense fallback={<LoadingState />}>
-          <JsonViewOnlyEditor data={contract.compilation} />
+          <JsonViewOnlyEditor data={contract.compilation.compilerSettings} />
         </Suspense>
       </section>
 
