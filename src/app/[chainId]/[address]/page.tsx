@@ -242,29 +242,27 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
             language={contract.compilation.language}
           />
 
-          {/* Library Transformations Section */}
-          {contract.creationBytecode.transformationValues?.libraries && (
-            <section className="mt-8 border border-gray-200 rounded-lg p-2">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Transformations</h2>
-              <Suspense fallback={<LoadingState />}>
-                <LibraryTransformations
-                  transformations={contract.creationBytecode.transformations}
-                  transformationValues={contract.creationBytecode.transformationValues}
-                  chainId={chainId}
-                />
-              </Suspense>
-            </section>
-          )}
-
-          {/* Constructor Arguments Section */}
-          {contract.creationBytecode.transformationValues?.constructorArguments && (
-            <section className="mb-8 border border-gray-200 rounded-lg p-4">
-              <Suspense fallback={<LoadingState />}>
-                <ConstructorArguments
-                  constructorArguments={contract.creationBytecode.transformationValues.constructorArguments}
-                  abi={contract.abi}
-                />
-              </Suspense>
+          {/* Creation Transformations Section */}
+          {contract.creationBytecode.transformations && contract.creationBytecode.transformations.length > 0 && (
+            <section className="flex flex-col mt-8 border border-gray-200 rounded-lg p-4 gap-4">
+              <h2 className="text-xl font-semibold text-gray-800">Transformations</h2>
+              {contract.creationBytecode.transformationValues?.libraries && (
+                <Suspense fallback={<LoadingState />}>
+                  <LibraryTransformations
+                    transformations={contract.creationBytecode.transformations}
+                    transformationValues={contract.creationBytecode.transformationValues}
+                    chainId={chainId}
+                  />
+                </Suspense>
+              )}
+              {contract.creationBytecode.transformationValues?.constructorArguments && (
+                <Suspense fallback={<LoadingState />}>
+                  <ConstructorArguments
+                    constructorArguments={contract.creationBytecode.transformationValues.constructorArguments}
+                    abi={contract.abi}
+                  />
+                </Suspense>
+              )}
             </section>
           )}
         </div>
@@ -300,7 +298,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
 
           {/* Runtime Transformations Section */}
           {contract.runtimeBytecode.transformations && contract.runtimeBytecode.transformations.length > 0 && (
-            <div className="mt-4 border border-gray-200 rounded-lg p-4">
+            <div className="flex flex-col mt-4 border border-gray-200 rounded-lg p-4 gap-4">
               <h2 className="text-xl font-semibold text-gray-800">Transformations</h2>
               <Suspense fallback={<LoadingState />}>
                 <LibraryTransformations
@@ -311,31 +309,25 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
               </Suspense>
 
               {contract.runtimeBytecode.transformationValues?.immutables && (
-                <div className="mt-4">
-                  <ImmutableTransformations
-                    transformations={contract.runtimeBytecode.transformations}
-                    transformationValues={contract.runtimeBytecode.transformationValues}
-                  />
-                </div>
+                <ImmutableTransformations
+                  transformations={contract.runtimeBytecode.transformations}
+                  transformationValues={contract.runtimeBytecode.transformationValues}
+                />
               )}
 
               {contract.runtimeBytecode.transformationValues?.callProtection && (
-                <div className="mt-4">
-                  <CallProtectionTransformation
-                    transformations={contract.runtimeBytecode.transformations}
-                    transformationValues={contract.runtimeBytecode.transformationValues}
-                  />
-                </div>
+                <CallProtectionTransformation
+                  transformations={contract.runtimeBytecode.transformations}
+                  transformationValues={contract.runtimeBytecode.transformationValues}
+                />
               )}
 
               {contract.runtimeBytecode.transformationValues?.cborAuxdata && (
-                <div className="mt-4">
-                  <CborAuxdataTransformations
-                    transformations={contract.runtimeBytecode.transformations}
-                    transformationValues={contract.runtimeBytecode.transformationValues}
-                    recompiledBytecode={contract.runtimeBytecode.recompiledBytecode}
-                  />
-                </div>
+                <CborAuxdataTransformations
+                  transformations={contract.runtimeBytecode.transformations}
+                  transformationValues={contract.runtimeBytecode.transformationValues}
+                  recompiledBytecode={contract.runtimeBytecode.recompiledBytecode}
+                />
               )}
             </div>
           )}
