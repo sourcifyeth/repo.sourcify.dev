@@ -312,7 +312,6 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
 
               {contract.runtimeBytecode.transformationValues?.immutables && (
                 <div className="mt-4">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Immutables</h3>
                   <ImmutableTransformations
                     transformations={contract.runtimeBytecode.transformations}
                     transformationValues={contract.runtimeBytecode.transformationValues}
