@@ -1,61 +1,23 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Transformations, TransformationValues } from "@/types/contract";
 import CopyToClipboard from "../../../../components/CopyToClipboard";
 import { IoCheckmarkCircle, IoCloseCircle } from "react-icons/io5";
-import { checkVerification } from "@/utils/api";
 
 interface LibraryTransformationsProps {
   transformations?: Transformations;
   transformationValues?: TransformationValues;
   chainId: string;
+  verificationStatus: Record<string, boolean>;
 }
 
 export default function LibraryTransformations({
   transformations,
   transformationValues,
   chainId,
+  verificationStatus,
 }: LibraryTransformationsProps) {
-  // State to store verification status for each library address
-  const [verificationStatus, setVerificationStatus] = useState<Record<string, boolean | undefined>>({});
-
-  // Check verification status for all library addresses
-  useEffect(() => {
-    if (!transformationValues?.libraries) return;
-
-    const libraries = transformationValues.libraries;
-
-    // Create an array of promises to check verification for each library
-    const checkAllLibraries = async () => {
-      const statuses: Record<string, boolean | undefined> = {};
-
-      // Initialize all addresses with undefined (loading state)
-      for (const [, address] of Object.entries(libraries)) {
-        if (address) {
-          statuses[address] = undefined;
-        }
-      }
-      setVerificationStatus(statuses);
-
-      // Check verification for each address
-      for (const [, address] of Object.entries(libraries)) {
-        if (address) {
-          try {
-            statuses[address] = await checkVerification(chainId, address);
-            setVerificationStatus({ ...statuses });
-          } catch (error) {
-            console.error(`Error checking verification for ${address}:`, error);
-            statuses[address] = false;
-            setVerificationStatus({ ...statuses });
-          }
-        }
-      }
-    };
-
-    checkAllLibraries();
-  }, [transformationValues, chainId]);
-
   if (!transformations || transformations.length === 0 || !transformationValues?.libraries) {
     return null;
   }
@@ -109,47 +71,43 @@ export default function LibraryTransformations({
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {sortedLibraries.map(({ id, address, offsets }) => {
-              const isVerified = verificationStatus[address];
+              const libraryAddress =
+                typeof address === "string" ? address : Object.values(address as Record<string, string>)[0];
+              const isVerified = verificationStatus[libraryAddress];
 
               return (
                 <tr key={id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{id}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-mono">
                     <div className="flex items-center">
-                      {address && (
+                      {libraryAddress && (
                         <>
                           {isVerified ? (
                             <a
-                              href={`/${chainId}/${address.toLowerCase()}`}
+                              href={`/${chainId}/${libraryAddress.toLowerCase()}`}
                               className="text-blue-600 hover:text-blue-800 hover:underline"
                             >
-                              {address}
+                              {libraryAddress}
                             </a>
                           ) : (
-                            <span>{address}</span>
+                            <span>{libraryAddress}</span>
                           )}
                           <span className="ml-2">
-                            {isVerified === undefined ? (
-                              <div
-                                className="animate-spin rounded-full h-5 w-5 border-2 border-gray-400 border-t-gray-600"
-                                data-tooltip-id="global-tooltip"
-                                data-tooltip-content={`Fetching the verification status of ${address}`}
-                              />
-                            ) : isVerified ? (
+                            {isVerified ? (
                               <IoCheckmarkCircle
                                 className="text-green-600 text-xl"
                                 data-tooltip-id="global-tooltip"
-                                data-tooltip-content={`${address} is verified on Sourcify`}
+                                data-tooltip-content={`${libraryAddress} is verified on Sourcify`}
                               />
                             ) : (
                               <IoCloseCircle
                                 className="text-red-600 text-xl"
                                 data-tooltip-id="global-tooltip"
-                                data-tooltip-content={`${address} is not verified on Sourcify`}
+                                data-tooltip-content={`${libraryAddress} is not verified on Sourcify`}
                               />
                             )}
                           </span>
-                          <CopyToClipboard text={address} className="ml-2" />
+                          <CopyToClipboard text={libraryAddress} className="ml-2" />
                         </>
                       )}
                     </div>

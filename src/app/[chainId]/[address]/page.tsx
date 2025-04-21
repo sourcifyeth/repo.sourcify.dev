@@ -1,9 +1,9 @@
-import { fetchContractData, fetchChains, getChainName } from "@/utils/api";
+import { fetchContractData, fetchChains, getChainName, checkVerification } from "@/utils/api";
 import { Suspense } from "react";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import LoadingState from "@/components/LoadingState";
-import { IoCheckmarkDoneCircle, IoCheckmarkCircle } from "react-icons/io5";
+import { IoCheckmarkDoneCircle, IoCheckmarkCircle, IoWarning } from "react-icons/io5";
 import CopyToClipboard from "@/components/CopyToClipboard";
 import InfoTooltip from "@/components/InfoTooltip";
 import ContractDetails from "@/app/[chainId]/[address]/sections/ContractDetails";
@@ -23,6 +23,7 @@ import DownloadSourcesButton from "@/components/DownloadSourcesButton";
 import DownloadFileButton from "@/components/DownloadFileButton";
 import CborAuxdataSection from "@/components/sections/CborAuxdataSection";
 import CborAuxdataTransformations from "./sections/CborAuxdataTransformations";
+import LibrariesSection from "./sections/LibrariesSection";
 
 // Fetch chains data
 async function getChainsData() {
@@ -73,6 +74,43 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
   // Get human-readable chain name
   const chainName = getChainName(chainId, chains);
 
+  // Check verification status for all libraries
+  const verificationStatus: Record<string, boolean> = {};
+
+  // Flatten the compiler libraries structure to "filePath:libraryName" => "address"
+  const flattenedCompilerLibraries = Object.entries(contract.compilation.compilerSettings?.libraries || {}).reduce(
+    (acc, [filePath, libraries]) => {
+      Object.entries(libraries as unknown as Record<string, string>).forEach(([libName, address]) => {
+        acc[`${filePath}:${libName}`] = address;
+      });
+      return acc;
+    },
+    {} as Record<string, string>
+  );
+
+  const allLibraries = {
+    ...flattenedCompilerLibraries,
+    ...(contract.runtimeBytecode.transformationValues?.libraries || {}),
+    ...(contract.creationBytecode.transformationValues?.libraries || {}),
+  };
+
+  // Check verification status for each library in parallel
+  await Promise.all(
+    Object.entries(allLibraries).map(async ([, address]) => {
+      if (typeof address === "string") {
+        try {
+          verificationStatus[address] = await checkVerification(chainId, address);
+        } catch (error) {
+          console.error(`Error checking verification for ${address}:`, error);
+          verificationStatus[address] = false;
+        }
+      }
+    })
+  );
+
+  // Check if there are any unverified libraries
+  const hasUnverifiedLibraries = Object.entries(allLibraries).some(([, address]) => !verificationStatus[address]);
+
   // Determine if this is an exact match
   const isExactMatch = contract.creationMatch === "exact_match" || contract.runtimeMatch === "exact_match";
   const matchLabel = isExactMatch ? "Exact Match" : "Match";
@@ -84,12 +122,6 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
   const matchTooltipContent = isExactMatch
     ? "Exact match: The onchain and compiled bytecode match exactly, including the metadata hashes."
     : "Match: The onchain and compiled bytecode match, but metadata hashes differ or don't exist.";
-  const matchTooltipHtml = `<p>${matchTooltipContent} <a href="https://docs.sourcify.dev/docs/full-vs-partial-match/" target="_blank" rel="noopener noreferrer" class="underline">Learn more</a></p>`;
-
-  // Log creation and runtime transformations
-  console.log("Address", contract.address);
-  console.log("Creation match", contract.creationMatch);
-  console.log("Runtime match", contract.runtimeMatch);
 
   return (
     <div>
@@ -109,10 +141,23 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       {/* Match status */}
       <div className="mb-6 flex flex-col gap-1">
         <div className="flex items-center gap-2">
-          <span className={`inline-flex items-center px-3 py-1 rounded-md font-semibold border ${matchColor}`}>
+          <span
+            className={`inline-flex items-center px-3 py-1 rounded-md font-semibold border ${matchColor} cursor-help`}
+            data-tooltip-id="global-tooltip"
+            data-tooltip-content={matchTooltipContent}
+          >
             <span className="mr-1 text-2xl">{matchIcon}</span> {matchLabel}
           </span>
-          <InfoTooltip content={matchTooltipHtml} className="ml-0" html={true} />
+          {hasUnverifiedLibraries && (
+            <span
+              className="flex items-center gap-1 text-yellow-600 cursor-help"
+              data-tooltip-id="global-tooltip"
+              data-tooltip-content="This contract uses unverified libraries. Libraries can contain arbitrary code and should be verified before interacting with the contract."
+            >
+              <IoWarning className="h-4 w-4" />
+              <span className="text-sm">Unverified Libraries</span>
+            </span>
+          )}
         </div>
         <div className="text-xs text-gray-500">
           Matched with
@@ -196,6 +241,19 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
         </Suspense>
       </section>
 
+      {/* Libraries Section */}
+      <section className="mb-8">
+        <Suspense fallback={<LoadingState />}>
+          <LibrariesSection
+            compilation={contract.compilation}
+            runtimeValues={contract.runtimeBytecode.transformationValues}
+            creationValues={contract.creationBytecode.transformationValues}
+            chainId={chainId}
+            verificationStatus={verificationStatus}
+          />
+        </Suspense>
+      </section>
+
       {/* Contract Metadata Section */}
       <section className="mb-8">
         <div className="sticky top-0 z-10 bg-gray-100 py-4">
@@ -252,6 +310,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
                     transformations={contract.creationBytecode.transformations}
                     transformationValues={contract.creationBytecode.transformationValues}
                     chainId={chainId}
+                    verificationStatus={verificationStatus}
                   />
                 </Suspense>
               )}
@@ -305,6 +364,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
                   transformations={contract.runtimeBytecode.transformations}
                   transformationValues={contract.runtimeBytecode.transformationValues}
                   chainId={chainId}
+                  verificationStatus={verificationStatus}
                 />
               </Suspense>
 
