@@ -21,8 +21,8 @@ export default function CborAuxdataSection({ cborAuxdata, language }: CborAuxdat
     <div className="mt-6 ml-2">
       <h3 className="text-xl font-semibold text-gray-800 mt-2">CBOR Auxdata</h3>
       <p className="text-gray-700 mb-2 text-xs">
-        These values are from the recompiled bytecode. If these values are different in the on-chain bytecode, they will
-        show up in Transformations section.
+        These values are what Sourcify extracted from the recompiled bytecode. If these values are different in the
+        on-chain bytecode, they will show up in Transformations section.
       </p>
       {Object.entries(cborAuxdata).map(([key, cborAuxdataObj]) => {
         const decodedCborAuxdata = formatCborAuxdata(cborAuxdataObj.value, language);

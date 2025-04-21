@@ -22,6 +22,7 @@ import RemixLogo from "@/assets/remix.svg";
 import DownloadSourcesButton from "@/components/DownloadSourcesButton";
 import DownloadFileButton from "@/components/DownloadFileButton";
 import CborAuxdataSection from "@/components/sections/CborAuxdataSection";
+import CborAuxdataTransformations from "./sections/CborAuxdataTransformations";
 
 // Fetch chains data
 async function getChainsData() {
@@ -297,10 +298,10 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
             language={contract.compilation.language}
           />
 
-          {/* Runtime Library Transformations Section */}
+          {/* Runtime Transformations Section */}
           {contract.runtimeBytecode.transformations && contract.runtimeBytecode.transformations.length > 0 && (
-            <div className="mt-8 border border-gray-200 rounded-lg p-2">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Transformations</h2>
+            <div className="mt-4 border border-gray-200 rounded-lg p-4">
+              <h2 className="text-xl font-semibold text-gray-800">Transformations</h2>
               <Suspense fallback={<LoadingState />}>
                 <LibraryTransformations
                   transformations={contract.runtimeBytecode.transformations}
@@ -310,7 +311,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
               </Suspense>
 
               {contract.runtimeBytecode.transformationValues?.immutables && (
-                <div className="mt-8">
+                <div className="mt-4">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Immutables</h3>
                   <ImmutableTransformations
                     transformations={contract.runtimeBytecode.transformations}
@@ -320,10 +321,20 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
               )}
 
               {contract.runtimeBytecode.transformationValues?.callProtection && (
-                <div className="mt-8">
+                <div className="mt-4">
                   <CallProtectionTransformation
                     transformations={contract.runtimeBytecode.transformations}
                     transformationValues={contract.runtimeBytecode.transformationValues}
+                  />
+                </div>
+              )}
+
+              {contract.runtimeBytecode.transformationValues?.cborAuxdata && (
+                <div className="mt-4">
+                  <CborAuxdataTransformations
+                    transformations={contract.runtimeBytecode.transformations}
+                    transformationValues={contract.runtimeBytecode.transformationValues}
+                    recompiledBytecode={contract.runtimeBytecode.recompiledBytecode}
                   />
                 </div>
               )}
