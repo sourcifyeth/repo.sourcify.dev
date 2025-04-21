@@ -336,7 +336,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
 
       {/* Storage Layout Section */}
       {contract.storageLayout?.types && (
-        <section className="mb-8 border border-gray-200 rounded-lg p-2">
+        <section className="mb-8 border border-gray-200 rounded-lg p-4">
           <div className="sticky top-0 z-10 bg-gray-100 py-4">
             <h2 className="text-xl font-semibold text-gray-800">Storage Layout</h2>
           </div>
