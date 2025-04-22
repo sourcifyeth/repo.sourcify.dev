@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 import LoadingState from "@/components/LoadingState";
 import { IoCheckmarkDoneCircle, IoCheckmarkCircle, IoWarning } from "react-icons/io5";
 import CopyToClipboard from "@/components/CopyToClipboard";
-import InfoTooltip from "@/components/InfoTooltip";
 import ContractDetails from "@/app/[chainId]/[address]/sections/ContractDetails";
 import ProxyResolution from "./sections/ProxyResolution";
 import ContractAbi from "./sections/ABI";
