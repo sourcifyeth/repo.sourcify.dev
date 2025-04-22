@@ -70,12 +70,13 @@ export default function RootLayout({
       <body
         className={`bg-gray-50 min-h-screen flex flex-col font-sans ${ibmPlexSans.variable} ${ibmPlexMono.variable} ${vt323.variable}`}
       >
-        {" "}
-        <Script
-          src="https://cloud.umami.is/script.js"
-          data-website-id="efba6a4b-bf9f-4bb8-9441-a748eca7465c"
-          strategy="afterInteractive"
-        />
+        {process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID && (
+          <Script
+            src="https://cloud.umami.is/script.js"
+            data-website-id={process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID}
+            strategy="afterInteractive"
+          />
+        )}
         <header className="shadow-sm">
           <div className="mx-auto py-4 flex items-center w-full max-w-[100rem] px-8 md:px-12 lg:px-12 xl:px-24">
             <Link href="/" className="flex items-center">
