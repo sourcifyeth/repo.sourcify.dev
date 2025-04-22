@@ -49,6 +49,9 @@ export default function JsonViewOnlyEditor({ data, height = "400px" }: JsonViewO
           glyphMargin: true,
           folding: true,
           renderLineHighlight: "all",
+          stickyScroll: {
+            enabled: false,
+          },
         }}
         onMount={handleEditorDidMount}
         theme="vs-dark"
