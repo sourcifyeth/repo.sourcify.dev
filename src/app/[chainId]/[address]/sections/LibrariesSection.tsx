@@ -44,7 +44,7 @@ export default async function LibrariesSection({
 }: LibrariesSectionProps) {
   const compilerLinkedLibraries = Object.entries(compilation?.compilerSettings?.libraries || {}).reduce(
     (acc, [filePath, libraries]) => {
-      Object.entries(libraries as unknown as Record<string, string>).forEach(([libName, address]) => {
+      Object.entries(libraries).forEach(([libName, address]) => {
         acc[`${filePath}:${libName}`] = address;
       });
       return acc;
