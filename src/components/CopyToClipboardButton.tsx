@@ -1,7 +1,7 @@
 "use client";
 
-import { FiCopy, FiCheck } from "react-icons/fi";
 import { useState } from "react";
+import { FaRegCopy, FaCheck } from "react-icons/fa";
 
 interface CopyToClipboardButtonProps {
   data: unknown;
@@ -35,12 +35,12 @@ export default function CopyToClipboardButton({ data, variant = "default" }: Cop
     >
       {copied ? (
         <>
-          <FiCheck className="w-4 h-4 text-green-600" />
+          <FaCheck className="w-4 h-4 text-green-600" />
           {variant === "default" && <span className="text-green-600">Copied!</span>}
         </>
       ) : (
         <>
-          <FiCopy className="w-4 h-4 text-gray-700" />
+          <FaRegCopy className="w-4 h-4 text-gray-700" />
           {variant === "default" && <span className="text-gray-700">Copy</span>}
         </>
       )}

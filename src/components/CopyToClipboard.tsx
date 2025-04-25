@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { IoIosCopy, IoMdCheckmark } from "react-icons/io";
+import { FaCopy, FaCheck } from "react-icons/fa";
 
 interface CopyToClipboardProps {
   text: string;
@@ -36,7 +36,7 @@ export default function CopyToClipboard({
       data-tooltip-id="global-tooltip"
       data-tooltip-content={copied ? "Copied!" : "Copy to clipboard"}
     >
-      {copied ? <IoMdCheckmark className={`${iconClassName}`} /> : <IoIosCopy className={iconClassName} />}
+      {copied ? <FaCheck className={iconClassName} /> : <FaCopy className={iconClassName} />}
     </button>
   );
 }
