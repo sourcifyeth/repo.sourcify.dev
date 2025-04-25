@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import LoadingState from "@/components/LoadingState";
-import { IoCheckmarkDoneCircle, IoCheckmarkCircle, IoWarning } from "react-icons/io5";
+import { IoCheckmarkDoneCircle, IoCheckmarkCircle, IoWarning, IoCloseCircle } from "react-icons/io5";
 import CopyToClipboard from "@/components/CopyToClipboard";
 import ContractDetails from "@/app/[chainId]/[address]/sections/ContractDetails";
 import ProxyResolution from "./sections/ProxyResolution";
@@ -148,27 +148,66 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           >
             <span className="mr-1 text-2xl">{matchIcon}</span> {matchLabel}
           </span>
-          {hasUnverifiedLibraries && (
-            <span
-              className="flex items-center gap-1 text-yellow-600 cursor-help"
-              data-tooltip-id="global-tooltip"
-              data-tooltip-content="This contract uses unverified libraries. Libraries can contain arbitrary code and should be verified before interacting with the contract."
-            >
-              <IoWarning className="h-4 w-4" />
-              <span className="text-sm">Unverified Libraries</span>
-            </span>
-          )}
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <div className="flex items-center gap-1">
+              {contract.runtimeMatch ? (
+                <IoCheckmarkCircle className="text-green-500" />
+              ) : (
+                <IoCloseCircle className="text-red-500" />
+              )}
+              <span
+                className="cursor-help"
+                data-tooltip-id="global-tooltip"
+                data-tooltip-content={
+                  contract.runtimeMatch
+                    ? "Contract matched with runtime bytecode"
+                    : "Contract not matched with runtime bytecode"
+                }
+              >
+                Runtime Bytecode
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              {contract.creationMatch ? (
+                <IoCheckmarkCircle className="text-green-500" />
+              ) : (
+                <IoCloseCircle className="text-red-500" />
+              )}
+              <span
+                className="cursor-help"
+                data-tooltip-id="global-tooltip"
+                data-tooltip-content={
+                  contract.creationMatch
+                    ? "Contract matched with creation bytecode"
+                    : "Contract not matched with creation bytecode"
+                }
+              >
+                Creation Bytecode
+              </span>
+            </div>
+            {hasUnverifiedLibraries && (
+              <span
+                className="flex items-center gap-1 text-yellow-600 cursor-help"
+                data-tooltip-id="global-tooltip"
+                data-tooltip-content="This contract uses unverified libraries. Libraries can contain arbitrary code and should be verified before interacting with the contract."
+              >
+                <IoWarning className="h-4 w-4" />
+                <span className="text-sm">Unverified Libraries</span>
+              </span>
+            )}
+          </div>
         </div>
-        <div className="text-xs text-gray-500">
-          Matched with
-          <span className="text-gray-500">
-            {contract.creationMatch && contract.runtimeMatch
-              ? " both the creation and runtime bytecodes"
-              : contract.creationMatch
-              ? " the creation bytecode"
-              : " the runtime bytecode"}
-          </span>
-        </div>
+        {!contract.creationMatch && contract.runtimeMatch && (
+          <div className="mt-2 text-sm text-yellow-600 bg-yellow-50 border border-yellow-200 p-2 rounded">
+            <div className="flex items-center gap-2">
+              <IoWarning className="h-4 w-4 flex-shrink-0" />
+              <span>
+                Warning: This contract is only matched with runtime bytecode. The constructor may be different from the
+                original one, which could affect the contract&apos;s functionality.
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Contract Details Section */}
