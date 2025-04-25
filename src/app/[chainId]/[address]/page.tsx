@@ -24,6 +24,7 @@ import CopyToClipboardButton from "@/components/CopyToClipboardButton";
 import CborAuxdataSection from "@/components/sections/CborAuxdataSection";
 import CborAuxdataTransformations from "./sections/CborAuxdataTransformations";
 import LibrariesSection from "./sections/LibrariesSection";
+import InfoTooltip from "@/components/InfoTooltip";
 
 // Fetch chains data
 async function getChainsData() {
@@ -185,17 +186,17 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
                 Creation Bytecode
               </span>
             </div>
-            {hasUnverifiedLibraries && (
-              <span
-                className="flex items-center gap-1 text-yellow-600 cursor-help"
-                data-tooltip-id="global-tooltip"
-                data-tooltip-content="This contract uses unverified libraries. Libraries can contain arbitrary code and should be verified before interacting with the contract."
-              >
-                <IoWarning className="h-4 w-4" />
-                <span className="text-sm">Unverified Libraries</span>
-              </span>
-            )}
           </div>
+          {hasUnverifiedLibraries && (
+            <span
+              className="flex items-center gap-1 text-yellow-600 cursor-help"
+              data-tooltip-id="global-tooltip"
+              data-tooltip-content="This contract uses unverified libraries. Libraries can contain arbitrary code and should be verified before interacting with the contract."
+            >
+              <IoWarning className="h-4 w-4" />
+              <span className="text-sm">Unverified Libraries</span>
+            </span>
+          )}
         </div>
         {!contract.creationMatch && contract.runtimeMatch && (
           <div className="mt-2 text-sm text-yellow-600 bg-yellow-50 border border-yellow-200 p-2 rounded">
@@ -348,7 +349,13 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           {/* Creation Transformations Section */}
           {contract.creationBytecode.transformations && contract.creationBytecode.transformations.length > 0 && (
             <section className="flex flex-col mt-8 border border-gray-200 rounded-lg p-4 gap-4">
-              <h2 className="text-xl font-semibold text-gray-800">Transformations</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-semibold text-gray-800">Transformations</h2>
+                <InfoTooltip
+                  content="Transformations are the necessary changes on the non-functional recompiled bytecode sections to achieve the onchain bytecode such as libraries, immutable variables etc. <a href='https://verifieralliance.org/docs/transformations' target='_blank' rel='noopener noreferrer' style='text-decoration: underline;'>Read more</a>"
+                  html={true}
+                />
+              </div>
               {contract.creationBytecode.transformationValues?.libraries && (
                 <Suspense fallback={<LoadingState />}>
                   <LibraryTransformations
@@ -410,7 +417,13 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           {/* Runtime Transformations Section */}
           {contract.runtimeBytecode.transformations && contract.runtimeBytecode.transformations.length > 0 && (
             <div className="flex flex-col mt-4 border border-gray-200 rounded-lg p-4 gap-4">
-              <h2 className="text-xl font-semibold text-gray-800">Transformations</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-semibold text-gray-800">Transformations</h2>
+                <InfoTooltip
+                  content="Transformations are the necessary changes on the non-functional recompiled bytecode sections to achieve the onchain bytecode such as libraries, immutable variables etc. <a href='https://verifieralliance.org/docs/transformations' target='_blank' rel='noopener noreferrer' style='text-decoration: underline;'>Read more</a>"
+                  html={true}
+                />
+              </div>
               <Suspense fallback={<LoadingState />}>
                 <LibraryTransformations
                   transformations={contract.runtimeBytecode.transformations}
