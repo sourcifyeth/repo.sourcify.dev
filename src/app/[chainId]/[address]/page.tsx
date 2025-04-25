@@ -328,6 +328,13 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
                   />
                 </Suspense>
               )}
+              {contract.creationBytecode.transformationValues?.cborAuxdata && (
+                <CborAuxdataTransformations
+                  transformations={contract.creationBytecode.transformations}
+                  transformationValues={contract.creationBytecode.transformationValues}
+                  recompiledBytecode={contract.creationBytecode.recompiledBytecode}
+                />
+              )}
             </section>
           )}
         </div>

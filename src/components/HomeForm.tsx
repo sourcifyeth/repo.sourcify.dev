@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChainData } from "@/types/chain";
 import ChainSelect from "./ChainSelect";
 import { isAddress } from "@ethersproject/address";
+import { getChainName } from "@/utils/api";
 
 interface HomeFormProps {
   chains: ChainData[];
@@ -18,8 +19,18 @@ interface ExampleContract {
 
 const EXAMPLE_CONTRACTS: ExampleContract[] = [
   {
-    name: "USDC Proxy",
-    address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    name: "ERC1967Proxy",
+    address: "0x78f7C79d8aE156A6C68c67d0393d1cCc97df3Bdf",
+    chainId: "1",
+  },
+  {
+    name: "Uniswap UniversalRouter",
+    address: "0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD",
+    chainId: "8453",
+  },
+  {
+    name: "PendleMarketV3",
+    address: "0x580E40C15261F7BAF18EA50F562118AE99361096",
     chainId: "1",
   },
   {
@@ -28,8 +39,23 @@ const EXAMPLE_CONTRACTS: ExampleContract[] = [
     chainId: "1",
   },
   {
-    name: "CreateX on Optimism",
+    name: "CreateX",
     address: "0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed",
+    chainId: "10",
+  },
+  {
+    name: "1Inch AggregationRouter v5",
+    address: "0x1111111254EEB25477B68fb85Ed929f73A960582",
+    chainId: "8453",
+  },
+  {
+    name: "SpaceStationV2",
+    address: "0x9e6eF7F75ad88D4Edb4C9925C94B769C5b0d6281",
+    chainId: "42161",
+  },
+  {
+    name: "GovernanceToken",
+    address: "0x4200000000000000000000000000000000000042",
     chainId: "10",
   },
 ];
@@ -61,11 +87,16 @@ export default function HomeForm({ chains }: HomeFormProps) {
 
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
+
     setAddress(value);
 
     if (value && !isAddress(value)) {
       setError("Please enter a valid Ethereum address");
     } else {
+      // Add '0x' prefix if not present. Ethers.js accepts with and without it.
+      if (value && !value.startsWith("0x")) {
+        setAddress("0x" + value);
+      }
       setError(null);
     }
   };
@@ -137,7 +168,7 @@ export default function HomeForm({ chains }: HomeFormProps) {
                 className="text-blue-600 hover:text-blue-800 cursor-pointer"
                 onClick={() => handleExampleClick(contract)}
               >
-                {contract.name} ({contract.address})
+                {contract.name} on {getChainName(contract.chainId, chains)} ({contract.address})
               </button>
             </li>
           ))}
