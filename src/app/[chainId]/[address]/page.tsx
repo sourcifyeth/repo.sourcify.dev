@@ -20,6 +20,7 @@ import Image from "next/image";
 import RemixLogo from "@/assets/remix.svg";
 import DownloadSourcesButton from "@/components/DownloadSourcesButton";
 import DownloadFileButton from "@/components/DownloadFileButton";
+import CopyToClipboardButton from "@/components/CopyToClipboardButton";
 import CborAuxdataSection from "@/components/sections/CborAuxdataSection";
 import CborAuxdataTransformations from "./sections/CborAuxdataTransformations";
 import LibrariesSection from "./sections/LibrariesSection";
@@ -227,12 +228,15 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
         <div className="sticky top-0 z-10 bg-gray-100 py-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-800">Compiler Settings</h2>
-            <DownloadFileButton
-              data={contract.compilation}
-              fileName="compiler-settings"
-              chainId={contract.chainId}
-              address={contract.address}
-            />
+            <div className="flex items-center gap-2">
+              <CopyToClipboardButton data={contract.compilation.compilerSettings} />
+              <DownloadFileButton
+                data={contract.compilation}
+                fileName="compiler-settings"
+                chainId={contract.chainId}
+                address={contract.address}
+              />
+            </div>
           </div>
         </div>
         <Suspense fallback={<LoadingState />}>
@@ -258,12 +262,15 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
         <div className="sticky top-0 z-10 bg-gray-100 py-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-800">Contract Metadata</h2>
-            <DownloadFileButton
-              data={contract.metadata}
-              fileName="metadata"
-              chainId={contract.chainId}
-              address={contract.address}
-            />
+            <div className="flex items-center gap-2">
+              <CopyToClipboardButton data={contract.metadata} />
+              <DownloadFileButton
+                data={contract.metadata}
+                fileName="metadata"
+                chainId={contract.chainId}
+                address={contract.address}
+              />
+            </div>
           </div>
         </div>
         <Suspense fallback={<LoadingState />}>
@@ -413,12 +420,15 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
                 This isn&apos;t the original compiler JSON data. Generated for compatibility.
               </p>
             </div>
-            <DownloadFileButton
-              data={contract.stdJsonInput}
-              fileName="standard-json-input"
-              chainId={contract.chainId}
-              address={contract.address}
-            />
+            <div className="flex items-center gap-2">
+              <CopyToClipboardButton data={contract.stdJsonInput} />
+              <DownloadFileButton
+                data={contract.stdJsonInput}
+                fileName="standard-json-input"
+                chainId={contract.chainId}
+                address={contract.address}
+              />
+            </div>
           </div>
         </div>
         <Suspense fallback={<LoadingState />}>
@@ -436,12 +446,15 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
                 This isn&apos;t the original compiler JSON data. Generated for compatibility.
               </p>
             </div>
-            <DownloadFileButton
-              data={contract.stdJsonOutput}
-              fileName="standard-json-output"
-              chainId={contract.chainId}
-              address={contract.address}
-            />
+            <div className="flex items-center gap-2">
+              <CopyToClipboardButton data={contract.stdJsonOutput} />
+              <DownloadFileButton
+                data={contract.stdJsonOutput}
+                fileName="standard-json-output"
+                chainId={contract.chainId}
+                address={contract.address}
+              />
+            </div>
           </div>
         </div>
         <Suspense fallback={<LoadingState />}>
