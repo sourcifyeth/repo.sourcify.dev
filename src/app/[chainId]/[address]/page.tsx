@@ -198,7 +198,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
             <h2 className="text-xl font-semibold text-gray-800">Source Code</h2>
             <div className="flex items-center gap-2">
               <a
-                href={`https://remix.ethereum.org/?#activate=contract-verification&call=contract-verification/lookupAndSave//sourcify//${contract.chainId}//${contract.address}`}
+                href={`https://remix.ethereum.org/?#activate=contract-verification&call=contract-verification//lookupAndSave//sourcify//${contract.chainId}//${contract.address}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-sm bg-white rounded-md px-2 py-2 shadow-sm border border-gray-200 hover:bg-gray-100 transition-colors duration-200"
