@@ -68,7 +68,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={``}>
       <body
-        className={`bg-gray-50 min-h-screen flex flex-col font-sans ${ibmPlexSans.variable} ${ibmPlexMono.variable} ${vt323.variable}`}
+        className={`bg-gray-100 min-h-screen flex flex-col font-sans ${ibmPlexSans.variable} ${ibmPlexMono.variable} ${vt323.variable}`}
       >
         {process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID && (
           <Script
