@@ -4,6 +4,7 @@ import { ContractData } from "@/types/contract";
 import { useState, useEffect, useRef } from "react";
 import Editor from "@monaco-editor/react";
 import type { editor } from "monaco-editor";
+import CopyToClipboardButton from "@/components/CopyToClipboardButton";
 
 // Define Monaco editor types
 type Monaco = typeof import("monaco-editor");
@@ -339,7 +340,10 @@ export default function ContractSource({ contract }: ContractSourceProps) {
           {/* Source code display with Monaco editor */}
           <div className="w-full md:w-3/4">
             {activeFile ? (
-              <div className="h-[500px]">
+              <div className="h-[500px] relative">
+                <div className="absolute top-2 right-4 z-10">
+                  <CopyToClipboardButton data={contract.sources[activeFile].content} variant="icon-only" />
+                </div>
                 <Editor
                   height="100%"
                   language={language}

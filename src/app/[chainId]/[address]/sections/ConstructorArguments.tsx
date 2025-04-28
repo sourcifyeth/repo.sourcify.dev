@@ -18,28 +18,26 @@ export default function ConstructorArguments({ constructorArguments, abi }: Cons
   const decodedArguments = abiCoder.decode(constructorAbiParamInputs, constructorArguments);
 
   return (
-    <div>
-      <h3 className="text-base font-semibold text-gray-800 mt-2">Constructor Arguments</h3>
-      <p className="text-gray-700 mb-2 text-sm">
-        These are the arguments passed to the contract&apos;s constructor during deployment, in the onchain creation
-        bytecode.
-      </p>
-      <ToggledRawCodeView
-        data1={{
-          name: "Raw",
-          value: constructorArguments || "",
-        }}
-        data2={{
-          name: "Decoded",
-          value: JSON.stringify(
-            Object.fromEntries(Object.entries(decodedArguments).filter(([key]) => isNaN(Number(key)))),
-            null,
-            2
-          ),
-          notBytes: true,
-        }}
-        tooltipContent="Decoded via @ethersproject/abi decoder"
-      />
+    <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+      <h3 className="text-lg font-medium leading-6 text-gray-900 px-6 py-4">Constructor Arguments</h3>
+      <div className="px-6 pb-4">
+        <ToggledRawCodeView
+          data1={{
+            name: "Raw",
+            value: constructorArguments || "",
+          }}
+          data2={{
+            name: "Decoded",
+            value: JSON.stringify(
+              Object.fromEntries(Object.entries(decodedArguments).filter(([key]) => isNaN(Number(key)))),
+              null,
+              2
+            ),
+            notBytes: true,
+          }}
+          tooltipContent="Decoded via @ethersproject/abi decoder"
+        />
+      </div>
     </div>
   );
 }

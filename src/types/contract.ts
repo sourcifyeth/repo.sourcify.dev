@@ -1,7 +1,7 @@
 export interface ContractData {
   matchId: string;
-  creationMatch: string;
-  runtimeMatch: string;
+  creationMatch: string | null;
+  runtimeMatch: string | null;
   verifiedAt: string;
   creationBytecode: BytecodeData;
   runtimeBytecode: BytecodeData;
@@ -39,7 +39,11 @@ export interface BytecodeData {
 }
 
 export type Transformations = Array<
-  LibraryTransformation | ConstructorArgumentTransformation | ImmutableTransformation | CallProtectionTransformation
+  | LibraryTransformation
+  | ConstructorArgumentTransformation
+  | ImmutableTransformation
+  | CallProtectionTransformation
+  | CBORAuxdataTransformation
 >;
 
 export interface TransformationValues {
@@ -47,6 +51,7 @@ export interface TransformationValues {
   constructorArguments?: string;
   immutables?: Record<string, string>;
   callProtection?: string;
+  cborAuxdata?: Record<string, string>;
 }
 
 interface Transformation {
@@ -69,6 +74,12 @@ interface LibraryTransformation extends Transformation {
 interface ImmutableTransformation extends Transformation {
   type: "replace";
   reason: "immutable";
+  id: string;
+}
+
+interface CBORAuxdataTransformation extends Transformation {
+  type: "replace";
+  reason: "cborAuxdata";
   id: string;
 }
 

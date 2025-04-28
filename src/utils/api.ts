@@ -9,11 +9,12 @@ const getSourcifyServerUrl = () => {
   return serverUrl;
 };
 
+const revalidateTime = process.env.NODE_ENV === "production" ? 86400 : 3600; // 24 hours for production, 1 hour for development
+
 /**
  * Fetches contract data from the Sourcify API
  * @param chainId The chain ID
  * @param address The contract address
- * @param environment The environment to use (staging or production)
  * @returns The contract data
  */
 export async function fetchContractData(chainId: string, address: string): Promise<ContractData> {
@@ -21,7 +22,7 @@ export async function fetchContractData(chainId: string, address: string): Promi
   const url = `${baseUrl}/v2/contract/${chainId}/${address}?fields=all`;
 
   try {
-    const response = await fetch(url, { next: { revalidate: 3600 } }); // Cache for 1 hour
+    const response = await fetch(url, { next: { revalidate: revalidateTime } });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch contract data: ${response.status} ${response.statusText}`);
@@ -80,7 +81,7 @@ export async function fetchChains(): Promise<ChainData[]> {
 
   try {
     const response = await fetch(url, {
-      next: { revalidate: 3600 }, // Cache for 1 hour
+      next: { revalidate: revalidateTime }, // Cache for 1 hour
     });
 
     if (!response.ok) {
@@ -89,8 +90,7 @@ export async function fetchChains(): Promise<ChainData[]> {
 
     const data = (await response.json()) as ChainsResponse;
 
-    // Convert the object to an array and sort by chainId
-    return Object.values(data).sort((a, b) => a.chainId - b.chainId);
+    return Object.values(data);
   } catch (error) {
     console.error("Error fetching chains data:", error);
     throw error;
@@ -123,7 +123,7 @@ export async function checkVerification(chainId: string, address: string): Promi
     const baseUrl = getSourcifyServerUrl();
 
     const url = `${baseUrl}/v2/contract/${chainId}/${address}`;
-    const response = await fetch(url, { next: { revalidate: 3600 } }); // Cache for 1 hour
+    const response = await fetch(url, { next: { revalidate: revalidateTime } }); // Cache for 1 hour
     const data = (await response.json()) as VerificationResponse;
 
     // Check if the contract is verified (match field is not null)

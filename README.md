@@ -6,7 +6,7 @@ A Next.js application for viewing verified smart contract details from the Sourc
 
 ### Prerequisites
 
-- Node.js 20.x or later
+- Node.js 18.x or later
 - npm or yarn
 - Docker (optional, for containerized deployment)
 
@@ -14,8 +14,9 @@ A Next.js application for viewing verified smart contract details from the Sourc
 
 Create a `.env` file in the root directory with the following variables:
 
-```
+```bash
 SOURCIFY_SERVER_URL=https://sourcify.dev/server
+# NODE_ENV=development or NODE_ENV=production
 ```
 
 ### Running Locally

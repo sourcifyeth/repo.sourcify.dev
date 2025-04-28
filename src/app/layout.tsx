@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { IBM_Plex_Sans, IBM_Plex_Mono, VT323 } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import Footer from "@/components/Footer";
 import AppTooltip from "@/components/AppTooltip";
 import Image from "next/image";
+import Link from "next/link";
 
 const ibmPlexSans = IBM_Plex_Sans({
   weight: ["400", "500", "600", "700"],
@@ -17,6 +19,13 @@ const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-ibm-plex-mono",
+});
+
+const vt323 = VT323({
+  weight: ["400"],
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-vt-323",
 });
 
 export const metadata: Metadata = {
@@ -57,15 +66,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${ibmPlexSans.variable} ${ibmPlexMono.variable}`}>
-      <body className="antialiased bg-gray-50 min-h-screen flex flex-col font-sans">
-        <header className="bg-white shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center">
-            <Image src="/sourcify.png" alt="Sourcify Logo" className="h-8 w-auto mr-3" width={32} height={32} />
-            <h1 className="text-2xl font-bold text-gray-900">Sourcify Contract Viewer</h1>
+    <html lang="en" className={``}>
+      <body
+        className={`bg-gray-100 min-h-screen flex flex-col font-sans ${ibmPlexSans.variable} ${ibmPlexMono.variable} ${vt323.variable}`}
+      >
+        {process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID && (
+          <Script
+            src="https://cloud.umami.is/script.js"
+            data-website-id={process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID}
+            strategy="afterInteractive"
+          />
+        )}
+        <header className="shadow-sm">
+          <div className="mx-auto py-4 flex items-center w-full max-w-[100rem] px-8 md:px-12 lg:px-12 xl:px-24">
+            <Link href="/" className="flex items-center">
+              <Image src="/sourcify.png" alt="Sourcify Logo" className="h-10 w-auto mr-3" width={32} height={32} />
+              <span className="text-gray-700 font-vt323 text-2xl">sourcify.eth</span>
+            </Link>
           </div>
         </header>
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow">{children}</main>
+        <main className="w-full max-w-[100rem] mx-auto px-8 md:px-12 lg:px-12 xl:px-24 py-6 flex-grow">{children}</main>
         <Footer />
         <AppTooltip />
       </body>
