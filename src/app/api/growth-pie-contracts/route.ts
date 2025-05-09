@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
 import { fetchGrowthPieChains, fetchTopContractsByChain, checkVerification } from "@/utils/api";
 
-// Cache time in seconds (1 hour)
-const revalidateTime = 3600;
+// Set cache control headers with a 1-hour cache time
+export const revalidate = 3600; // 1 hour in seconds
+export const dynamic = "force-static";
 
 // Chains with available top contracts data
 const AVAILABLE_CHAINS = ["arbitrum", "base", "ethereum", "linea", "optimism", "taiko", "unichain", "zksync_era"];
-
-export const dynamic = "force-static";
-export const revalidate = revalidateTime;
 
 interface ChainDataItem {
   name: string;

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaCheckCircle, FaExclamationTriangle, FaTimes } from "react-icons/fa";
+import Image from "next/image";
 
 interface TopContract {
   address: string;
@@ -110,7 +111,7 @@ export default function TopContracts() {
           rel="noopener noreferrer"
           className="ml-1 inline-flex items-center hover:opacity-80 transition-opacity"
         >
-          <img src="/growthepie.png" alt="GrowthePie" className="h-5 w-auto" />
+          <Image src="/growthepie.png" alt="GrowthePie" width={80} height={20} className="h-5 w-auto" />
         </a>
       </div>
 
