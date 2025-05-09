@@ -8,9 +8,11 @@ export default async function Home() {
   const chains = await fetchChains();
   return (
     <div className="w-full mx-auto">
-      <div className="px-4 py-5 sm:p-6 text-center flex flex-col items-center">
-        <h1 className="font-medium text-gray-700  font-vt323 text-5xl">Sourcify Verified Contract Repository</h1>
-        <HomeForm chains={chains} />
+      <div className="px-4 py-5 sm:p-6 text-center">
+        <h1 className="font-medium text-gray-700 font-vt323 text-5xl mb-8">Sourcify Verified Contract Repository</h1>
+        <div className="w-full">
+          <HomeForm chains={chains} />
+        </div>
       </div>
     </div>
   );
