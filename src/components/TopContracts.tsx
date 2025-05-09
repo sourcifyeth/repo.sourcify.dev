@@ -148,7 +148,7 @@ export default function TopContracts() {
       ) : (
         <div className="overflow-auto max-h-[400px]">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50 sticky top-0">
+            <thead className="bg-gray-50 sticky top-0 z-10">
               <tr>
                 <th scope="col" className="px-3 py-2 w-10">
                   {/* No header text for verified column */}
