@@ -168,7 +168,7 @@ export default function HomeForm({ chains }: HomeFormProps) {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 sticky top-0">
                 <tr>
-                  <th scope="col" className="px-3 py-2 w-10">
+                  <th scope="col" className="pl-3 pr-1 py-2 w-6">
                     {/* Empty header for consistency */}
                   </th>
                   <th
@@ -192,7 +192,7 @@ export default function HomeForm({ chains }: HomeFormProps) {
                     onClick={() => handleExampleClick(contract)}
                     className="cursor-pointer hover:bg-gray-50"
                   >
-                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 text-center w-10">
+                    <td className="pl-3 pr-1 py-2 whitespace-nowrap text-sm text-gray-500 text-center w-6">
                       <FaCheckCircle
                         className="h-4 w-4 text-green-500 cursor-help"
                         data-tooltip-id="global-tooltip"

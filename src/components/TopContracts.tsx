@@ -150,7 +150,7 @@ export default function TopContracts() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50 sticky top-0 z-10">
               <tr>
-                <th scope="col" className="px-3 py-2 w-10">
+                <th scope="col" className="pl-3 pr-1 py-2 w-6">
                   {/* No header text for verified column */}
                 </th>
                 <th
@@ -179,7 +179,7 @@ export default function TopContracts() {
                   data-tooltip-content={!contract.verified ? "Not verified on Sourcify" : undefined}
                   data-tooltip-anchor-select={!contract.verified ? ".verification-icon" : undefined}
                 >
-                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 text-center w-10">
+                  <td className="pl-3 pr-1 py-2 whitespace-nowrap text-sm text-gray-500 text-center w-6">
                     {contract.verified ? (
                       <FaCheckCircle
                         className="h-4 w-4 text-green-500 inline cursor-help verification-icon"
@@ -187,7 +187,11 @@ export default function TopContracts() {
                         data-tooltip-content="Verified on Sourcify"
                       />
                     ) : (
-                      <span className="cursor-help">
+                      <span
+                        className="cursor-help"
+                        data-tooltip-id="global-tooltip"
+                        data-tooltip-content="Not verified on Sourcify"
+                      >
                         <FaTimes className="h-4 w-4 text-red-500 inline verification-icon" />
                       </span>
                     )}
