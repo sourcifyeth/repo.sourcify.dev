@@ -46,14 +46,18 @@ export async function GET() {
         );
       })
       .reduce((acc, [key, value]) => {
-        acc[key] = value as ChainDataItem;
+        // Only include name and evm_chain_id from ChainDataItem
+        acc[key] = {
+          name: (value as ChainDataItem).name,
+          evm_chain_id: (value as ChainDataItem).evm_chain_id,
+        };
         return acc;
-      }, {} as Record<string, ChainDataItem>);
+      }, {} as Record<string, Pick<ChainDataItem, "name" | "evm_chain_id">>);
 
     // Prepare results object
     const result: {
-      chains: Record<string, ChainDataItem>;
-      contracts: Record<string, TopContract[]>;
+      chains: Record<string, Pick<ChainDataItem, "name" | "evm_chain_id">>;
+      contracts: Record<string, Pick<TopContract, "address" | "name" | "owner_project" | "verified">[]>;
     } = {
       chains: filteredChains,
       contracts: {},
@@ -74,14 +78,19 @@ export async function GET() {
               // Check verification status
               const verified = await checkVerification(chainId, contract.address);
 
+              // Only include the specified fields
               return {
-                ...contract,
+                address: contract.address,
+                name: contract.name,
+                owner_project: contract.owner_project,
                 verified,
               };
             } catch (err) {
               console.error("Error checking verification:", err);
               return {
-                ...contract,
+                address: contract.address,
+                name: contract.name,
+                owner_project: contract.owner_project,
                 verified: false,
               };
             }

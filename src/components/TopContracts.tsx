@@ -7,21 +7,14 @@ import Image from "next/image";
 
 interface TopContract {
   address: string;
-  chain_id: string;
   name: string;
   owner_project: string | null;
-  usage_category: string | null;
-  txcount_180d: number;
-  gas_fees_usd_180d: number;
   verified?: boolean;
 }
 
 interface ChainData {
   name: string;
   evm_chain_id: number;
-  chain_type: string;
-  deployment: string;
-  [key: string]: unknown;
 }
 
 export default function TopContracts() {
@@ -91,9 +84,11 @@ export default function TopContracts() {
   }, [selectedChain, allContracts]);
 
   const handleContractClick = (contract: TopContract) => {
-    // Extract the numeric chain ID from chain_id format "eip155:42161"
-    const chainId = contract.chain_id.split(":")[1];
-    router.push(`/${chainId}/${contract.address}`);
+    // Get the chain ID from the selected chain
+    const chainId = chains[selectedChain]?.evm_chain_id.toString();
+    if (chainId) {
+      router.push(`/${chainId}/${contract.address}`);
+    }
   };
 
   if (Object.keys(chains).length === 0 && !error) {
