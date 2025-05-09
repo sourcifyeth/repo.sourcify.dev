@@ -133,3 +133,48 @@ export async function checkVerification(chainId: string, address: string): Promi
     return false;
   }
 }
+
+// GrowthPie API functions
+export async function fetchGrowthPieChains() {
+  try {
+    const response = await fetch("https://api.growthepie.xyz/v1/master.json");
+    if (!response.ok) {
+      throw new Error("Failed to fetch chains from GrowthPie API");
+    }
+    const data = await response.json();
+    return data.chains;
+  } catch (error) {
+    console.error("Error fetching growthepie chains:", error);
+    return null;
+  }
+}
+
+export async function fetchTopContractsByChain(chainKey: string) {
+  try {
+    const response = await fetch(`https://api.growthepie.xyz/v1/top_contracts/export_${chainKey}.json`);
+    if (!response.ok) {
+      console.error(`Failed to fetch top contracts for ${chainKey}, status: ${response.status}`);
+      return [];
+    }
+    const data = await response.json();
+    return data.slice(0, 20); // Return top 20 contracts
+  } catch (error) {
+    console.error(`Error fetching top contracts for ${chainKey}:`, error);
+    return [];
+  }
+}
+
+// Function to check if a contract is verified on Sourcify
+export async function isContractVerifiedOnSourcify(chainId: string, address: string) {
+  try {
+    const response = await fetch(`/api/check-verification?chainId=${chainId}&address=${address}`);
+    if (!response.ok) {
+      return false;
+    }
+    const data = await response.json();
+    return data.verified;
+  } catch (error) {
+    console.error("Error checking verification status:", error);
+    return false;
+  }
+}
