@@ -124,10 +124,15 @@ export async function checkVerification(chainId: string, address: string): Promi
 
     const url = `${baseUrl}/v2/contract/${chainId}/${address}`;
     const response = await fetch(url, { next: { revalidate: revalidateTime } }); // Cache for 1 hour
+
+    if (!response.ok) {
+      return false;
+    }
+
     const data = (await response.json()) as VerificationResponse;
 
     // Check if the contract is verified (match field is not null)
-    return data.match !== null;
+    return !!data.match;
   } catch (error) {
     console.error(`Error checking verification for ${address}:`, error);
     return false;
