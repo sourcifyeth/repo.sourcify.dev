@@ -125,7 +125,8 @@ export async function checkVerification(chainId: string, address: string): Promi
     const url = `${baseUrl}/v2/contract/${chainId}/${address}`;
     const response = await fetch(url, { next: { revalidate: revalidateTime } }); // Cache for 1 hour
 
-    if (!response.ok) {
+    // Accept 2xx and 3xx status codes (< 400), but fail on 4xx and 5xx
+    if (response.status >= 400) {
       return false;
     }
 
