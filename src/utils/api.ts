@@ -168,18 +168,3 @@ export async function fetchTopContractsByChain(chainKey: string) {
     return [];
   }
 }
-
-// Function to check if a contract is verified on Sourcify
-export async function isContractVerifiedOnSourcify(chainId: string, address: string) {
-  try {
-    const response = await fetch(`/api/check-verification?chainId=${chainId}&address=${address}`);
-    if (!response.ok) {
-      return false;
-    }
-    const data = await response.json();
-    return data.verified;
-  } catch (error) {
-    console.error("Error checking verification status:", error);
-    return false;
-  }
-}

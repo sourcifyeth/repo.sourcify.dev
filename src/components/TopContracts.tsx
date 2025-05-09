@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { fetchGrowthPieChains, fetchTopContractsByChain } from "@/utils/api";
 import { FaCheckCircle, FaExclamationTriangle, FaTimes } from "react-icons/fa";
 
 interface TopContract {
@@ -24,94 +23,71 @@ interface ChainData {
   [key: string]: unknown;
 }
 
-// Chains with available top contracts data
-const AVAILABLE_CHAINS = ["arbitrum", "base", "ethereum", "linea", "optimism", "taiko", "unichain", "zksync_era"];
-
 export default function TopContracts() {
   const router = useRouter();
   const [chains, setChains] = useState<Record<string, ChainData>>({});
   const [selectedChain, setSelectedChain] = useState<string>("ethereum");
+  const [allContracts, setAllContracts] = useState<Record<string, TopContract[]>>({});
   const [topContracts, setTopContracts] = useState<TopContract[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadChains = async () => {
-      const chainsData = await fetchGrowthPieChains();
-      if (chainsData) {
-        // Filter to include only chains with available data
-        const filteredChains = Object.entries(chainsData)
-          .filter((entry) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const chainData = entry[1] as any;
-            return AVAILABLE_CHAINS.includes(entry[0]) && chainData.evm_chain_id && chainData.deployment === "PROD";
-          })
-          .reduce<Record<string, ChainData>>((acc, [key, value]) => {
-            acc[key] = value as ChainData;
-            return acc;
-          }, {});
+    const loadData = async () => {
+      setLoading(true);
 
-        setChains(filteredChains);
+      try {
+        // Fetch all data from our server-side cached API
+        const response = await fetch("/api/growth-pie-contracts");
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch contract data");
+        }
+
+        const data = await response.json();
+
+        // Set chains data
+        setChains(data.chains);
+
+        // Set all contracts data
+        setAllContracts(data.contracts);
 
         // Default to ethereum or first available chain
-        const defaultChain = "ethereum" in filteredChains ? "ethereum" : Object.keys(filteredChains)[0];
+        const defaultChain = "ethereum" in data.chains ? "ethereum" : Object.keys(data.chains)[0];
         setSelectedChain(defaultChain);
+
+        // Set initial contracts for the default chain
+        if (data.contracts[defaultChain] && data.contracts[defaultChain].length > 0) {
+          setTopContracts(data.contracts[defaultChain]);
+        } else {
+          setError(`No contract data available for ${defaultChain}`);
+        }
+      } catch (err) {
+        console.error("Error loading data:", err);
+        setError("Failed to load contract data");
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadChains();
+    loadData();
   }, []);
 
+  // Update displayed contracts when selected chain changes
   useEffect(() => {
-    if (selectedChain) {
-      const loadTopContracts = async () => {
-        setLoading(true);
+    if (selectedChain && allContracts[selectedChain]) {
+      if (allContracts[selectedChain].length > 0) {
+        setTopContracts(allContracts[selectedChain]);
         setError(null);
-        const contracts = await fetchTopContractsByChain(selectedChain);
-
-        if (contracts.length === 0) {
-          setError(`No contract data available for ${selectedChain}`);
-          setTopContracts([]);
-          setLoading(false);
-          return;
-        }
-
-        // Check verification status for each contract
-        const contractsWithVerificationStatus = await Promise.all(
-          contracts.map(async (contract: TopContract) => {
-            try {
-              // Extract the numeric chain ID from chain_id format "eip155:42161"
-              const chainId = contract.chain_id.split(":")[1];
-
-              // Check verification status from API
-              const response = await fetch(`/api/check-verification?chainId=${chainId}&address=${contract.address}`);
-              let verified = false;
-
-              if (response.ok) {
-                const data = await response.json();
-                verified = data.verified;
-              }
-
-              return {
-                ...contract,
-                verified,
-              };
-            } catch {
-              return {
-                ...contract,
-                verified: false,
-              };
-            }
-          })
-        );
-
-        setTopContracts(contractsWithVerificationStatus);
-        setLoading(false);
-      };
-
-      loadTopContracts();
+      } else {
+        setTopContracts([]);
+        setError(`No contract data available for ${selectedChain}`);
+      }
+    } else if (selectedChain) {
+      setTopContracts([]);
+      setError(`No contract data available for ${selectedChain}`);
     }
-  }, [selectedChain]);
+  }, [selectedChain, allContracts]);
 
   const handleContractClick = (contract: TopContract) => {
     // Extract the numeric chain ID from chain_id format "eip155:42161"
@@ -119,7 +95,7 @@ export default function TopContracts() {
     router.push(`/${chainId}/${contract.address}`);
   };
 
-  if (Object.keys(chains).length === 0) {
+  if (Object.keys(chains).length === 0 && !error) {
     return <div className="text-center py-4">Loading chains...</div>;
   }
 
@@ -147,6 +123,7 @@ export default function TopContracts() {
           value={selectedChain}
           onChange={(e) => setSelectedChain(e.target.value)}
           className="block w-full pl-3 pr-10 py-2 text-sm bg-cerulean-blue-100 border border-cerulean-blue-300 rounded-md cursor-pointer text-cerulean-blue-600 focus:outline-none focus:ring-cerulean-blue-500 focus:border-cerulean-blue-500"
+          disabled={loading}
         >
           {Object.entries(chains).map(([key, chain]) => (
             <option key={key} value={key}>
@@ -198,6 +175,9 @@ export default function TopContracts() {
                   className={`${
                     contract.verified ? "cursor-pointer hover:bg-gray-50" : "cursor-not-allowed opacity-75"
                   }`}
+                  data-tooltip-id={!contract.verified ? "global-tooltip" : undefined}
+                  data-tooltip-content={!contract.verified ? "Not verified on Sourcify" : undefined}
+                  data-tooltip-anchor-select={!contract.verified ? ".verification-icon" : undefined}
                 >
                   <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 text-center w-10">
                     {contract.verified ? (
@@ -207,11 +187,7 @@ export default function TopContracts() {
                         data-tooltip-content="Verified on Sourcify"
                       />
                     ) : (
-                      <span
-                        className="cursor-help"
-                        data-tooltip-id="global-tooltip"
-                        data-tooltip-content="Not verified on Sourcify"
-                      >
+                      <span className="cursor-help">
                         <FaTimes className="h-4 w-4 text-red-500 inline verification-icon" />
                       </span>
                     )}
