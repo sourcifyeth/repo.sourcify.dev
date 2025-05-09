@@ -62,6 +62,20 @@ The project includes a Dockerfile based on the official Next.js Docker example.
 
 ### Building and Running with Docker
 
+Keep in mind you need to pass the `SOURCIFY_SERVER_URL` as a build argument. The way to pass this might differ depending on your build platform. In Google Cloud Build, you need to pass it as a value to be substituted in your `cloudbuild.yaml` file:
+
+```yaml
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - "--build-arg"
+      - "SOURCIFY_SERVER_URL=${_SOURCIFY_SERVER_URL}"
+---
+substitutions:
+  _SOURCIFY_SERVER_URL: https://sourcify.dev/server
+```
+
 1. Build the Docker image:
 
    ```bash
