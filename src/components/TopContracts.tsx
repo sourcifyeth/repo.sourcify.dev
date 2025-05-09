@@ -39,7 +39,7 @@ export default function TopContracts() {
 
       try {
         // Fetch all data from our server-side cached API
-        const response = await fetch("/api/growth-pie-contracts");
+        const response = await fetch("/api/growthepie-contracts");
 
         if (!response.ok) {
           throw new Error("Failed to fetch contract data");
