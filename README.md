@@ -65,13 +65,14 @@ The project includes a Dockerfile based on the official Next.js Docker example.
 1. Build the Docker image:
 
    ```bash
-   docker build -t repo-sourcify .
+   # Build the image with the Sourcify server URL as a build argument
+   docker build --build-arg SOURCIFY_SERVER_URL=https://sourcify.dev/server -t repo-sourcify .
    ```
 
 2. Run the container:
 
    ```bash
-   docker run -p 3000:3000 -e SOURCIFY_SERVER_URL=https://sourcify.dev/server sourcify-contract-viewer
+   docker run -p 3000:3000 -e SOURCIFY_SERVER_URL=https://sourcify.dev/server repo-sourcify
    ```
 
 3. Access the application at [http://localhost:3000](http://localhost:3000).

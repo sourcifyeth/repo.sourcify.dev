@@ -29,6 +29,10 @@ COPY . .
 # Uncomment the following line in case you want to disable telemetry during the build.
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Add the Sourcify server URL as a build argument
+ARG SOURCIFY_SERVER_URL
+ENV SOURCIFY_SERVER_URL=${SOURCIFY_SERVER_URL}
+
 RUN \
   if [ -f yarn.lock ]; then yarn run build; \
   elif [ -f package-lock.json ]; then npm run build; \
@@ -43,6 +47,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 # Uncomment the following line in case you want to disable telemetry during runtime.
 # ENV NEXT_TELEMETRY_DISABLED=1
+ARG SOURCIFY_SERVER_URL
+ENV SOURCIFY_SERVER_URL=${SOURCIFY_SERVER_URL}
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
