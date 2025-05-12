@@ -175,7 +175,7 @@ export default function BytecodeDiffView({
       result.push(
         <span
           key={`transformed-${index}`}
-          className={`${colorClasses} cursor-help border rounded-xs hover:brightness-110 transition-all duration-200 relative overflow-x-clip`}
+          className={`${colorClasses} cursor-help rounded-xs hover:brightness-110 transition-all duration-200 relative overflow-x-clip ring-1 ring-inset ring-current`}
           onMouseEnter={() => handleTransformationMouseEnter(transformationInfo)}
           onMouseLeave={handleTransformationMouseLeave}
         >
