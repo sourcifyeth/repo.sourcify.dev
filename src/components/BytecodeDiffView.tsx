@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import InfoTooltip from "./InfoTooltip";
-import { Tooltip } from "react-tooltip";
 import { Transformations, TransformationValues } from "@/types/contract";
 
 interface BytecodeDiffViewProps {
@@ -11,6 +10,13 @@ interface BytecodeDiffViewProps {
   id: string;
   transformations?: Transformations;
   transformationValues?: TransformationValues;
+}
+
+interface TransformationInfo {
+  reason: string;
+  originalValue: string;
+  value: string;
+  offset: number;
 }
 
 export default function BytecodeDiffView({
@@ -24,8 +30,20 @@ export default function BytecodeDiffView({
     transformations && transformations.length > 0 ? "transformations" : "onchain" // If no transformations, show onchain bytecode
   );
   const [currentView, setCurrentView] = useState<string>(recompiledBytecode);
+  const [activeTransformation, setActiveTransformation] = useState<TransformationInfo | null>(null);
+  const [isTooltipHovered, setIsTooltipHovered] = useState(false);
+  const tooltipCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const isOnchainRecompiledSame = onchainBytecode === recompiledBytecode;
+
+  // Clear any existing close timer when component unmounts
+  useEffect(() => {
+    return () => {
+      if (tooltipCloseTimerRef.current) {
+        clearTimeout(tooltipCloseTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (viewMode === "onchain") {
@@ -34,6 +52,41 @@ export default function BytecodeDiffView({
       setCurrentView(recompiledBytecode);
     }
   }, [viewMode, onchainBytecode, recompiledBytecode]);
+
+  const handleTransformationMouseEnter = (transformationInfo: TransformationInfo) => {
+    // Clear any existing close timer
+    if (tooltipCloseTimerRef.current) {
+      clearTimeout(tooltipCloseTimerRef.current);
+      tooltipCloseTimerRef.current = null;
+    }
+    setActiveTransformation(transformationInfo);
+  };
+
+  const handleTransformationMouseLeave = () => {
+    // Only start close timer if tooltip is not being hovered
+    if (!isTooltipHovered) {
+      tooltipCloseTimerRef.current = setTimeout(() => {
+        setActiveTransformation(null);
+      }, 500); // 500ms delay before closing
+    }
+  };
+
+  const handleTooltipMouseEnter = () => {
+    // Clear close timer if mouse enters the tooltip
+    if (tooltipCloseTimerRef.current) {
+      clearTimeout(tooltipCloseTimerRef.current);
+      tooltipCloseTimerRef.current = null;
+    }
+    setIsTooltipHovered(true);
+  };
+
+  const handleTooltipMouseLeave = () => {
+    setIsTooltipHovered(false);
+    // Start timer to close tooltip
+    tooltipCloseTimerRef.current = setTimeout(() => {
+      setActiveTransformation(null);
+    }, 300); // 300ms delay before closing
+  };
 
   const getTransformationColor = (reason: string) => {
     switch (reason) {
@@ -109,44 +162,24 @@ export default function BytecodeDiffView({
         originalValue = recompiledBytecode.slice(charOffset, charOffset + value.length);
       }
 
-      const tooltipId = `transformation-${id}-${index}`;
       const colorClasses = getTransformationColor(transformation.reason);
+
+      // Create an object with all the transformation info we need for the tooltip
+      const transformationInfo = {
+        reason: transformation.reason,
+        originalValue,
+        value,
+        offset: transformation.offset,
+      };
+
       result.push(
         <span
           key={`transformed-${index}`}
           className={`${colorClasses} cursor-help border rounded-xs hover:brightness-110 transition-all duration-200`}
-          data-tooltip-id={tooltipId}
+          onMouseEnter={() => handleTransformationMouseEnter(transformationInfo)}
+          onMouseLeave={handleTransformationMouseLeave}
         >
           {value}
-          <Tooltip
-            id={tooltipId}
-            className="!p-3 !max-w-md lg:!max-w-4xl !z-100"
-            place="top-end"
-            delayShow={0}
-            delayHide={0}
-            render={() => (
-              <div className="text-xs flex flex-col gap-1 font-sans">
-                <div className="flex gap-1">
-                  <span className="text-gray-400">Reason:</span>
-                  <span className="font-mono ml-1">{transformation.reason}</span>
-                </div>
-                {originalValue && (
-                  <div className="flex gap-1">
-                    <span className="text-gray-400">Original:</span>
-                    <span className="font-mono ml-1 break-all">0x{originalValue}</span>
-                  </div>
-                )}
-                <div className="flex gap-1">
-                  <span className="text-gray-400">Transformed:</span>
-                  <span className="font-mono ml-1 break-all">0x{value}</span>
-                </div>
-                <div className="flex gap-1">
-                  <span className="text-gray-400">Offset:</span>
-                  <span className="font-mono ml-1 break-all">{transformation.offset} bytes</span>
-                </div>
-              </div>
-            )}
-          />
         </span>
       );
       // Update currentIndex based on the length of the value in characters
@@ -179,7 +212,45 @@ export default function BytecodeDiffView({
   `;
 
   return (
-    <div>
+    <div className="relative">
+      {/* Fixed tooltip area as an overlay */}
+      {viewMode === "transformations" && (
+        <div
+          className={`absolute top-0 left-1/2 transform -translate-x-1/2 z-10 p-3 rounded shadow-md text-xs min-w-[200px] max-w-[80%] transition-all duration-300 ease-in-out ${
+            activeTransformation
+              ? "opacity-100 translate-y-0 scale-100"
+              : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
+          } ${
+            activeTransformation ? getTransformationColor(activeTransformation.reason) : "bg-gray-100 text-gray-800"
+          }`}
+          onMouseEnter={handleTooltipMouseEnter}
+          onMouseLeave={handleTooltipMouseLeave}
+        >
+          {activeTransformation && (
+            <div className="text-xs flex flex-col gap-1 font-sans">
+              <div className="flex gap-1">
+                <span className="font-semibold">Reason:</span>
+                <span className="font-mono ml-1">{activeTransformation.reason}</span>
+              </div>
+              {activeTransformation.originalValue && (
+                <div className="flex gap-1">
+                  <span className="font-semibold">Original:</span>
+                  <span className="font-mono ml-1 break-all">0x{activeTransformation.originalValue}</span>
+                </div>
+              )}
+              <div className="flex gap-1">
+                <span className="font-semibold">Transformed:</span>
+                <span className="font-mono ml-1 break-all">0x{activeTransformation.value}</span>
+              </div>
+              <div className="flex gap-1">
+                <span className="font-semibold">Offset:</span>
+                <span className="font-mono ml-1 break-all">{activeTransformation.offset} bytes</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {onchainBytecode ===
         "0x2121212121212121212121202d20636861696e207761732064657072656361746564206174207468652074696d65206f6620766572696669636174696f6e" && (
         <div className="w-full text-sm my-2">
