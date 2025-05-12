@@ -216,7 +216,7 @@ export default function BytecodeDiffView({
       {/* Fixed tooltip area as an overlay */}
       {viewMode === "transformations" && (
         <div
-          className={`absolute top-0 left-1/2 transform -translate-x-1/2 z-10 p-3 rounded shadow-md text-xs min-w-[200px] max-w-[80%] transition-all duration-300 ease-in-out ${
+          className={`absolute top-0 left-1/2 transform -translate-x-1/2 z-10 p-3 rounded shadow-md text-xs max-w-[80%] transition-all duration-300 ease-in-out ${
             activeTransformation
               ? "opacity-100 translate-y-0 scale-100"
               : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
@@ -227,24 +227,24 @@ export default function BytecodeDiffView({
           onMouseLeave={handleTooltipMouseLeave}
         >
           {activeTransformation && (
-            <div className="text-xs flex flex-col gap-1 font-sans">
-              <div className="flex gap-1">
-                <span className="font-semibold">Reason:</span>
-                <span className="font-mono ml-1">{activeTransformation.reason}</span>
+            <div className="text-xs flex flex-col gap-2 font-sans w-full">
+              <div className="flex flex-wrap items-baseline">
+                <span className="font-semibold whitespace-nowrap mr-1">Reason:</span>
+                <span className="font-mono overflow-hidden">{activeTransformation.reason}</span>
               </div>
               {activeTransformation.originalValue && (
-                <div className="flex gap-1">
-                  <span className="font-semibold">Original:</span>
-                  <span className="font-mono ml-1 break-all">0x{activeTransformation.originalValue}</span>
+                <div className="flex flex-wrap items-baseline">
+                  <span className="font-semibold whitespace-nowrap mr-1">Original:</span>
+                  <span className="font-mono overflow-hidden break-words">0x{activeTransformation.originalValue}</span>
                 </div>
               )}
-              <div className="flex gap-1">
-                <span className="font-semibold">Transformed:</span>
-                <span className="font-mono ml-1 break-all">0x{activeTransformation.value}</span>
+              <div className="flex flex-wrap items-baseline">
+                <span className="font-semibold whitespace-nowrap mr-1">Transformed:</span>
+                <span className="font-mono overflow-hidden break-words">0x{activeTransformation.value}</span>
               </div>
-              <div className="flex gap-1">
-                <span className="font-semibold">Offset:</span>
-                <span className="font-mono ml-1 break-all">{activeTransformation.offset} bytes</span>
+              <div className="flex flex-wrap items-baseline">
+                <span className="font-semibold whitespace-nowrap mr-1">Offset:</span>
+                <span className="font-mono">{activeTransformation.offset} bytes</span>
               </div>
             </div>
           )}
