@@ -128,7 +128,7 @@ export default function BytecodeDiffView({
       // Add the unchanged part before the transformation
       if (currentIndex < charOffset) {
         result.push(
-          <span key={`unchanged-${id}-${index}`} className="text-gray-800">
+          <span key={`unchanged-${id}-${index}`} className="text-gray-800 break-all">
             {recompiledBytecode.slice(currentIndex, charOffset)}
           </span>
         );
@@ -175,14 +175,14 @@ export default function BytecodeDiffView({
       result.push(
         <span
           key={`transformed-${index}`}
-          className={`${colorClasses} cursor-help rounded-xs hover:brightness-110 transition-all duration-200 relative overflow-x-clip ring-1 ring-inset ring-current`}
+          className={`break-all ${colorClasses} cursor-help rounded-xs hover:brightness-110 transition-all duration-200 relative overflow-x-clip ring-1 ring-inset ring-current`}
           onMouseEnter={() => handleTransformationMouseEnter(transformationInfo)}
           onMouseLeave={handleTransformationMouseLeave}
         >
           <span
             className={`absolute -top-2 text-[7.5px] font-bold ${colorClasses.split(" ")[1]} ${
               colorClasses.split(" ")[0]
-            } opacity-100 select-none pointer-events-none px-[3px] py-[1px] rounded`}
+            } opacity-100 select-none pointer-events-none px-[3px] py-[1px] rounded whitespace-nowrap`}
           >
             {transformation.reason}
           </span>
@@ -328,7 +328,7 @@ export default function BytecodeDiffView({
         </div>
       )}
 
-      <div className="w-full max-h-64 p-3 bg-gray-50 rounded text-xs font-mono border border-gray-200 cursor-text break-words overflow-y-auto whitespace-pre-wrap">
+      <div className="w-full max-h-64 p-3 bg-gray-50 rounded text-xs font-mono border border-gray-200 cursor-text break-words overflow-y-auto whitespace-pre-wrap overflow-x-clip">
         {viewMode === "transformations" ? renderTransformations() : currentView}
       </div>
     </div>
