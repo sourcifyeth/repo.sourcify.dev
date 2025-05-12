@@ -175,10 +175,17 @@ export default function BytecodeDiffView({
       result.push(
         <span
           key={`transformed-${index}`}
-          className={`${colorClasses} cursor-help border rounded-xs hover:brightness-110 transition-all duration-200`}
+          className={`${colorClasses} cursor-help border rounded-xs hover:brightness-110 transition-all duration-200 relative overflow-x-clip`}
           onMouseEnter={() => handleTransformationMouseEnter(transformationInfo)}
           onMouseLeave={handleTransformationMouseLeave}
         >
+          <span
+            className={`absolute -top-2 text-[7.5px] font-bold ${colorClasses.split(" ")[1]} ${
+              colorClasses.split(" ")[0]
+            } opacity-100 select-none pointer-events-none px-[3px] py-[1px] rounded`}
+          >
+            {transformation.reason}
+          </span>
           {value}
         </span>
       );
