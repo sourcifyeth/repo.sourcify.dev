@@ -199,7 +199,7 @@ export default function BytecodeDiffView({
     // Add any remaining unchanged part (except for constructor arguments which are handled above)
     if (currentIndex < onchainBytecode.length) {
       result.push(
-        <span key="remaining" className="text-gray-800">
+        <span key="remaining" className="text-gray-800 break-all">
           {onchainBytecode.slice(currentIndex)}
         </span>
       );
