@@ -55,7 +55,7 @@ export default function ContractDetails({ contract }: ContractDetailsProps) {
   ];
 
   return (
-    <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div className="bg-white shadow overflow-auto text-sm md:text-base rounded-lg break-all">
       <div className="border-t border-gray-200">
         <dl>
           {details.map((detail, index) => (

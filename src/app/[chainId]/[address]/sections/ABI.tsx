@@ -21,7 +21,7 @@ export default function ContractAbi({ abi }: ContractAbiProps) {
   };
 
   return (
-    <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div className="bg-white shadow overflow-auto text-sm md:text-base rounded-lg">
       <div
         className="px-4 py-3 flex justify-between items-center cursor-pointer border-b border-gray-200"
         onClick={() => setSectionExpanded(!sectionExpanded)}

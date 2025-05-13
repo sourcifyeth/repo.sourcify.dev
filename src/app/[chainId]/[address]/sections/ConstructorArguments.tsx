@@ -19,8 +19,10 @@ export default function ConstructorArguments({ constructorArguments, abi }: Cons
 
   return (
     <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-      <h3 className="text-lg font-medium leading-6 text-gray-900 px-6 py-4">Constructor Arguments</h3>
-      <div className="px-6 pb-4">
+      <h3 className="md:text-lg text-base font-medium leading-6 text-gray-900 md:px-6 px-3 md:py-4 py-2">
+        Constructor Arguments
+      </h3>
+      <div className="px-3 md:px-6 pb-4">
         <ToggledRawCodeView
           data1={{
             name: "Raw",

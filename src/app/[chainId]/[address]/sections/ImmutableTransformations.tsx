@@ -28,39 +28,41 @@ export default function ImmutableTransformations({
 
   return (
     <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-      <h3 className="text-lg font-medium leading-6 text-gray-900 px-6 py-4">Immutable Transformations</h3>
+      <h3 className="md:text-lg text-base font-medium leading-6 text-gray-900 md:px-6 px-3 md:py-4 py-2">
+        Immutable Transformations
+      </h3>
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+        <table className="min-w-full divide-y divide-gray-200 text-[0.65rem] md:text-xs">
           <thead className="bg-gray-50">
             <tr>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                className="px-3 md:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider"
               >
                 ID
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                className="px-3 md:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider"
               >
                 Value
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                className="px-3 md:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider"
               >
                 Offsets
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white divide-y divide-gray-200 text-[0.65rem] md:text-xs">
             {Object.entries(groupedTransformations).map(([id, offsets]) => (
               <tr key={id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-mono">{id}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">
+                <td className="px-3 md:px-6 py-4 whitespace-nowrap font-mono">{id}</td>
+                <td className="px-3 md:px-6 py-4 whitespace-nowrap font-mono text-gray-500">
                   {transformationValues.immutables?.[id] || "N/A"}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">{offsets.join(", ")}</td>
+                <td className="px-3 md:px-6 py-4 whitespace-nowrap font-mono text-gray-500">{offsets.join(", ")}</td>
               </tr>
             ))}
           </tbody>

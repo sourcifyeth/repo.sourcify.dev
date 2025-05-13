@@ -19,16 +19,16 @@ export default function CborAuxdataSection({ cborAuxdata, language }: CborAuxdat
 
   return (
     <div className="mt-6 ml-2">
-      <h3 className="text-xl font-semibold text-gray-800 mt-2">CBOR Auxdata</h3>
-      <p className="text-gray-700 mb-2 text-xs">
+      <h3 className="text-base md:text-lg font-semibold text-gray-800 mt-2">CBOR Auxdata</h3>
+      <p className="text-gray-700 mb-2 text-[0.65rem] md:text-xs">
         These values are what Sourcify extracted from the recompiled bytecode. If these values are different in the
         on-chain bytecode, they will show up in Transformations section.
       </p>
       {Object.entries(cborAuxdata).map(([key, cborAuxdataObj]) => {
         const decodedCborAuxdata = formatCborAuxdata(cborAuxdataObj.value, language);
         return (
-          <div key={key} className="mb-4 rounded-lg border border-gray-200 p-4 ml-4">
-            <h4 className="text-md font-medium">CBOR Auxdata id: {key}</h4>
+          <div key={key} className="mb-4 rounded-lg border border-gray-200 p-2 md:p-4 md:ml-4">
+            <h4 className="md:text-base text-sm font-medium">CBOR Auxdata id: {key}</h4>
             {(decodedCborAuxdata as SolidityDecodedObject)?.ipfs && (
               <div className="my-2">
                 <a
@@ -39,10 +39,10 @@ export default function CborAuxdataSection({ cborAuxdata, language }: CborAuxdat
                 >
                   View on <Image src={ipfsLogo} alt="IPFS Logo" width={36} height={36} />
                 </a>
-                <span className="text-gray-700 ml-2 text-sm">
+                <div className="text-gray-700 mt-2 md:mt-0 md:ml-2 text-xs md:text-sm md:inline">
                   Solidity metadata.json IPFS hash:{" "}
-                  <span className="font-mono">{(decodedCborAuxdata as SolidityDecodedObject).ipfs}</span>
-                </span>
+                  <span className="font-mono break-all">{(decodedCborAuxdata as SolidityDecodedObject).ipfs}</span>
+                </div>
               </div>
             )}
             <Suspense fallback={<LoadingState />}>

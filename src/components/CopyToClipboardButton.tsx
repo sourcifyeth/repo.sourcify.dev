@@ -27,7 +27,7 @@ export default function CopyToClipboardButton({ data, variant = "default" }: Cop
   return (
     <button
       onClick={handleCopy}
-      className={`inline-flex items-center gap-1 text-sm bg-white rounded-md px-2 py-2 shadow-sm border border-gray-200 hover:bg-gray-100 transition-colors duration-200 cursor-pointer relative ${
+      className={`inline-flex items-center gap-1 text-xs md:text-sm bg-white rounded-md px-2 py-2 shadow-sm border border-gray-200 hover:bg-gray-100 transition-colors duration-200 cursor-pointer relative ${
         variant === "icon-only" ? "px-2" : ""
       }`}
       data-tooltip-id="global-tooltip"
@@ -35,12 +35,12 @@ export default function CopyToClipboardButton({ data, variant = "default" }: Cop
     >
       {copied ? (
         <>
-          <FaCheck className="w-4 h-4 text-green-600" />
+          <FaCheck className="h-3 w-3 md:h-4 md:w-4 text-green-600" />
           {variant === "default" && <span className="text-green-600">Copied!</span>}
         </>
       ) : (
         <>
-          <FaRegCopy className="w-4 h-4 text-gray-700" />
+          <FaRegCopy className="h-3 w-3 md:h-4 md:w-4 text-gray-700" />
           {variant === "default" && <span className="text-gray-700">Copy</span>}
         </>
       )}

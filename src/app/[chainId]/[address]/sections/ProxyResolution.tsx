@@ -80,8 +80,8 @@ export default async function ProxyResolution({ proxyResolution, chainId }: Prox
 
   return (
     <div className="mt-1">
-      <h2 className="text-xl font-semibold text-gray-800">Proxy</h2>
-      <p className="text-gray-500">
+      <h2 className="md:text-xl text-lg font-semibold text-gray-800">Proxy</h2>
+      <p className="text-gray-500 md:text-base text-sm">
         Proxy resolution by{" "}
         <Link
           href="https://github.com/shazow/whatsabi"
@@ -93,7 +93,7 @@ export default async function ProxyResolution({ proxyResolution, chainId }: Prox
         </Link>
       </p>
 
-      <div className="mt-4 bg-white shadow overflow-hidden sm:rounded-lg">
+      <div className="mt-4 bg-white shadow overflow-hidden sm:rounded-lg text-sm md:text-base break-all">
         <div className="border-t border-gray-200">
           <dl>
             <div className="bg-gray-50 px-4 py-3 md:grid md:grid-cols-[150px_1fr] md:gap-4 md:px-6 md:items-center">
