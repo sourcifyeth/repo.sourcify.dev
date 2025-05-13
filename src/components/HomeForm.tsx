@@ -55,7 +55,7 @@ export default function HomeForm({ chains }: HomeFormProps) {
 
   return (
     <>
-      <form className="mt-8 space-y-6 w-full max-w-xl mx-auto mb-10" onSubmit={handleSubmit}>
+      <form className="mt-4 md:mt-8 space-y-6 w-full max-w-xl mx-auto mb-10" onSubmit={handleSubmit}>
         <div className="space-y-4">
           <div>
             <label htmlFor="chainId" className="block text-lg font-medium text-gray-700 mb-1">

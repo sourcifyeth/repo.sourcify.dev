@@ -192,7 +192,7 @@ export default function TopContracts() {
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-left">
+                  <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-left max-w-[170px] truncate">
                     <span className={contract.verified ? "text-blue-600 hover:underline" : "text-gray-600"}>
                       {contract.name || "Unknown"}
                     </span>
