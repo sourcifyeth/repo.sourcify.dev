@@ -37,7 +37,7 @@ export default function BytecodeDiffView({
   const isOnchainRecompiledSame = onchainBytecode === recompiledBytecode;
 
   // Check if there are library references in the transformations
-  const hasLibraryReferences = transformations?.some((t) => t.reason === "library");
+  const hasLibraryTransformations = transformations?.some((t) => t.reason === "library");
 
   // Clear any existing close timer when component unmounts
   useEffect(() => {
@@ -245,7 +245,11 @@ export default function BytecodeDiffView({
               {activeTransformation.originalValue && (
                 <div className="flex flex-wrap items-baseline">
                   <span className="font-semibold whitespace-nowrap mr-1">Original:</span>
-                  <span className="font-mono overflow-hidden break-words">0x{activeTransformation.originalValue}</span>
+                  <span className="font-mono overflow-hidden break-words">
+                    {/* Don't prefix the __$a2..bc placeholder with 0x */}
+                    {activeTransformation.originalValue.startsWith("__") ? "" : "0x"}
+                    {activeTransformation.originalValue}
+                  </span>
                 </div>
               )}
               <div className="flex flex-wrap items-baseline">
@@ -336,7 +340,7 @@ export default function BytecodeDiffView({
       </div>
 
       {/* Add library placeholder info message */}
-      {viewMode === "recompiled" && hasLibraryReferences && (
+      {viewMode === "recompiled" && hasLibraryTransformations && (
         <div className="mt-2 text-xs text-gray-600 italic border-l-2 border-gray-300 pl-2">
           Library placeholders are inserted on the frontend, the value in the DB and the API contains `0000`s for
           placeholders in the bytecode
