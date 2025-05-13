@@ -36,6 +36,9 @@ export default function BytecodeDiffView({
 
   const isOnchainRecompiledSame = onchainBytecode === recompiledBytecode;
 
+  // Check if there are library references in the transformations
+  const hasLibraryReferences = transformations?.some((t) => t.reason === "library");
+
   // Clear any existing close timer when component unmounts
   useEffect(() => {
     return () => {
@@ -331,6 +334,14 @@ export default function BytecodeDiffView({
       <div className="w-full max-h-64 p-3 bg-gray-50 rounded text-xs font-mono border border-gray-200 cursor-text break-words overflow-y-auto whitespace-pre-wrap overflow-x-clip">
         {viewMode === "transformations" ? renderTransformations() : currentView}
       </div>
+
+      {/* Add library placeholder info message */}
+      {viewMode === "recompiled" && hasLibraryReferences && (
+        <div className="mt-2 text-xs text-gray-600 italic border-l-2 border-gray-300 pl-2">
+          Library placeholders are inserted on the frontend, the value in the DB and the API contains `0000`s for
+          placeholders in the bytecode
+        </div>
+      )}
     </div>
   );
 }
