@@ -25,6 +25,7 @@ import CborAuxdataSection from "@/components/sections/CborAuxdataSection";
 import CborAuxdataTransformations from "./sections/CborAuxdataTransformations";
 import LibrariesSection from "./sections/LibrariesSection";
 import InfoTooltip from "@/components/InfoTooltip";
+import { processContractBytecodes } from "@/utils/bytecodeUtils";
 
 // Fetch chains data
 async function getChainsData() {
@@ -71,6 +72,22 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
   if (!contract) {
     notFound();
   }
+
+  // Process bytecodes to insert library placeholders
+  const { processedCreationBytecode, processedRuntimeBytecode } = processContractBytecodes(contract);
+
+  // Update the contract object with processed bytecodes
+  const contractWithPlaceholders = {
+    ...contract,
+    creationBytecode: {
+      ...contract.creationBytecode,
+      recompiledBytecode: processedCreationBytecode,
+    },
+    runtimeBytecode: {
+      ...contract.runtimeBytecode,
+      recompiledBytecode: processedRuntimeBytecode,
+    },
+  };
 
   // Get human-readable chain name
   const chainName = getChainName(chainId, chains);
@@ -213,14 +230,14 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
 
       {/* Contract Details Section */}
       <section className="mb-8">
-        <ContractDetails contract={contract} chainName={chainName} />
+        <ContractDetails contract={contractWithPlaceholders} chainName={chainName} />
       </section>
 
       {/* Proxy Resolution Section */}
-      {contract.proxyResolution && contract.proxyResolution.isProxy && (
+      {contractWithPlaceholders.proxyResolution && contractWithPlaceholders.proxyResolution.isProxy && (
         <section className="mb-8">
           <div className="sticky top-0 z-10 bg-gray-100 py-4">
-            <ProxyResolution proxyResolution={contract.proxyResolution} chainId={chainId} />
+            <ProxyResolution proxyResolution={contractWithPlaceholders.proxyResolution} chainId={chainId} />
           </div>
         </section>
       )}
@@ -228,7 +245,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       {/* Contract ABI Section */}
       <section className="mb-8">
         <Suspense fallback={<LoadingState />}>
-          <ContractAbi abi={contract.abi} />
+          <ContractAbi abi={contractWithPlaceholders.abi} />
         </Suspense>
       </section>
 
@@ -239,7 +256,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
             <h2 className="text-xl font-semibold text-gray-800">Source Code</h2>
             <div className="flex items-center gap-2">
               <a
-                href={`https://remix.ethereum.org/?#activate=contract-verification&call=contract-verification//lookupAndSave//sourcify//${contract.chainId}//${contract.address}`}
+                href={`https://remix.ethereum.org/?#activate=contract-verification&call=contract-verification//lookupAndSave//sourcify//${contractWithPlaceholders.chainId}//${contractWithPlaceholders.address}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-sm bg-white rounded-md px-2 py-2 shadow-sm border border-gray-200 hover:bg-gray-100 transition-colors duration-200"
@@ -253,13 +270,17 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
                 />
                 View on Remix IDE
               </a>
-              <DownloadSourcesButton sources={contract.sources} chainId={contract.chainId} address={contract.address} />
+              <DownloadSourcesButton
+                sources={contractWithPlaceholders.sources}
+                chainId={contractWithPlaceholders.chainId}
+                address={contractWithPlaceholders.address}
+              />
             </div>
           </div>
         </div>
 
         <Suspense fallback={<LoadingState />}>
-          <ContractSource contract={contract} />
+          <ContractSource contract={contractWithPlaceholders} />
         </Suspense>
       </section>
 
@@ -269,18 +290,18 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-800">Compiler Settings</h2>
             <div className="flex items-center gap-2">
-              <CopyToClipboardButton data={contract.compilation.compilerSettings} />
+              <CopyToClipboardButton data={contractWithPlaceholders.compilation.compilerSettings} />
               <DownloadFileButton
-                data={contract.compilation}
+                data={contractWithPlaceholders.compilation}
                 fileName="compiler-settings"
-                chainId={contract.chainId}
-                address={contract.address}
+                chainId={contractWithPlaceholders.chainId}
+                address={contractWithPlaceholders.address}
               />
             </div>
           </div>
         </div>
         <Suspense fallback={<LoadingState />}>
-          <JsonViewOnlyEditor data={contract.compilation.compilerSettings} />
+          <JsonViewOnlyEditor data={contractWithPlaceholders.compilation.compilerSettings} />
         </Suspense>
       </section>
 
@@ -288,9 +309,9 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       <section className="mb-8">
         <Suspense fallback={<LoadingState />}>
           <LibrariesSection
-            compilation={contract.compilation}
-            runtimeValues={contract.runtimeBytecode.transformationValues}
-            creationValues={contract.creationBytecode.transformationValues}
+            compilation={contractWithPlaceholders.compilation}
+            runtimeValues={contractWithPlaceholders.runtimeBytecode.transformationValues}
+            creationValues={contractWithPlaceholders.creationBytecode.transformationValues}
             chainId={chainId}
             verificationStatus={verificationStatus}
           />
@@ -303,169 +324,173 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-800">Contract Metadata</h2>
             <div className="flex items-center gap-2">
-              <CopyToClipboardButton data={contract.metadata} />
+              <CopyToClipboardButton data={contractWithPlaceholders.metadata} />
               <DownloadFileButton
-                data={contract.metadata}
+                data={contractWithPlaceholders.metadata}
                 fileName="metadata"
-                chainId={contract.chainId}
-                address={contract.address}
+                chainId={contractWithPlaceholders.chainId}
+                address={contractWithPlaceholders.address}
               />
             </div>
           </div>
         </div>
         <Suspense fallback={<LoadingState />}>
-          <JsonViewOnlyEditor data={contract.metadata} />
+          <JsonViewOnlyEditor data={contractWithPlaceholders.metadata} />
         </Suspense>
       </section>
 
       {/* Creation Bytecode Section */}
       <section className="mb-8 border border-gray-200 rounded-lg p-6">
-        {!contract.creationMatch && (
+        {!contractWithPlaceholders.creationMatch && (
           <div className="mb-4 text-sm text-gray-700 bg-yellow-50 border border-yellow-200 p-3 rounded">
             Contract couldn&apos;t be verified with the creation bytecode but with the runtime bytecode. Below is what
             was found at the time of verification.
           </div>
         )}
-        <div className={`${!contract.creationMatch ? "opacity-60" : ""}`}>
+        <div className={`${!contractWithPlaceholders.creationMatch ? "opacity-60" : ""}`}>
           <div className="sticky top-0 z-10 bg-gray-100">
             <h2 className="text-xl font-semibold text-gray-800">Creation Bytecode</h2>
           </div>
           <Suspense fallback={<LoadingState />}>
             <BytecodeDiffView
-              onchainBytecode={contract.creationBytecode.onchainBytecode}
-              recompiledBytecode={contract.creationBytecode.recompiledBytecode}
+              onchainBytecode={contractWithPlaceholders.creationBytecode.onchainBytecode}
+              recompiledBytecode={contractWithPlaceholders.creationBytecode.recompiledBytecode}
               id="creation"
-              transformations={contract.creationBytecode.transformations}
-              transformationValues={contract.creationBytecode.transformationValues}
+              transformations={contractWithPlaceholders.creationBytecode.transformations}
+              transformationValues={contractWithPlaceholders.creationBytecode.transformationValues}
             />
           </Suspense>
 
           {/* CBOR Auxdata Section */}
           <CborAuxdataSection
-            cborAuxdata={contract.creationBytecode.cborAuxdata}
-            language={contract.compilation.language}
+            cborAuxdata={contractWithPlaceholders.creationBytecode.cborAuxdata}
+            language={contractWithPlaceholders.compilation.language}
           />
 
           {/* Creation Transformations Section */}
-          {contract.creationBytecode.transformations && contract.creationBytecode.transformations.length > 0 && (
-            <section className="flex flex-col mt-8 border border-gray-200 rounded-lg p-4 gap-4">
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-semibold text-gray-800">Transformations</h2>
-                <InfoTooltip
-                  content="Transformations are the necessary changes on the non-functional recompiled bytecode sections to achieve the onchain bytecode such as libraries, immutable variables etc. <a href='https://verifieralliance.org/docs/transformations' target='_blank' rel='noopener noreferrer' style='text-decoration: underline;'>Read more</a>"
-                  html={true}
-                />
-              </div>
-              {contract.creationBytecode.transformationValues?.libraries && (
-                <Suspense fallback={<LoadingState />}>
-                  <LibraryTransformations
-                    transformations={contract.creationBytecode.transformations}
-                    transformationValues={contract.creationBytecode.transformationValues}
-                    chainId={chainId}
-                    verificationStatus={verificationStatus}
+          {contractWithPlaceholders.creationBytecode.transformations &&
+            contractWithPlaceholders.creationBytecode.transformations.length > 0 && (
+              <section className="flex flex-col mt-8 border border-gray-200 rounded-lg p-4 gap-4">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-semibold text-gray-800">Transformations</h2>
+                  <InfoTooltip
+                    content="Transformations are the necessary changes on the non-functional recompiled bytecode sections to achieve the onchain bytecode such as libraries, immutable variables etc. <a href='https://verifieralliance.org/docs/transformations' target='_blank' rel='noopener noreferrer' style='text-decoration: underline;'>Read more</a>"
+                    html={true}
                   />
-                </Suspense>
-              )}
-              {contract.creationBytecode.transformationValues?.constructorArguments && (
-                <Suspense fallback={<LoadingState />}>
-                  <ConstructorArguments
-                    constructorArguments={contract.creationBytecode.transformationValues.constructorArguments}
-                    abi={contract.abi}
+                </div>
+                {contractWithPlaceholders.creationBytecode.transformationValues?.libraries && (
+                  <Suspense fallback={<LoadingState />}>
+                    <LibraryTransformations
+                      transformations={contractWithPlaceholders.creationBytecode.transformations}
+                      transformationValues={contractWithPlaceholders.creationBytecode.transformationValues}
+                      chainId={chainId}
+                      verificationStatus={verificationStatus}
+                    />
+                  </Suspense>
+                )}
+                {contractWithPlaceholders.creationBytecode.transformationValues?.constructorArguments && (
+                  <Suspense fallback={<LoadingState />}>
+                    <ConstructorArguments
+                      constructorArguments={
+                        contractWithPlaceholders.creationBytecode.transformationValues.constructorArguments
+                      }
+                      abi={contractWithPlaceholders.abi}
+                    />
+                  </Suspense>
+                )}
+                {contractWithPlaceholders.creationBytecode.transformationValues?.cborAuxdata && (
+                  <CborAuxdataTransformations
+                    transformations={contractWithPlaceholders.creationBytecode.transformations}
+                    transformationValues={contractWithPlaceholders.creationBytecode.transformationValues}
+                    recompiledBytecode={contractWithPlaceholders.creationBytecode.recompiledBytecode}
                   />
-                </Suspense>
-              )}
-              {contract.creationBytecode.transformationValues?.cborAuxdata && (
-                <CborAuxdataTransformations
-                  transformations={contract.creationBytecode.transformations}
-                  transformationValues={contract.creationBytecode.transformationValues}
-                  recompiledBytecode={contract.creationBytecode.recompiledBytecode}
-                />
-              )}
-            </section>
-          )}
+                )}
+              </section>
+            )}
         </div>
       </section>
 
       {/* Runtime Bytecode Section */}
       <section className="mb-8 border border-gray-200 rounded-lg p-6">
-        {!contract.runtimeMatch && (
+        {!contractWithPlaceholders.runtimeMatch && (
           <div className="mb-4 text-sm text-gray-700 bg-yellow-50 border border-yellow-200 p-3 rounded">
             Contract couldn&apos;t be verified with the runtime bytecode but with the creation bytecode. Below is what
             was found at the time of verification.
           </div>
         )}
-        <div className={`${!contract.runtimeMatch ? "opacity-60" : ""}`}>
+        <div className={`${!contractWithPlaceholders.runtimeMatch ? "opacity-60" : ""}`}>
           <div className="sticky top-0 z-10 bg-gray-100">
             <h2 className="text-xl font-semibold text-gray-800">Runtime Bytecode</h2>
           </div>
           <Suspense fallback={<LoadingState />}>
             <BytecodeDiffView
-              onchainBytecode={contract.runtimeBytecode.onchainBytecode}
-              recompiledBytecode={contract.runtimeBytecode.recompiledBytecode}
+              onchainBytecode={contractWithPlaceholders.runtimeBytecode.onchainBytecode}
+              recompiledBytecode={contractWithPlaceholders.runtimeBytecode.recompiledBytecode}
               id="runtime"
-              transformations={contract.runtimeBytecode.transformations}
-              transformationValues={contract.runtimeBytecode.transformationValues}
+              transformations={contractWithPlaceholders.runtimeBytecode.transformations}
+              transformationValues={contractWithPlaceholders.runtimeBytecode.transformationValues}
             />
           </Suspense>
 
           {/* Runtime CBOR Auxdata Section */}
           <CborAuxdataSection
-            cborAuxdata={contract.runtimeBytecode.cborAuxdata}
-            language={contract.compilation.language}
+            cborAuxdata={contractWithPlaceholders.runtimeBytecode.cborAuxdata}
+            language={contractWithPlaceholders.compilation.language}
           />
 
           {/* Runtime Transformations Section */}
-          {contract.runtimeBytecode.transformations && contract.runtimeBytecode.transformations.length > 0 && (
-            <div className="flex flex-col mt-4 border border-gray-200 rounded-lg p-4 gap-4">
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-semibold text-gray-800">Transformations</h2>
-                <InfoTooltip
-                  content="Transformations are the necessary changes on the non-functional recompiled bytecode sections to achieve the onchain bytecode such as libraries, immutable variables etc. <a href='https://verifieralliance.org/docs/transformations' target='_blank' rel='noopener noreferrer' style='text-decoration: underline;'>Read more</a>"
-                  html={true}
-                />
+          {contractWithPlaceholders.runtimeBytecode.transformations &&
+            contractWithPlaceholders.runtimeBytecode.transformations.length > 0 && (
+              <div className="flex flex-col mt-4 border border-gray-200 rounded-lg p-4 gap-4">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-semibold text-gray-800">Transformations</h2>
+                  <InfoTooltip
+                    content="Transformations are the necessary changes on the non-functional recompiled bytecode sections to achieve the onchain bytecode such as libraries, immutable variables etc. <a href='https://verifieralliance.org/docs/transformations' target='_blank' rel='noopener noreferrer' style='text-decoration: underline;'>Read more</a>"
+                    html={true}
+                  />
+                </div>
+                <Suspense fallback={<LoadingState />}>
+                  <LibraryTransformations
+                    transformations={contractWithPlaceholders.runtimeBytecode.transformations}
+                    transformationValues={contractWithPlaceholders.runtimeBytecode.transformationValues}
+                    chainId={chainId}
+                    verificationStatus={verificationStatus}
+                  />
+                </Suspense>
+
+                {contractWithPlaceholders.runtimeBytecode.transformationValues?.immutables && (
+                  <ImmutableTransformations
+                    transformations={contractWithPlaceholders.runtimeBytecode.transformations}
+                    transformationValues={contractWithPlaceholders.runtimeBytecode.transformationValues}
+                  />
+                )}
+
+                {contractWithPlaceholders.runtimeBytecode.transformationValues?.callProtection && (
+                  <CallProtectionTransformation
+                    transformations={contractWithPlaceholders.runtimeBytecode.transformations}
+                    transformationValues={contractWithPlaceholders.runtimeBytecode.transformationValues}
+                  />
+                )}
+
+                {contractWithPlaceholders.runtimeBytecode.transformationValues?.cborAuxdata && (
+                  <CborAuxdataTransformations
+                    transformations={contractWithPlaceholders.runtimeBytecode.transformations}
+                    transformationValues={contractWithPlaceholders.runtimeBytecode.transformationValues}
+                    recompiledBytecode={contractWithPlaceholders.runtimeBytecode.recompiledBytecode}
+                  />
+                )}
               </div>
-              <Suspense fallback={<LoadingState />}>
-                <LibraryTransformations
-                  transformations={contract.runtimeBytecode.transformations}
-                  transformationValues={contract.runtimeBytecode.transformationValues}
-                  chainId={chainId}
-                  verificationStatus={verificationStatus}
-                />
-              </Suspense>
-
-              {contract.runtimeBytecode.transformationValues?.immutables && (
-                <ImmutableTransformations
-                  transformations={contract.runtimeBytecode.transformations}
-                  transformationValues={contract.runtimeBytecode.transformationValues}
-                />
-              )}
-
-              {contract.runtimeBytecode.transformationValues?.callProtection && (
-                <CallProtectionTransformation
-                  transformations={contract.runtimeBytecode.transformations}
-                  transformationValues={contract.runtimeBytecode.transformationValues}
-                />
-              )}
-
-              {contract.runtimeBytecode.transformationValues?.cborAuxdata && (
-                <CborAuxdataTransformations
-                  transformations={contract.runtimeBytecode.transformations}
-                  transformationValues={contract.runtimeBytecode.transformationValues}
-                  recompiledBytecode={contract.runtimeBytecode.recompiledBytecode}
-                />
-              )}
-            </div>
-          )}
+            )}
         </div>
       </section>
 
       {/* Storage Layout Section */}
-      {contract.storageLayout?.types && (
+      {contractWithPlaceholders.storageLayout?.types && (
         <section className="mb-8">
           <div className="sticky top-0 z-10 bg-gray-100 py-4">
             <h2 className="text-xl font-semibold text-gray-800">Storage Layout</h2>
           </div>
-          <StorageLayout storageLayout={contract.storageLayout} />
+          <StorageLayout storageLayout={contractWithPlaceholders.storageLayout} />
         </section>
       )}
 
@@ -480,18 +505,18 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <CopyToClipboardButton data={contract.stdJsonInput} />
+              <CopyToClipboardButton data={contractWithPlaceholders.stdJsonInput} />
               <DownloadFileButton
-                data={contract.stdJsonInput}
+                data={contractWithPlaceholders.stdJsonInput}
                 fileName="standard-json-input"
-                chainId={contract.chainId}
-                address={contract.address}
+                chainId={contractWithPlaceholders.chainId}
+                address={contractWithPlaceholders.address}
               />
             </div>
           </div>
         </div>
         <Suspense fallback={<LoadingState />}>
-          <JsonViewOnlyEditor data={contract.stdJsonInput} />
+          <JsonViewOnlyEditor data={contractWithPlaceholders.stdJsonInput} />
         </Suspense>
       </section>
 
@@ -506,18 +531,18 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <CopyToClipboardButton data={contract.stdJsonOutput} />
+              <CopyToClipboardButton data={contractWithPlaceholders.stdJsonOutput} />
               <DownloadFileButton
-                data={contract.stdJsonOutput}
+                data={contractWithPlaceholders.stdJsonOutput}
                 fileName="standard-json-output"
-                chainId={contract.chainId}
-                address={contract.address}
+                chainId={contractWithPlaceholders.chainId}
+                address={contractWithPlaceholders.address}
               />
             </div>
           </div>
         </div>
         <Suspense fallback={<LoadingState />}>
-          <JsonViewOnlyEditor data={contract.stdJsonOutput} />
+          <JsonViewOnlyEditor data={contractWithPlaceholders.stdJsonOutput} />
         </Suspense>
       </section>
     </div>
