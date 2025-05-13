@@ -21,11 +21,21 @@ export interface ContractData {
   address: string;
 }
 
+export interface LibraryReferenceObject {
+  start: number;
+  length: number;
+}
+export interface LinkReferences {
+  [fileName: string]: {
+    [libraryName: string]: LibraryReferenceObject[];
+  };
+}
+
 export interface BytecodeData {
   onchainBytecode: string;
   recompiledBytecode: string;
   sourceMap: string;
-  linkReferences: Record<string, unknown>;
+  linkReferences: LinkReferences;
   cborAuxdata?: Record<
     string,
     {
