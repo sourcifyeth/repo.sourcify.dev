@@ -145,10 +145,10 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
     <div>
       <div className="mt-3 mb-2">
         <div className="flex items-center">
-          <h1 className="text-2xl font-bold font-mono text-gray-900">{contract.address}</h1>
-          <CopyToClipboard text={contract.address} className="ml-2" />
+          <h1 className="text-base break-all md:text-2xl font-bold font-mono text-gray-900">{contract.address}</h1>
+          <CopyToClipboard text={contract.address} className="ml-2 md:p-0 p-2" />
         </div>
-        <p className="text-gray-700 mt-1">
+        <p className="text-sm md:text-base text-gray-700 mt-1">
           on {chainName}
           {chains.find((c) => c.chainId.toString() === chainId)?.supported === false && (
             <span className="text-gray-500 text-sm ml-2"> (verification on this chain is deprecated)</span>
@@ -157,16 +157,19 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </div>
 
       {/* Match status */}
-      <div className="mb-6 flex flex-col gap-1">
-        <div className="flex items-center gap-2">
+      <div className="mb-6">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Match badge */}
           <span
-            className={`inline-flex items-center px-3 py-1 rounded-md font-semibold border ${matchColor} cursor-help`}
+            className={`inline-flex items-center px-2 py-1 md:px-3 md:py-1 rounded-md font-semibold border ${matchColor} cursor-help text-sm w-auto flex-shrink-0 md:text-base`}
             data-tooltip-id="global-tooltip"
             data-tooltip-content={matchTooltipContent}
           >
-            <span className="mr-1 text-2xl">{matchIcon}</span> {matchLabel}
+            <span className="mr-1 text-xl md:text-2xl">{matchIcon}</span> {matchLabel}
           </span>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+
+          {/* Bytecode match indicators */}
+          <div className="flex items-center gap-2 md:text-sm text-xs text-gray-500 flex-shrink-0">
             <div className="flex items-center gap-1">
               {contract.runtimeMatch ? (
                 <IoCheckmarkCircle className="text-green-500" />
@@ -204,19 +207,23 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
               </span>
             </div>
           </div>
+
+          {/* Unverified libraries warning */}
           {hasUnverifiedLibraries && (
             <span
-              className="flex items-center gap-1 text-yellow-600 cursor-help"
+              className="flex items-center gap-1 text-yellow-600 cursor-help flex-shrink-0"
               data-tooltip-id="global-tooltip"
               data-tooltip-content="This contract uses unverified libraries. Libraries can contain arbitrary code and should be verified before interacting with the contract."
             >
               <IoWarning className="h-4 w-4" />
-              <span className="text-sm">Unverified Libraries</span>
+              <span className="md:text-sm text-xs">Unverified Libraries</span>
             </span>
           )}
         </div>
+
+        {/* Warning for runtime-only match */}
         {!contract.creationMatch && contract.runtimeMatch && (
-          <div className="mt-2 text-sm text-yellow-600 bg-yellow-50 border border-yellow-200 p-2 rounded">
+          <div className="mt-2 md:text-sm text-xs text-yellow-600 bg-yellow-50 border border-yellow-200 p-2 rounded">
             <div className="flex items-center gap-2">
               <IoWarning className="h-4 w-4 flex-shrink-0" />
               <span>
@@ -252,14 +259,14 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       {/* Contract Source Code Section */}
       <section className="mb-8">
         <div className="sticky top-0 z-10 bg-gray-100 pt-4 pb-2">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <h2 className="text-xl font-semibold text-gray-800">Source Code</h2>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-xs md:text-sm">
               <a
                 href={`https://remix.ethereum.org/?#activate=contract-verification&call=contract-verification//lookupAndSave//sourcify//${contractWithPlaceholders.chainId}//${contractWithPlaceholders.address}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-sm bg-white rounded-md px-2 py-2 shadow-sm border border-gray-200 hover:bg-gray-100 transition-colors duration-200"
+                className="inline-flex items-center gap-1 bg-white rounded-md px-2 py-2 shadow-sm border border-gray-200 hover:bg-gray-100 transition-colors duration-200"
               >
                 <Image
                   src={RemixLogo}
@@ -287,9 +294,9 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       {/* Compiler Settings Section */}
       <section className="mb-8">
         <div className="sticky top-0 z-10 bg-gray-100 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <h2 className="text-xl font-semibold text-gray-800">Compiler Settings</h2>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-xs md:text-sm">
               <CopyToClipboardButton data={contractWithPlaceholders.compilation.compilerSettings} />
               <DownloadFileButton
                 data={contractWithPlaceholders.compilation}
@@ -321,7 +328,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       {/* Contract Metadata Section */}
       <section className="mb-8">
         <div className="sticky top-0 z-10 bg-gray-100 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <h2 className="text-xl font-semibold text-gray-800">Contract Metadata</h2>
             <div className="flex items-center gap-2">
               <CopyToClipboardButton data={contractWithPlaceholders.metadata} />
@@ -340,7 +347,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </section>
 
       {/* Creation Bytecode Section */}
-      <section className="mb-8 border border-gray-200 rounded-lg p-6">
+      <section className="mb-8 border border-gray-200 rounded-lg p-3 md:p-6">
         {!contractWithPlaceholders.creationMatch && (
           <div className="mb-4 text-sm text-gray-700 bg-yellow-50 border border-yellow-200 p-3 rounded">
             Contract couldn&apos;t be verified with the creation bytecode but with the runtime bytecode. Below is what
@@ -372,7 +379,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
             contractWithPlaceholders.creationBytecode.transformations.length > 0 && (
               <section className="flex flex-col mt-8 border border-gray-200 rounded-lg p-4 gap-4">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-semibold text-gray-800">Transformations</h2>
+                  <h2 className="text-lg md:text-xl font-semibold text-gray-800">Transformations</h2>
                   <InfoTooltip
                     content="Transformations are the necessary changes on the non-functional recompiled bytecode sections to achieve the onchain bytecode such as libraries, immutable variables etc. <a href='https://verifieralliance.org/docs/transformations' target='_blank' rel='noopener noreferrer' style='text-decoration: underline;'>Read more</a>"
                     html={true}
@@ -411,9 +418,9 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </section>
 
       {/* Runtime Bytecode Section */}
-      <section className="mb-8 border border-gray-200 rounded-lg p-6">
+      <section className="mb-8 border border-gray-200 rounded-lg p-3 md:p-6">
         {!contractWithPlaceholders.runtimeMatch && (
-          <div className="mb-4 text-sm text-gray-700 bg-yellow-50 border border-yellow-200 p-3 rounded">
+          <div className="mb-4 text-xs md:text-sm text-gray-700 bg-yellow-50 border border-yellow-200 p-3 rounded">
             Contract couldn&apos;t be verified with the runtime bytecode but with the creation bytecode. Below is what
             was found at the time of verification.
           </div>
@@ -497,7 +504,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       {/* Standard JSON Input Section */}
       <section className="mb-8">
         <div className="sticky top-0 z-10 bg-gray-100 py-4">
-          <div className="flex items-end justify-between">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between">
             <div>
               <h2 className="text-xl font-semibold text-gray-800">Standard JSON Input</h2>
               <p className="text-gray-700 text-sm">
@@ -523,7 +530,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       {/* Standard JSON Output Section */}
       <section className="mb-8">
         <div className="sticky top-0 z-10 bg-gray-100 py-4">
-          <div className="flex items-end justify-between">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between">
             <div>
               <h2 className="text-xl font-semibold text-gray-800">Standard JSON Output</h2>
               <p className="text-gray-700 text-sm">

@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import Editor from "@monaco-editor/react";
 import type { editor } from "monaco-editor";
 import CopyToClipboardButton from "@/components/CopyToClipboardButton";
+import { useIsMobile } from "@/hooks/useResponsive";
 
 // Define Monaco editor types
 type Monaco = typeof import("monaco-editor");
@@ -291,7 +292,7 @@ export default function ContractSource({ contract }: ContractSourceProps) {
   const monacoRef = useRef<Monaco | null>(null);
 
   const fileNames = Object.keys(contract.sources);
-
+  const isMobile = useIsMobile();
   // Determine language based on file extension
   useEffect(() => {
     if (activeFile) {
@@ -350,9 +351,9 @@ export default function ContractSource({ contract }: ContractSourceProps) {
                   value={contract.sources[activeFile].content}
                   options={{
                     readOnly: true,
-                    minimap: { enabled: true },
+                    minimap: { enabled: isMobile ? false : true },
                     scrollBeyondLastLine: false,
-                    fontSize: 12,
+                    fontSize: isMobile ? 10 : 12,
                     wordWrap: "on",
                     automaticLayout: true,
                     scrollbar: {
@@ -364,7 +365,7 @@ export default function ContractSource({ contract }: ContractSourceProps) {
                       verticalScrollbarSize: 12,
                       horizontalScrollbarSize: 12,
                     },
-                    lineNumbers: "on",
+                    lineNumbers: isMobile ? "off" : "on",
                     glyphMargin: true,
                     folding: true,
                     renderLineHighlight: "all",

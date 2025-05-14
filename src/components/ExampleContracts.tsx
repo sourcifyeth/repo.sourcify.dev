@@ -103,7 +103,7 @@ export default function ExampleContracts({ chains }: ExampleContractsProps) {
                     data-tooltip-content="Verified on Sourcify"
                   />
                 </td>
-                <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-left">
+                <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-left max-w-[170px] truncate">
                   <span className="text-blue-600 hover:underline">{contract.name}</span>
                   <div className="text-xs text-gray-500 font-normal">on {getChainName(contract.chainId, chains)}</div>
                 </td>

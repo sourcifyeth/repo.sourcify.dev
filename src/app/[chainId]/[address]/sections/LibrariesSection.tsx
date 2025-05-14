@@ -67,8 +67,8 @@ export default async function LibrariesSection({
   );
 
   return (
-    <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-      <h3 className="text-xl font-medium leading-6 text-gray-900 px-6 py-4">Libraries</h3>
+    <div className="bg-white shadow overflow-hidden rounded-lg">
+      <h3 className="text-xl font-medium leading-6 text-gray-900 md:px-6 md:py-4 px-4 py-4">Libraries</h3>
       {hasUnverifiedLibraries && (
         <div className="px-6 pb-4">
           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
@@ -77,7 +77,7 @@ export default async function LibrariesSection({
                 <IoWarning className="h-5 w-5 text-yellow-400" />
               </div>
               <div className="ml-3">
-                <p className="text-sm text-yellow-700">
+                <p className="md:text-sm text-xs text-yellow-700">
                   This contract uses unverified libraries. Libraries can contain arbitrary code and should be verified
                   before interacting with the contract.
                 </p>
@@ -90,18 +90,18 @@ export default async function LibrariesSection({
         {Object.keys(compilerLinkedLibraries).length > 0 && (
           <div className="px-6 pb-4">
             <h4 className="text-md font-medium text-gray-700 mb-2">Compiler Linked Libraries</h4>
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-gray-200 text-xs md:text-sm">
               <thead className="bg-gray-50">
                 <tr>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider"
                   >
                     Name
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider"
                   >
                     Address
                   </th>
@@ -113,7 +113,7 @@ export default async function LibrariesSection({
                   return (
                     <tr key={name}>
                       <td className="px-6 py-4 whitespace-nowrap font-sans">{name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono">
+                      <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm font-mono">
                         <div className="flex items-center">
                           {isVerified ? (
                             <a

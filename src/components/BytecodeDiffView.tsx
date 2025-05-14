@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import InfoTooltip from "./InfoTooltip";
 import { Transformations, TransformationValues } from "@/types/contract";
+import { useIsMobile } from "@/hooks/useResponsive";
 
 interface BytecodeDiffViewProps {
   onchainBytecode: string;
@@ -33,6 +34,9 @@ export default function BytecodeDiffView({
   const [activeTransformation, setActiveTransformation] = useState<TransformationInfo | null>(null);
   const [isTooltipHovered, setIsTooltipHovered] = useState(false);
   const tooltipCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Use the isMobile hook to check screen size
+  const isMobile = useIsMobile();
 
   const isOnchainRecompiledSame = onchainBytecode === recompiledBytecode;
 
@@ -199,7 +203,7 @@ export default function BytecodeDiffView({
     // Add any remaining unchanged part (except for constructor arguments which are handled above)
     if (currentIndex < onchainBytecode.length) {
       result.push(
-        <span key="remaining" className="text-gray-800">
+        <span key="remaining" className="text-gray-800 break-all">
           {onchainBytecode.slice(currentIndex)}
         </span>
       );
@@ -277,7 +281,7 @@ export default function BytecodeDiffView({
         </div>
       )}
       {!isOnchainRecompiledSame && (
-        <div className="flex items-center gap-4 my-2">
+        <div className="flex flex-col md:flex-row md:items-center gap-4 md:my-2 my-2">
           {transformations && transformations.length > 0 && (
             <div className="flex items-center gap-2">
               <input
@@ -335,13 +339,19 @@ export default function BytecodeDiffView({
         </div>
       )}
 
-      <div className="w-full max-h-64 p-3 bg-gray-50 rounded text-xs font-mono border border-gray-200 cursor-text break-words overflow-y-auto whitespace-pre-wrap overflow-x-clip">
+      <div
+        className={`w-full max-h-64 p-3 bg-gray-50 rounded font-mono border border-gray-200 cursor-text break-words overflow-y-auto whitespace-pre-wrap overflow-x-clip ${
+          isMobile ? "text-[0.65rem]" : "text-xs"
+        }`}
+      >
         {viewMode === "transformations" ? renderTransformations() : currentView}
       </div>
 
       {/* Add library placeholder info message */}
       {viewMode === "recompiled" && hasLibraryTransformations && (
-        <div className="mt-2 text-xs text-gray-600 italic border-l-2 border-gray-300 pl-2">
+        <div
+          className={`mt-2 italic border-l-2 border-gray-300 pl-2 text-gray-600 ${isMobile ? "text-[9px]" : "text-xs"}`}
+        >
           Library placeholders are inserted on the frontend, the value in the DB and the API contains `0000`s for
           placeholders in the bytecode
         </div>
