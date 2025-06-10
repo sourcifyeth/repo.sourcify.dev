@@ -269,76 +269,100 @@ export default function BytecodeDiffView({
         </div>
       )}
 
-      {onchainBytecode ===
-        "0x2121212121212121212121202d20636861696e207761732064657072656361746564206174207468652074696d65206f6620766572696669636174696f6e" && (
-        <div className="w-full text-sm my-2">
-          <div>
-            <span>
-              Chain was deprecated at the time of verification but sources were verified on an early Sourcify version.
-              The onchain bytecode below is a placeholder in database
-            </span>
+      {/* Bytecode view mode selector */}
+      <div className="flex flex-row justify-between items-end gap-2">
+        {onchainBytecode ===
+          "0x2121212121212121212121202d20636861696e207761732064657072656361746564206174207468652074696d65206f6620766572696669636174696f6e" && (
+          <div className="w-full text-sm my-2">
+            <div>
+              <span>
+                Chain was deprecated at the time of verification but sources were verified on an early Sourcify version.
+                The onchain bytecode below is a placeholder in database
+              </span>
+            </div>
           </div>
-        </div>
-      )}
-      {!isOnchainRecompiledSame && (
-        <div className="flex flex-col md:flex-row md:items-center gap-4 md:my-2 my-2">
-          {transformations && transformations.length > 0 && (
+        )}
+        {!isOnchainRecompiledSame && (
+          <div className="flex flex-col md:flex-row md:items-center gap-4 md:my-2 my-2">
+            {transformations && transformations.length > 0 && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  id={`transformations-${id}`}
+                  name={`bytecode-view-${id}`}
+                  value="transformations"
+                  checked={viewMode === "transformations"}
+                  onChange={() => setViewMode("transformations")}
+                  className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300"
+                />
+                <label htmlFor={`transformations-${id}`} className="text-sm font-medium text-gray-700 cursor-pointer">
+                  Transformations View
+                </label>
+                <InfoTooltip content={transformationsTooltipContent} html={true} />
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <input
                 type="radio"
-                id={`transformations-${id}`}
+                id={`onchain-${id}`}
                 name={`bytecode-view-${id}`}
-                value="transformations"
-                checked={viewMode === "transformations"}
-                onChange={() => setViewMode("transformations")}
+                value="onchain"
+                checked={viewMode === "onchain"}
+                onChange={() => setViewMode("onchain")}
                 className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300"
               />
-              <label htmlFor={`transformations-${id}`} className="text-sm font-medium text-gray-700 cursor-pointer">
-                Transformations View
+              <label htmlFor={`onchain-${id}`} className="text-sm font-medium text-gray-700 cursor-pointer">
+                On-chain Bytecode
               </label>
-              <InfoTooltip content={transformationsTooltipContent} html={true} />
             </div>
-          )}
-          <div className="flex items-center gap-2">
-            <input
-              type="radio"
-              id={`onchain-${id}`}
-              name={`bytecode-view-${id}`}
-              value="onchain"
-              checked={viewMode === "onchain"}
-              onChange={() => setViewMode("onchain")}
-              className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300"
-            />
-            <label htmlFor={`onchain-${id}`} className="text-sm font-medium text-gray-700 cursor-pointer">
-              On-chain Bytecode
-            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="radio"
+                id={`recompiled-${id}`}
+                name={`bytecode-view-${id}`}
+                value="recompiled"
+                checked={viewMode === "recompiled"}
+                onChange={() => setViewMode("recompiled")}
+                className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300"
+              />
+              <label htmlFor={`recompiled-${id}`} className="text-sm font-medium text-gray-700 cursor-pointer">
+                Recompiled Bytecode
+              </label>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="radio"
-              id={`recompiled-${id}`}
-              name={`bytecode-view-${id}`}
-              value="recompiled"
-              checked={viewMode === "recompiled"}
-              onChange={() => setViewMode("recompiled")}
-              className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300"
+        )}
+        {isOnchainRecompiledSame && (
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-sm font-medium text-gray-700">On-chain & Recompiled Bytecode</span>
+            <InfoTooltip
+              content="The on-chain and recompiled bytecodes are exactly the same, with no transformations needed."
+              html={false}
             />
-            <label htmlFor={`recompiled-${id}`} className="text-sm font-medium text-gray-700 cursor-pointer">
-              Recompiled Bytecode
-            </label>
           </div>
-        </div>
-      )}
-      {isOnchainRecompiledSame && (
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-sm font-medium text-gray-700">On-chain & Recompiled Bytecode</span>
-          <InfoTooltip
-            content="The on-chain and recompiled bytecodes are exactly the same, with no transformations needed."
-            html={false}
-          />
-        </div>
-      )}
+        )}
+        <button
+          onClick={() => {
+            const bytecodeWithoutPrefix = currentView.startsWith("0x") ? currentView.slice(2) : currentView;
+            const url = `https://www.evm.codes/playground?code=%27${encodeURIComponent(
+              bytecodeWithoutPrefix
+            )}%27_&codeType=Bytecode`;
+            window.open(url, "_blank");
+          }}
+          className="text-xs font-medium text-gray-600 hover:text-gray-800 transition-colors duration-200 flex items-center gap-1 hover:cursor-pointer mb-1"
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+            />
+          </svg>
+          Open in evm.codes
+        </button>
+      </div>
 
+      {/* Bytecode string */}
       <div
         className={`w-full max-h-64 p-3 bg-gray-50 rounded font-mono border border-gray-200 cursor-text break-words overflow-y-auto whitespace-pre-wrap overflow-x-clip ${
           isMobile ? "text-[0.65rem]" : "text-xs"
