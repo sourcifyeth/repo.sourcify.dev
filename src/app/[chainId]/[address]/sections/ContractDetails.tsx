@@ -42,7 +42,10 @@ export default function ContractDetails({ contract }: ContractDetailsProps) {
     { label: "Compilation Target", value: contract.compilation.fullyQualifiedName },
     { label: "Language", value: contract.compilation.language },
     { label: "Compiler", value: `${contract.compilation.compiler} ${contract.compilation.compilerVersion}` },
-    { label: "EVM Version", value: contract.compilation.compilerSettings.evmVersion as string },
+    {
+      label: "EVM Version",
+      value: (contract.compilation.compilerSettings.evmVersion as string | undefined) || "default",
+    },
     { label: "Verified At", value: formatTimestamp(contract.verifiedAt) },
     { label: "Deployer", value: contract.deployment.deployer, copyValue: contract.deployment.deployer },
     {
