@@ -1,19 +1,21 @@
 "use client";
 
 import React from "react";
-import { Transformations, TransformationValues } from "@/types/contract";
+import { BytecodeData, Transformations, TransformationValues } from "@/types/contract";
 import CopyToClipboard from "../../../../components/CopyToClipboard";
 
 interface CborAuxdataTransformationsProps {
   transformations?: Transformations;
   transformationValues?: TransformationValues;
   recompiledBytecode?: string;
+  recompiledBytecodeCborAuxdata?: BytecodeData["cborAuxdata"];
 }
 
 export default function CborAuxdataTransformations({
   transformations,
   transformationValues,
   recompiledBytecode,
+  recompiledBytecodeCborAuxdata,
 }: CborAuxdataTransformationsProps) {
   if (!transformations || transformations.length === 0 || !transformationValues?.cborAuxdata || !recompiledBytecode) {
     return null;
@@ -56,8 +58,7 @@ export default function CborAuxdataTransformations({
             {cborTransformations.map((transformation) => {
               const cborAuxdata = transformationValues.cborAuxdata?.[transformation.id] || "";
               // Convert byte offset to character position (each byte is 2 hex chars)
-              const charOffset = transformation.offset * 2 + 2; // Add 2 for "0x" prefix
-              const originalValue = recompiledBytecode.slice(charOffset, charOffset + cborAuxdata.length - 2); // Remove 2 to account for "0x" prefix
+              const originalValue = recompiledBytecodeCborAuxdata?.[transformation.id]?.value || "";
 
               return (
                 <tr key={transformation.offset}>
@@ -67,7 +68,7 @@ export default function CborAuxdataTransformations({
                     <div className="flex flex-col gap-0">
                       <div className="flex items-center">
                         <span className="text-gray-500 text-xs w-36 font-sans">Original (recompiled):</span>
-                        <span className="font-mono">0x{originalValue}</span>
+                        <span className="font-mono flex-1">{originalValue}</span>
                         <CopyToClipboard text={`0x${originalValue}`} className="ml-2" />
                       </div>
                       <div className="flex items-center">
