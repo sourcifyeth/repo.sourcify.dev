@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import InfoTooltip from "./InfoTooltip";
-import { Transformations, TransformationValues } from "@/types/contract";
+import { BytecodeData, Transformations, TransformationValues } from "@/types/contract";
 import { useIsMobile } from "@/hooks/useResponsive";
 
 interface BytecodeDiffViewProps {
@@ -11,6 +11,7 @@ interface BytecodeDiffViewProps {
   id: string;
   transformations?: Transformations;
   transformationValues?: TransformationValues;
+  recompiledBytecodeCborAuxdata?: BytecodeData["cborAuxdata"];
 }
 
 interface TransformationInfo {
@@ -26,6 +27,7 @@ export default function BytecodeDiffView({
   id,
   transformations,
   transformationValues,
+  recompiledBytecodeCborAuxdata,
 }: BytecodeDiffViewProps) {
   const [viewMode, setViewMode] = useState<"transformations" | "onchain" | "recompiled">(
     transformations && transformations.length > 0 ? "transformations" : "onchain" // If no transformations, show onchain bytecode
@@ -165,8 +167,12 @@ export default function BytecodeDiffView({
       // Get the original value from the recompiled bytecode
       let originalValue = "";
       if (transformation.reason !== "constructorArguments") {
-        const charOffset = transformation.offset * 2 + 2; // Add 2 for "0x" prefix
-        originalValue = recompiledBytecode.slice(charOffset, charOffset + value.length);
+        if (transformation.reason === "cborAuxdata") {
+          originalValue = recompiledBytecodeCborAuxdata?.[transformation.id]?.value || "";
+        } else {
+          const charOffset = transformation.offset * 2 + 2; // Add 2 for "0x" prefix
+          originalValue = recompiledBytecode.slice(charOffset, charOffset + value.length);
+        }
       }
 
       const colorClasses = getTransformationColor(transformation.reason);
@@ -251,7 +257,10 @@ export default function BytecodeDiffView({
                   <span className="font-semibold whitespace-nowrap mr-1">Original:</span>
                   <span className="font-mono overflow-hidden break-words">
                     {/* Don't prefix the __$a2..bc placeholder with 0x */}
-                    {activeTransformation.originalValue.startsWith("__") ? "" : "0x"}
+                    {activeTransformation.originalValue.startsWith("__") ||
+                    activeTransformation.originalValue.startsWith("0x")
+                      ? ""
+                      : "0x"}
                     {activeTransformation.originalValue}
                   </span>
                 </div>

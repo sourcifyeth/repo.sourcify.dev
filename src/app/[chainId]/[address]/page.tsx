@@ -365,6 +365,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
               id="creation"
               transformations={contractWithPlaceholders.creationBytecode.transformations}
               transformationValues={contractWithPlaceholders.creationBytecode.transformationValues}
+              recompiledBytecodeCborAuxdata={contractWithPlaceholders.creationBytecode.cborAuxdata}
             />
           </Suspense>
 
@@ -410,6 +411,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
                     transformations={contractWithPlaceholders.creationBytecode.transformations}
                     transformationValues={contractWithPlaceholders.creationBytecode.transformationValues}
                     recompiledBytecode={contractWithPlaceholders.creationBytecode.recompiledBytecode}
+                    recompiledBytecodeCborAuxdata={contractWithPlaceholders.creationBytecode.cborAuxdata}
                   />
                 )}
               </section>
@@ -436,6 +438,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
               id="runtime"
               transformations={contractWithPlaceholders.runtimeBytecode.transformations}
               transformationValues={contractWithPlaceholders.runtimeBytecode.transformationValues}
+              recompiledBytecodeCborAuxdata={contractWithPlaceholders.runtimeBytecode.cborAuxdata}
             />
           </Suspense>
 
@@ -484,6 +487,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
                     transformations={contractWithPlaceholders.runtimeBytecode.transformations}
                     transformationValues={contractWithPlaceholders.runtimeBytecode.transformationValues}
                     recompiledBytecode={contractWithPlaceholders.runtimeBytecode.recompiledBytecode}
+                    recompiledBytecodeCborAuxdata={contractWithPlaceholders.runtimeBytecode.cborAuxdata}
                   />
                 )}
               </div>
