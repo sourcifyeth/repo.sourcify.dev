@@ -143,23 +143,23 @@ export default function BytecodeDiffView({
   const getAnnotationColor = (reason: string) => {
     switch (reason) {
       case "library":
-        return "bg-blue-200 text-blue-900 border-blue-700";
+        return "bg-blue-200 text-blue-900";
       case "immutable":
-        return "bg-purple-200 text-purple-900 border-purple-700";
+        return "bg-purple-200 text-purple-900";
       case "callProtection":
-        return "bg-amber-200 text-amber-900 border-amber-700";
+        return "bg-amber-200 text-amber-900";
       case "constructorArguments":
-        return "bg-green-200 text-green-900 border-green-700";
+        return "bg-green-200 text-green-900";
       case "cborAuxdata":
-        return "bg-cyan-200 text-cyan-900 border-cyan-700";
+        return "bg-cyan-200 text-cyan-900";
       case "functionSignature":
-        return "bg-orange-200 text-orange-900 border-orange-700";
+        return "bg-orange-100 text-gray-600";
       case "errorSignature":
-        return "bg-red-200 text-red-900 border-red-700";
+        return "bg-rose-100 text-gray-700";
       case "eventSignature":
-        return "bg-pink-200 text-pink-900 border-pink-700";
+        return "bg-teal-100 text-gray-700";
       default:
-        return "bg-gray-200 text-gray-900 border-gray-700";
+        return "bg-gray-200 text-gray-900";
     }
   };
 
@@ -344,15 +344,15 @@ export default function BytecodeDiffView({
     <p>This view shows annotations on the bytecode including function/error signatures and transformations applied to match the on-chain bytecode.</p>
     <ul class="mt-2">
       <p>Transformations:</p>
-      <li class="text-gray-800 bg-gray-100 px-2 py-1 rounded">Black: Unchanged bytecode</li>
+        <li class="text-gray-800 bg-gray-100 px-2 py-1 rounded">Black: Unchanged bytecode</li>
       <li class="bg-blue-200 text-blue-900 px-2 py-1 rounded">Blue: Library addresses</li>
       <li class="bg-purple-200 text-purple-900 px-2 py-1 rounded">Purple: Immutable values</li>
       <li class="bg-amber-200 text-amber-900 px-2 py-1 rounded">Amber: Call protection</li>
       <li class="bg-green-200 text-green-900 px-2 py-1 rounded">Green: Constructor arguments</li>
       <li class="bg-cyan-200 text-cyan-900 px-2 py-1 rounded">Cyan: CBOR Auxdata</li>
       <p>Signatures:</p>
-      <li class="bg-orange-200 text-orange-900 px-2 py-1 rounded">Orange: Function signatures</li>
-      <li class="bg-red-200 text-red-900 px-2 py-1 rounded">Red: Error signatures</li>
+      <li class="bg-orange-100 text-gray-600 px-2 py-1 rounded">Orange: Function signatures</li>
+      <li class="bg-rose-100 text-rose-900 px-2 py-1 rounded">Red: Error signatures</li>
     </ul>
     <p class="mt-2">Hover over the colored sections to see details.</p>
   `;
