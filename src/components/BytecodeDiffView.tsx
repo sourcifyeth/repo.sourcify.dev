@@ -73,6 +73,49 @@ export default function BytecodeDiffView({
     setActiveAnnotation(annotationInfo);
   };
 
+  const renderAnnotationTooltipContent = (annotation: AnnotationInfo) => {
+    if (annotation.reason.endsWith("Signature")) {
+      const tooltipValues = {
+        Reason: annotation.reason,
+        Signature: annotation.originalValue,
+        "4byte Hash": "0x" + annotation.value,
+        Offset: annotation.offset + " bytes",
+      };
+      return (
+        <div className="text-xs flex flex-col gap-2 font-sans w-full">
+          {Object.entries(tooltipValues).map(([key, value]) => (
+            <div className="flex flex-wrap items-baseline" key={key}>
+              <span className="font-semibold whitespace-nowrap mr-1">{key}:</span>
+              <span className="font-mono overflow-hidden">{value}</span>
+            </div>
+          ))}
+        </div>
+      );
+    } else {
+      const tooltipValues: Record<string, string> = {
+        Reason: annotation.reason,
+        ...(annotation.originalValue && {
+          Original:
+            (annotation.originalValue.startsWith("__") || annotation.originalValue.startsWith("0x") ? "" : "0x") +
+            annotation.originalValue,
+        }),
+        Transformed: "0x" + annotation.value,
+        Offset: annotation.offset + " bytes",
+      };
+
+      return (
+        <div className="text-xs flex flex-col gap-2 font-sans w-full">
+          {Object.entries(tooltipValues).map(([key, value]) => (
+            <div className="flex flex-wrap items-baseline" key={key}>
+              <span className="font-semibold whitespace-nowrap mr-1">{key}:</span>
+              <span className="font-mono overflow-hidden break-words">{value}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+  };
+
   const handleAnnotationMouseLeave = () => {
     // Only start close timer if tooltip is not being hovered
     if (!isTooltipHovered) {
@@ -329,34 +372,7 @@ export default function BytecodeDiffView({
           onMouseEnter={handleTooltipMouseEnter}
           onMouseLeave={handleTooltipMouseLeave}
         >
-          {activeAnnotation && (
-            <div className="text-xs flex flex-col gap-2 font-sans w-full">
-              <div className="flex flex-wrap items-baseline">
-                <span className="font-semibold whitespace-nowrap mr-1">Reason:</span>
-                <span className="font-mono overflow-hidden">{activeAnnotation.reason}</span>
-              </div>
-              {activeAnnotation.originalValue && (
-                <div className="flex flex-wrap items-baseline">
-                  <span className="font-semibold whitespace-nowrap mr-1">Original:</span>
-                  <span className="font-mono overflow-hidden break-words">
-                    {/* Don't prefix the __$a2..bc placeholder with 0x */}
-                    {activeAnnotation.originalValue.startsWith("__") || activeAnnotation.originalValue.startsWith("0x")
-                      ? ""
-                      : "0x"}
-                    {activeAnnotation.originalValue}
-                  </span>
-                </div>
-              )}
-              <div className="flex flex-wrap items-baseline">
-                <span className="font-semibold whitespace-nowrap mr-1">Transformed:</span>
-                <span className="font-mono overflow-hidden break-words">0x{activeAnnotation.value}</span>
-              </div>
-              <div className="flex flex-wrap items-baseline">
-                <span className="font-semibold whitespace-nowrap mr-1">Offset:</span>
-                <span className="font-mono">{activeAnnotation.offset} bytes</span>
-              </div>
-            </div>
-          )}
+          {activeAnnotation && renderAnnotationTooltipContent(activeAnnotation)}
         </div>
       )}
 
