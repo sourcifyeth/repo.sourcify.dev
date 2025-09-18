@@ -15,7 +15,7 @@ interface BytecodeDiffViewProps {
   signatures?: SignatureData;
 }
 
-interface TransformationInfo {
+interface AnnotationInfo {
   reason: string;
   originalValue: string;
   value: string;
@@ -35,7 +35,7 @@ export default function BytecodeDiffView({
     transformations && transformations.length > 0 ? "annotations" : "onchain" // If no transformations, show onchain bytecode
   );
   const [currentView, setCurrentView] = useState<string>(recompiledBytecode);
-  const [activeTransformation, setActiveTransformation] = useState<TransformationInfo | null>(null);
+  const [activeAnnotation, setActiveAnnotation] = useState<AnnotationInfo | null>(null);
   const [isTooltipHovered, setIsTooltipHovered] = useState(false);
   const tooltipCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -64,20 +64,20 @@ export default function BytecodeDiffView({
     }
   }, [viewMode, onchainBytecode, recompiledBytecode]);
 
-  const handleTransformationMouseEnter = (transformationInfo: TransformationInfo) => {
+  const handleAnnotationMouseEnter = (annotationInfo: AnnotationInfo) => {
     // Clear any existing close timer
     if (tooltipCloseTimerRef.current) {
       clearTimeout(tooltipCloseTimerRef.current);
       tooltipCloseTimerRef.current = null;
     }
-    setActiveTransformation(transformationInfo);
+    setActiveAnnotation(annotationInfo);
   };
 
-  const handleTransformationMouseLeave = () => {
+  const handleAnnotationMouseLeave = () => {
     // Only start close timer if tooltip is not being hovered
     if (!isTooltipHovered) {
       tooltipCloseTimerRef.current = setTimeout(() => {
-        setActiveTransformation(null);
+        setActiveAnnotation(null);
       }, 500); // 500ms delay before closing
     }
   };
@@ -95,11 +95,11 @@ export default function BytecodeDiffView({
     setIsTooltipHovered(false);
     // Start timer to close tooltip
     tooltipCloseTimerRef.current = setTimeout(() => {
-      setActiveTransformation(null);
+      setActiveAnnotation(null);
     }, 300); // 300ms delay before closing
   };
 
-  const getTransformationColor = (reason: string) => {
+  const getAnnotationColor = (reason: string) => {
     switch (reason) {
       case "library":
         return "bg-blue-200 text-blue-900 border-blue-700";
@@ -256,7 +256,7 @@ export default function BytecodeDiffView({
         originalValue = recompiledBytecode.slice(charOffset, charOffset + value.length);
       }
 
-      const colorClasses = getTransformationColor(annotation.reason);
+      const colorClasses = getAnnotationColor(annotation.reason);
 
       // Create an object with all the annotation info we need for the tooltip
       const annotationInfo = {
@@ -270,8 +270,8 @@ export default function BytecodeDiffView({
         <span
           key={`annotation-${index}`}
           className={`break-all ${colorClasses} cursor-help rounded-xs hover:brightness-110 transition-all duration-200 relative overflow-x-clip ring-1 ring-inset ring-current`}
-          onMouseEnter={() => handleTransformationMouseEnter(annotationInfo)}
-          onMouseLeave={handleTransformationMouseLeave}
+          onMouseEnter={() => handleAnnotationMouseEnter(annotationInfo)}
+          onMouseLeave={handleAnnotationMouseLeave}
         >
           <span
             className={`absolute -top-2 text-[7.5px] font-bold ${colorClasses.split(" ")[1]} ${
@@ -300,14 +300,16 @@ export default function BytecodeDiffView({
   };
 
   const annotationsTooltipContent = `
-    <p>This view shows the transformations applied to the recompiled bytecode to match the on-chain bytecode, plus signature annotations.</p>
+    <p>This view shows annotations on the bytecode including function/error signatures and transformations applied to match the on-chain bytecode.</p>
     <ul class="mt-2">
+      <p>Transformations:</p>
       <li class="text-gray-800 bg-gray-100 px-2 py-1 rounded">Black: Unchanged bytecode</li>
       <li class="bg-blue-200 text-blue-900 px-2 py-1 rounded">Blue: Library addresses</li>
       <li class="bg-purple-200 text-purple-900 px-2 py-1 rounded">Purple: Immutable values</li>
       <li class="bg-amber-200 text-amber-900 px-2 py-1 rounded">Amber: Call protection</li>
       <li class="bg-green-200 text-green-900 px-2 py-1 rounded">Green: Constructor arguments</li>
       <li class="bg-cyan-200 text-cyan-900 px-2 py-1 rounded">Cyan: CBOR Auxdata</li>
+      <p>Signatures:</p>
       <li class="bg-orange-200 text-orange-900 px-2 py-1 rounded">Orange: Function signatures</li>
       <li class="bg-red-200 text-red-900 px-2 py-1 rounded">Red: Error signatures</li>
     </ul>
@@ -320,41 +322,38 @@ export default function BytecodeDiffView({
       {viewMode === "annotations" && (
         <div
           className={`absolute top-0 left-1/2 transform -translate-x-1/2 z-10 p-3 rounded shadow-md text-xs max-w-[80%] transition-all duration-300 ease-in-out ${
-            activeTransformation
+            activeAnnotation
               ? "opacity-100 translate-y-0 scale-100"
               : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
-          } ${
-            activeTransformation ? getTransformationColor(activeTransformation.reason) : "bg-gray-100 text-gray-800"
-          }`}
+          } ${activeAnnotation ? getAnnotationColor(activeAnnotation.reason) : "bg-gray-100 text-gray-800"}`}
           onMouseEnter={handleTooltipMouseEnter}
           onMouseLeave={handleTooltipMouseLeave}
         >
-          {activeTransformation && (
+          {activeAnnotation && (
             <div className="text-xs flex flex-col gap-2 font-sans w-full">
               <div className="flex flex-wrap items-baseline">
                 <span className="font-semibold whitespace-nowrap mr-1">Reason:</span>
-                <span className="font-mono overflow-hidden">{activeTransformation.reason}</span>
+                <span className="font-mono overflow-hidden">{activeAnnotation.reason}</span>
               </div>
-              {activeTransformation.originalValue && (
+              {activeAnnotation.originalValue && (
                 <div className="flex flex-wrap items-baseline">
                   <span className="font-semibold whitespace-nowrap mr-1">Original:</span>
                   <span className="font-mono overflow-hidden break-words">
                     {/* Don't prefix the __$a2..bc placeholder with 0x */}
-                    {activeTransformation.originalValue.startsWith("__") ||
-                    activeTransformation.originalValue.startsWith("0x")
+                    {activeAnnotation.originalValue.startsWith("__") || activeAnnotation.originalValue.startsWith("0x")
                       ? ""
                       : "0x"}
-                    {activeTransformation.originalValue}
+                    {activeAnnotation.originalValue}
                   </span>
                 </div>
               )}
               <div className="flex flex-wrap items-baseline">
                 <span className="font-semibold whitespace-nowrap mr-1">Transformed:</span>
-                <span className="font-mono overflow-hidden break-words">0x{activeTransformation.value}</span>
+                <span className="font-mono overflow-hidden break-words">0x{activeAnnotation.value}</span>
               </div>
               <div className="flex flex-wrap items-baseline">
                 <span className="font-semibold whitespace-nowrap mr-1">Offset:</span>
-                <span className="font-mono">{activeTransformation.offset} bytes</span>
+                <span className="font-mono">{activeAnnotation.offset} bytes</span>
               </div>
             </div>
           )}
@@ -372,39 +371,47 @@ export default function BytecodeDiffView({
           </div>
         </div>
       )}
-      {!isOnchainRecompiledSame && (
-        <div className="flex flex-col md:flex-row md:items-center gap-4 md:my-2 my-2">
-          {transformations && transformations.length > 0 && (
-            <div className="flex items-center gap-2">
-              <input
-                type="radio"
-                id={`annotations-${id}`}
-                name={`bytecode-view-${id}`}
-                value="annotations"
-                checked={viewMode === "annotations"}
-                onChange={() => setViewMode("annotations")}
-                className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300"
-              />
-              <label htmlFor={`annotations-${id}`} className="text-sm font-medium text-gray-700 cursor-pointer">
-                Annotations View
-              </label>
-              <InfoTooltip content={annotationsTooltipContent} html={true} />
-            </div>
-          )}
-          <div className="flex items-center gap-2">
-            <input
-              type="radio"
-              id={`onchain-${id}`}
-              name={`bytecode-view-${id}`}
-              value="onchain"
-              checked={viewMode === "onchain"}
-              onChange={() => setViewMode("onchain")}
-              className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300"
-            />
-            <label htmlFor={`onchain-${id}`} className="text-sm font-medium text-gray-700 cursor-pointer">
-              On-chain Bytecode
-            </label>
-          </div>
+      <div className="flex flex-col md:flex-row md:items-center gap-6 md:my-2 my-2">
+        <div className="flex items-center gap-1">
+          <input
+            type="radio"
+            id={`annotations-${id}`}
+            name={`bytecode-view-${id}`}
+            value="annotations"
+            checked={viewMode === "annotations"}
+            onChange={() => setViewMode("annotations")}
+            className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300"
+          />
+          <label htmlFor={`annotations-${id}`} className="text-sm font-medium text-gray-700 cursor-pointer">
+            Annotated Bytecode
+          </label>
+          <InfoTooltip content={annotationsTooltipContent} html={true} />
+        </div>
+        <div className="flex items-center gap-1">
+          <input
+            type="radio"
+            id={`onchain-${id}`}
+            name={`bytecode-view-${id}`}
+            value="onchain"
+            checked={viewMode === "onchain"}
+            onChange={() => setViewMode("onchain")}
+            className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300"
+          />
+          <label htmlFor={`onchain-${id}`} className="text-sm font-medium text-gray-700 cursor-pointer">
+            {isOnchainRecompiledSame ? (
+              <span className="flex items-center gap-1">
+                On-chain & Recompiled Bytecode
+                <InfoTooltip
+                  content="The on-chain and recompiled bytecodes are exactly the same, with no transformations needed."
+                  html={false}
+                />
+              </span>
+            ) : (
+              "On-chain Bytecode"
+            )}
+          </label>
+        </div>
+        {!isOnchainRecompiledSame && (
           <div className="flex items-center gap-2">
             <input
               type="radio"
@@ -419,17 +426,8 @@ export default function BytecodeDiffView({
               Recompiled Bytecode
             </label>
           </div>
-        </div>
-      )}
-      {isOnchainRecompiledSame && (
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-sm font-medium text-gray-700">On-chain & Recompiled Bytecode</span>
-          <InfoTooltip
-            content="The on-chain and recompiled bytecodes are exactly the same, with no transformations needed."
-            html={false}
-          />
-        </div>
-      )}
+        )}
+      </div>
 
       <div
         className={`w-full max-h-64 p-3 bg-gray-50 rounded font-mono border border-gray-200 cursor-text break-words overflow-y-auto whitespace-pre-wrap overflow-x-clip ${
