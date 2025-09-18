@@ -73,10 +73,11 @@ export default function BytecodeDiffView({
 
   const renderAnnotationTooltipContent = (annotation: AnnotationInfo) => {
     if (annotation.reason.endsWith("Signature")) {
+      const hashLabel = annotation.reason === "eventSignature" ? "32byte Hash" : "4byte Hash";
       const tooltipValues = {
         Reason: annotation.reason,
         Signature: annotation.originalValue,
-        "4byte Hash": "0x" + annotation.value,
+        [hashLabel]: "0x" + annotation.value,
         Offset: annotation.offset + " bytes",
       };
       return (
@@ -211,6 +212,37 @@ export default function BytecodeDiffView({
       }
     });
 
+    // Search for event signatures (32-byte hashes)
+    signatures.event.forEach((sig) => {
+      const hash32WithoutPrefix = sig.signatureHash32.startsWith("0x")
+        ? sig.signatureHash32.slice(2)
+        : sig.signatureHash32;
+      let searchIndex = 0;
+
+      while (true) {
+        const index = bytecodeWithoutPrefix.indexOf(hash32WithoutPrefix, searchIndex);
+        if (index === -1) break;
+
+        const byteOffset = index / 2;
+
+        // Skip if we already have an annotation at this offset (avoid overlaps)
+        if (!foundOffsets.has(byteOffset)) {
+          foundOffsets.add(byteOffset);
+
+          signatureTransformations.push({
+            reason: "eventSignature",
+            type: "replace",
+            offset: byteOffset,
+            id: sig.signature,
+            signature: sig.signature,
+            signatureHash32: sig.signatureHash32,
+          });
+        }
+
+        searchIndex = index + hash32WithoutPrefix.length;
+      }
+    });
+
     return signatureTransformations;
   };
 
@@ -259,9 +291,8 @@ export default function BytecodeDiffView({
 
       // Handle signature annotations
       if (annotation.reason.endsWith("Signature")) {
-        value = (annotation as any).signatureHash4.startsWith("0x")
-          ? (annotation as any).signatureHash4.slice(2)
-          : (annotation as any).signatureHash4;
+        const hash = annotation.reason === "eventSignature" ? annotation.signatureHash32 : annotation.signatureHash4;
+        value = hash.startsWith("0x") ? hash.slice(2) : hash;
       }
       // Handle regular transformations
       else if (transformationValues) {
@@ -353,6 +384,7 @@ export default function BytecodeDiffView({
       <p>Signatures:</p>
       <li class="bg-orange-100 text-gray-600 px-2 py-1 rounded">Orange: Function signatures</li>
       <li class="bg-rose-100 text-rose-900 px-2 py-1 rounded">Red: Error signatures</li>
+      <li class="bg-teal-100 text-gray-700 px-2 py-1 rounded">Teal: Event signatures</li>
     </ul>
     <p class="mt-2">Hover over the colored sections to see details.</p>
   `;
