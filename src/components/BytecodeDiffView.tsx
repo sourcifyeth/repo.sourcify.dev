@@ -31,9 +31,7 @@ export default function BytecodeDiffView({
   recompiledBytecodeCborAuxdata,
   signatures,
 }: BytecodeDiffViewProps) {
-  const [viewMode, setViewMode] = useState<"annotations" | "onchain" | "recompiled">(
-    transformations && transformations.length > 0 ? "annotations" : "onchain" // If no transformations, show onchain bytecode
-  );
+  const [viewMode, setViewMode] = useState<"annotations" | "onchain" | "recompiled">("annotations");
   const [currentView, setCurrentView] = useState<string>(recompiledBytecode);
   const [activeAnnotation, setActiveAnnotation] = useState<AnnotationInfo | null>(null);
   const [isTooltipHovered, setIsTooltipHovered] = useState(false);
@@ -321,7 +319,7 @@ export default function BytecodeDiffView({
               colorClasses.split(" ")[0]
             } opacity-100 select-none pointer-events-none px-[3px] py-[1px] rounded whitespace-nowrap`}
           >
-            {annotation.reason.endsWith("Signature") ? annotation.reason.replace("Signature", "") : annotation.reason}
+            {annotation.reason}
           </span>
           {value}
         </span>
