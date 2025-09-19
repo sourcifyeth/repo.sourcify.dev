@@ -22,6 +22,16 @@ interface AnnotationInfo {
   offset: number;
 }
 
+interface SignatureTransformation {
+  reason: string;
+  type: "replace";
+  offset: number;
+  id: string;
+  signature: string;
+  signatureHash32: string;
+  signatureHash4: string;
+}
+
 export default function BytecodeDiffView({
   onchainBytecode,
   recompiledBytecode,
@@ -168,14 +178,7 @@ export default function BytecodeDiffView({
   const detectSignatures = () => {
     if (!signatures) return [];
 
-    const signatureTransformations: Array<{
-      reason: string;
-      type: "replace";
-      offset: number;
-      id: string;
-      signature: string;
-      signatureHash4: string;
-    }> = [];
+    const signatureTransformations: Array<SignatureTransformation> = [];
 
     const bytecodeWithoutPrefix = recompiledBytecode.startsWith("0x")
       ? recompiledBytecode.slice(2)
@@ -205,6 +208,7 @@ export default function BytecodeDiffView({
             id: sig.signature,
             signature: sig.signature,
             signatureHash4: sig.signatureHash4,
+            signatureHash32: sig.signatureHash32,
           });
         }
 
@@ -236,6 +240,7 @@ export default function BytecodeDiffView({
             id: sig.signature,
             signature: sig.signature,
             signatureHash32: sig.signatureHash32,
+            signatureHash4: sig.signatureHash4,
           });
         }
 
@@ -291,21 +296,24 @@ export default function BytecodeDiffView({
 
       // Handle signature annotations
       if (annotation.reason.endsWith("Signature")) {
-        const hash = annotation.reason === "eventSignature" ? annotation.signatureHash32 : annotation.signatureHash4;
+        const hash =
+          (annotation as SignatureTransformation).reason === "eventSignature"
+            ? (annotation as SignatureTransformation).signatureHash32
+            : (annotation as SignatureTransformation).signatureHash4;
         value = hash.startsWith("0x") ? hash.slice(2) : hash;
       }
       // Handle regular transformations
       else if (transformationValues) {
         if (annotation.reason === "library" && transformationValues.libraries) {
-          value = transformationValues.libraries[(annotation as any).id];
+          value = transformationValues.libraries[annotation.id];
         } else if (annotation.reason === "immutable" && transformationValues.immutables) {
-          value = transformationValues.immutables[(annotation as any).id];
+          value = transformationValues.immutables[annotation.id];
         } else if (annotation.reason === "callProtection" && transformationValues.callProtection) {
           value = transformationValues.callProtection;
         } else if (annotation.reason === "constructorArguments" && transformationValues.constructorArguments) {
           value = transformationValues.constructorArguments;
         } else if (annotation.reason === "cborAuxdata" && transformationValues.cborAuxdata) {
-          value = transformationValues.cborAuxdata[(annotation as any).id];
+          value = transformationValues.cborAuxdata[annotation.id];
         }
       }
 
@@ -320,9 +328,9 @@ export default function BytecodeDiffView({
         originalValue = "";
       } else if (annotation.reason.endsWith("Signature")) {
         // For signatures, show the signature text as the original value
-        originalValue = (annotation as any).signature;
+        originalValue = (annotation as SignatureTransformation).signature;
       } else if (annotation.reason === "cborAuxdata") {
-        originalValue = recompiledBytecodeCborAuxdata?.[(annotation as any).id]?.value || "";
+        originalValue = recompiledBytecodeCborAuxdata?.[annotation.id]?.value || "";
       } else {
         const charOffset = annotation.offset * 2 + 2; // Add 2 for "0x" prefix
         originalValue = recompiledBytecode.slice(charOffset, charOffset + value.length);
