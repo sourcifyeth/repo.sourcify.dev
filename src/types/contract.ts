@@ -19,6 +19,7 @@ export interface ContractData {
   match: string;
   chainId: string;
   address: string;
+  signatures?: SignatureData;
 }
 
 export interface LibraryReferenceObject {
@@ -175,4 +176,16 @@ export interface StorageLayoutData {
     offset: number;
     contract: string;
   }>;
+}
+
+export interface SignatureData {
+  function: SignatureItem[];
+  event: SignatureItem[];
+  error: SignatureItem[];
+}
+
+export interface SignatureItem {
+  signature: string;
+  signatureHash32: string;
+  signatureHash4: string;
 }
