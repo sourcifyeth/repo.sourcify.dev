@@ -380,7 +380,7 @@ export default function BytecodeDiffView({
   };
 
   const annotationsTooltipContent = `
-    <p>This view shows annotations on the bytecode including function/error signatures and transformations applied to match the on-chain bytecode.</p>
+    <p>This view shows annotations on the on-chain bytecode including function/error signatures and transformations applied to match the on-chain bytecode.</p>
     <ul class="mt-2">
       <p>Transformations:</p>
         <li class="text-gray-800 bg-gray-100 px-2 py-1 rounded">Black: Unchanged bytecode</li>
