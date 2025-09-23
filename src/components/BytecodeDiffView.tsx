@@ -437,7 +437,7 @@ export default function BytecodeDiffView({
             className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300"
           />
           <label htmlFor={`annotations-${id}`} className="text-sm font-medium text-gray-700 cursor-pointer">
-            Annotated Bytecode
+            Annotated On-chain Bytecode
           </label>
           <InfoTooltip content={annotationsTooltipContent} html={true} />
         </div>
