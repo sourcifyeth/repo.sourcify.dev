@@ -41,7 +41,8 @@ export default function BytecodeDiffView({
   recompiledBytecodeCborAuxdata,
   signatures,
 }: BytecodeDiffViewProps) {
-  const [viewMode, setViewMode] = useState<"annotations" | "onchain" | "recompiled">("annotations");
+  // annotations view is hidden if no onchain code is available
+  const [viewMode, setViewMode] = useState<"annotations" | "onchain" | "recompiled">(onchainBytecode ? "annotations" : "onchain");
   const [currentView, setCurrentView] = useState<string>(recompiledBytecode);
   const [activeAnnotation, setActiveAnnotation] = useState<AnnotationInfo | null>(null);
   const [isTooltipHovered, setIsTooltipHovered] = useState(false);
@@ -354,9 +355,8 @@ export default function BytecodeDiffView({
           onMouseLeave={handleAnnotationMouseLeave}
         >
           <span
-            className={`absolute -top-2 text-[7.5px] font-bold ${colorClasses.split(" ")[1]} ${
-              colorClasses.split(" ")[0]
-            } opacity-100 select-none pointer-events-none px-[3px] py-[1px] rounded whitespace-nowrap`}
+            className={`absolute -top-2 text-[7.5px] font-bold ${colorClasses.split(" ")[1]} ${colorClasses.split(" ")[0]
+              } opacity-100 select-none pointer-events-none px-[3px] py-[1px] rounded whitespace-nowrap`}
           >
             {annotation.reason}
           </span>
@@ -368,7 +368,7 @@ export default function BytecodeDiffView({
     });
 
     // Add any remaining unchanged part (except for constructor arguments which are handled above)
-    if (currentIndex < onchainBytecode.length) {
+    if (onchainBytecode && currentIndex < onchainBytecode.length) {
       result.push(
         <span key="remaining" className="text-gray-800 break-all">
           {onchainBytecode.slice(currentIndex)}
@@ -402,11 +402,10 @@ export default function BytecodeDiffView({
       {/* Fixed tooltip area as an overlay */}
       {viewMode === "annotations" && (
         <div
-          className={`absolute top-0 left-1/2 transform -translate-x-1/2 z-10 p-3 rounded shadow-md text-xs max-w-[80%] transition-all duration-300 ease-in-out ${
-            activeAnnotation
-              ? "opacity-100 translate-y-0 scale-100"
-              : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
-          } ${activeAnnotation ? getAnnotationColor(activeAnnotation.reason) : "bg-gray-100 text-gray-800"}`}
+          className={`absolute top-0 left-1/2 transform -translate-x-1/2 z-10 p-3 rounded shadow-md text-xs max-w-[80%] transition-all duration-300 ease-in-out ${activeAnnotation
+            ? "opacity-100 translate-y-0 scale-100"
+            : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
+            } ${activeAnnotation ? getAnnotationColor(activeAnnotation.reason) : "bg-gray-100 text-gray-800"}`}
           onMouseEnter={handleTooltipMouseEnter}
           onMouseLeave={handleTooltipMouseLeave}
         >
@@ -416,31 +415,32 @@ export default function BytecodeDiffView({
 
       {onchainBytecode ===
         "0x2121212121212121212121202d20636861696e207761732064657072656361746564206174207468652074696d65206f6620766572696669636174696f6e" && (
-        <div className="w-full text-sm my-2">
-          <div>
-            <span>
-              Chain was deprecated at the time of verification but sources were verified on an early Sourcify version.
-              The onchain bytecode below is a placeholder in database
-            </span>
+          <div className="w-full text-sm my-2">
+            <div>
+              <span>
+                Chain was deprecated at the time of verification but sources were verified on an early Sourcify version.
+                The onchain bytecode below is a placeholder in database
+              </span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
       <div className="flex flex-col md:flex-row md:items-center gap-6 md:my-2 my-2">
-        <div className="flex items-center gap-1">
-          <input
-            type="radio"
-            id={`annotations-${id}`}
-            name={`bytecode-view-${id}`}
-            value="annotations"
-            checked={viewMode === "annotations"}
-            onChange={() => setViewMode("annotations")}
-            className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300"
-          />
-          <label htmlFor={`annotations-${id}`} className="text-sm font-medium text-gray-700 cursor-pointer">
-            Annotated On-chain Bytecode
-          </label>
-          <InfoTooltip content={annotationsTooltipContent} html={true} />
-        </div>
+        {onchainBytecode && (
+          <div className="flex items-center gap-1">
+            <input
+              type="radio"
+              id={`annotations-${id}`}
+              name={`bytecode-view-${id}`}
+              value="annotations"
+              checked={viewMode === "annotations"}
+              onChange={() => setViewMode("annotations")}
+              className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300"
+            />
+            <label htmlFor={`annotations-${id}`} className="text-sm font-medium text-gray-700 cursor-pointer">
+              Annotated On-chain Bytecode
+            </label>
+            <InfoTooltip content={annotationsTooltipContent} html={true} />
+          </div>)}
         <div className="flex items-center gap-1">
           <input
             type="radio"
@@ -484,9 +484,8 @@ export default function BytecodeDiffView({
       </div>
 
       <div
-        className={`w-full max-h-64 p-3 bg-gray-50 rounded font-mono border border-gray-200 cursor-text break-words overflow-y-auto whitespace-pre-wrap overflow-x-clip ${
-          isMobile ? "text-[0.65rem]" : "text-xs"
-        }`}
+        className={`w-full max-h-64 p-3 bg-gray-50 rounded font-mono border border-gray-200 cursor-text break-words overflow-y-auto whitespace-pre-wrap overflow-x-clip ${isMobile ? "text-[0.65rem]" : "text-xs"
+          }`}
       >
         {viewMode === "annotations" ? renderAnnotations() : currentView}
       </div>
