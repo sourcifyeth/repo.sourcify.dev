@@ -237,21 +237,21 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </div>
 
       {/* Contract Details Section */}
-      <section className="mb-4">
+      <section className="my-6">
         <ContractDetails contract={contractWithPlaceholders} chainName={chainName} />
       </section>
 
       {/* Proxy Resolution Section */}
       {contractWithPlaceholders.proxyResolution && contractWithPlaceholders.proxyResolution.isProxy && (
-        <section className="mb-4">
-          <div className="sticky top-0 z-10 bg-gray-100 py-4">
+        <section className="mt-6 mb-4">
+          <div className="sticky top-0 z-10 bg-gray-100">
             <ProxyResolution proxyResolution={contractWithPlaceholders.proxyResolution} chainId={chainId} />
           </div>
         </section>
       )}
 
       {/* Read/Write Contract Section */}
-      <section className="mb-4 flex flex-row flex-wrap items-center gap-2">
+      <section className="my-4 flex flex-row flex-wrap items-center gap-2">
         <div className="sticky top-0 z-10 bg-gray-100 py-4">
           <h2 className="text-lg font-semibold text-gray-800">Read/Write Contract on:</h2>
         </div>
