@@ -18,6 +18,7 @@ import ConstructorArguments from "./sections/ConstructorArguments";
 import StorageLayout from "./sections/StorageLayout";
 import Image from "next/image";
 import RemixLogo from "@/assets/remix.svg";
+import OpenZeppelinLogo from "@/assets/oz.svg";
 import DownloadSourcesButton from "@/components/DownloadSourcesButton";
 import DownloadFileButton from "@/components/DownloadFileButton";
 import CopyToClipboardButton from "@/components/CopyToClipboardButton";
@@ -236,18 +237,35 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </div>
 
       {/* Contract Details Section */}
-      <section className="mb-8">
+      <section className="my-6">
         <ContractDetails contract={contractWithPlaceholders} chainName={chainName} />
       </section>
 
       {/* Proxy Resolution Section */}
       {contractWithPlaceholders.proxyResolution && contractWithPlaceholders.proxyResolution.isProxy && (
-        <section className="mb-8">
-          <div className="sticky top-0 z-10 bg-gray-100 py-4">
+        <section className="mt-6 mb-4">
+          <div className="sticky top-0 z-10 bg-gray-100">
             <ProxyResolution proxyResolution={contractWithPlaceholders.proxyResolution} chainId={chainId} />
           </div>
         </section>
       )}
+
+      {/* Read/Write Contract Section */}
+      <section className="my-4 flex flex-row flex-wrap items-center gap-2">
+        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+          <h2 className="text-lg font-semibold text-gray-800">Read/Write Contract on:</h2>
+        </div>
+        <div className="flex items-center gap-2">
+          <a
+            href={`https://builder.openzeppelin.com/?ecosystem=evm&chainId=${chainId}&address=${contract.address}&service=sourcify`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-white rounded-md px-4 py-3 shadow-sm border border-gray-200 hover:bg-gray-100 transition-colors duration-200 text-sm"
+          >
+            <Image src={OpenZeppelinLogo} alt="OpenZeppelin Logo" height={16} />
+          </a>
+        </div>
+      </section>
 
       {/* Contract ABI Section */}
       <section className="mb-8">

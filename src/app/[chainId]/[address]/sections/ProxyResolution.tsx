@@ -79,7 +79,7 @@ export default async function ProxyResolution({ proxyResolution, chainId }: Prox
   const verificationResults = await Promise.all(verificationPromises);
 
   return (
-    <div className="mt-1">
+    <div className="">
       <h2 className="md:text-xl text-lg font-semibold text-gray-800">Proxy</h2>
       <p className="text-gray-500 md:text-base text-sm">
         Proxy resolution by{" "}
