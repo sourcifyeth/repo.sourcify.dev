@@ -1,14 +1,18 @@
 "use client";
 
+import { FileNode } from '@/types/codeEditor';
 import { ContractData } from "@/types/contract";
 import { useState, useEffect, useRef } from "react";
-import Editor from "@monaco-editor/react";
-import type { editor } from "monaco-editor";
-import CopyToClipboardButton from "@/components/CopyToClipboardButton";
+import type { EditorProps } from '@monaco-editor/react';
+import MonacoEditor from '@monaco-editor/react';
+import type * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
+import CodeEditorTabs from '@/components/CodeEditorTabs';
+import FileExplorerTree from '@/components/FileExplorerTree';
+import { useCodeEditor } from '@/hooks/useCodeEditor';
 import { useIsMobile } from "@/hooks/useResponsive";
+import { buildFileTreeWithIds } from '@/utils/fileExplorer';
 
-// Define Monaco editor types
-type Monaco = typeof import("monaco-editor");
+type Monaco = typeof monaco;
 
 // Define Solidity language configuration
 const configureSolidityLanguage = () => {
@@ -281,22 +285,77 @@ const configureSolidityLanguage = () => {
   };
 };
 
+const EDITOR_OPTIONS = (isMobile: boolean): EditorProps['options'] => ({
+  readOnly: true,
+  minimap: { enabled: isMobile ? false : true },
+  scrollBeyondLastLine: false,
+  fontSize: isMobile ? 10 : 12,
+  wordWrap: "on",
+  automaticLayout: true,
+  scrollbar: {
+    useShadows: false,
+    verticalHasArrows: true,
+    horizontalHasArrows: true,
+    vertical: "visible",
+    horizontal: "visible",
+    verticalScrollbarSize: 12,
+    horizontalScrollbarSize: 12,
+    alwaysConsumeMouseWheel: true,
+  },
+  lineNumbers: isMobile ? "off" : "on",
+  glyphMargin: true,
+  folding: true,
+  renderLineHighlight: "all",
+  dragAndDrop: false,
+});
+
 interface ContractSourceProps {
   contract: ContractData;
 }
 
-export default function ContractSource({ contract }: ContractSourceProps) {
-  const [activeFile, setActiveFile] = useState<string | null>(Object.keys(contract.sources)[0] || null);
+export default function ContractSourceV2({ contract }: ContractSourceProps) {
   const [language, setLanguage] = useState<string>("solidity");
-  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
 
-  const fileNames = Object.keys(contract.sources);
+  // Initialize tabs hook
+  const {
+    tabs,
+    activeTabId,
+    activeTab,
+    openTab,
+    closeTab,
+    closeAllTabs,
+    switchToTab,
+  } = useCodeEditor({
+    initialFiles: contract.sources,
+  });
+
+  // File explorer state
+  const [fileTreeWithIds, setFileTreeWithIds] = useState<FileNode[]>([]);
+
   const isMobile = useIsMobile();
+
+  // Build file tree from contract sources
+  useEffect(() => {
+    const treeWithIds = buildFileTreeWithIds(contract.sources);
+    setFileTreeWithIds(treeWithIds);
+  }, [contract.sources]);
+
+  // Handle file selection from tree
+  const handleFileSelect = (filePath: string, content?: string) => {
+    // Open or switch to tab for this file
+    if (content) {
+      openTab(filePath, content);
+    } else if (contract.sources[filePath]) {
+      openTab(filePath, contract.sources[filePath].content);
+    }
+  };
+
   // Determine language based on file extension
   useEffect(() => {
-    if (activeFile) {
-      const extension = activeFile.split(".").pop()?.toLowerCase();
+    if (activeTab) {
+      const extension = activeTab.path.split(".").pop()?.toLowerCase();
       if (extension === "sol") {
         setLanguage("solidity");
       } else if (extension === "vy") {
@@ -305,10 +364,10 @@ export default function ContractSource({ contract }: ContractSourceProps) {
         setLanguage("plaintext");
       }
     }
-  }, [activeFile]);
+  }, [activeTab]);
 
   // Handle editor mounting
-  const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor, monaco: Monaco) => {
+  const handleEditorDidMount = (editor: monaco.editor.IStandaloneCodeEditor, monaco: Monaco) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
   };
@@ -320,64 +379,49 @@ export default function ContractSource({ contract }: ContractSourceProps) {
     <div className="bg-white shadow overflow-hidden sm:rounded-lg">
       <div className="border-t border-gray-200">
         <div className="flex flex-col md:flex-row">
-          {/* File selector */}
-          <div className="w-full md:w-1/4 border-b md:border-b-0 md:border-r border-gray-200">
-            <ul className="divide-y divide-gray-200 max-h-60 md:max-h-[500px] overflow-y-auto">
-              {fileNames.map((fileName) => (
-                <li
-                  key={fileName}
-                  className={`px-4 py-3 cursor-pointer hover:bg-gray-50 text-sm  ${
-                    activeFile === fileName ? "bg-gray-100 border-l-4 border-gray-500 font-medium" : ""
-                  }`}
-                  onClick={() => setActiveFile(fileName)}
-                  title={fileName}
-                >
-                  {fileName}
-                </li>
-              ))}
-            </ul>
+          {/* File Explorer */}
+          <div className="w-full md:w-1/4 border-b md:border-b-0 md:border-r border-gray-700">
+            <FileExplorerTree
+              files={fileTreeWithIds}
+              activeFile={activeTab?.path}
+              onFileSelect={handleFileSelect}
+            />
           </div>
-
-          {/* Source code display with Monaco editor */}
-          <div className="w-full md:w-3/4">
-            {activeFile ? (
-              <div className="h-[500px] relative">
-                <div className="absolute top-2 right-4 z-10">
-                  <CopyToClipboardButton data={contract.sources[activeFile].content} variant="icon-only" />
-                </div>
-                <Editor
+          {/* Source code editor */}
+          <div className="w-full md:w-3/4 flex flex-col">
+            {/* Code Editor Tabs */}
+            <CodeEditorTabs
+              tabs={tabs}
+              activeTabId={activeTabId}
+              onTabSelect={switchToTab}
+              onTabClose={closeTab}
+              onTabCloseAll={closeAllTabs}
+            />  
+            {/* Monaco Editor */}
+            <div className="flex-1 relative">
+              {activeTab ? (
+                <MonacoEditor
+                  className="editor-container"
                   height="100%"
                   language={language}
-                  value={contract.sources[activeFile].content}
-                  options={{
-                    readOnly: true,
-                    minimap: { enabled: isMobile ? false : true },
-                    scrollBeyondLastLine: false,
-                    fontSize: isMobile ? 10 : 12,
-                    wordWrap: "on",
-                    automaticLayout: true,
-                    scrollbar: {
-                      useShadows: false,
-                      verticalHasArrows: true,
-                      horizontalHasArrows: true,
-                      vertical: "visible",
-                      horizontal: "visible",
-                      verticalScrollbarSize: 12,
-                      horizontalScrollbarSize: 12,
-                    },
-                    lineNumbers: isMobile ? "off" : "on",
-                    glyphMargin: true,
-                    folding: true,
-                    renderLineHighlight: "all",
-                  }}
+                  path={activeTab.path}
+                  defaultValue={activeTab.content}
+                  options={EDITOR_OPTIONS(isMobile)}
                   beforeMount={solidityConfig.beforeMount}
                   onMount={handleEditorDidMount}
+                  loading={
+                    <div className="bg-gray-800 text-sm text-gray-500 flex items-center justify-center w-full h-full">
+                        <p>Loading files...</p>
+                    </div>
+                  }
                   theme="vs-dark"
                 />
-              </div>
-            ) : (
-              <div className="p-4 text-sm text-gray-500">No source files available.</div>
-            )}
+              ) : (
+                <div className="bg-gray-800 p-4 text-sm text-gray-500 flex items-center justify-center w-full h-full">
+                  <p>No source files available.</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

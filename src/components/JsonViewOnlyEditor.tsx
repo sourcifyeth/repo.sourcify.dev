@@ -1,11 +1,12 @@
 "use client";
 
 import { useRef } from "react";
-import Editor from "@monaco-editor/react";
+import MonacoEditor from '@monaco-editor/react';
+import type * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import type { editor } from "monaco-editor";
 import { useIsMobile } from "@/hooks/useResponsive";
 
-type Monaco = typeof import("monaco-editor");
+type Monaco = typeof monaco;
 
 interface JsonViewOnlyEditorProps {
   data: Record<string, unknown> | unknown;
@@ -30,7 +31,7 @@ export default function JsonViewOnlyEditor({ data, height = "400px" }: JsonViewO
 
   return (
     <div className="h-[400px]" style={{ height }}>
-      <Editor
+      <MonacoEditor
         height="100%"
         language="json"
         value={formattedJson}
