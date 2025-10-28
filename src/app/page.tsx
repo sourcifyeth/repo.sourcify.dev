@@ -1,5 +1,5 @@
 import HomeForm from "@/components/HomeForm";
-import { fetchChains } from "@/utils/api";
+import { fetchChains } from "@/utils/fetch-chains";
 
 // Force dynamic rendering to avoid passing SOURCIFY_SERVER_URL env var as a build arg
 export const dynamic = "force-dynamic";

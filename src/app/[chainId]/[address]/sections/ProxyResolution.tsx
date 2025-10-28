@@ -3,7 +3,8 @@ import CopyToClipboard from "../../../../components/CopyToClipboard";
 import { IoCheckmarkCircle, IoCloseCircle } from "react-icons/io5";
 import InfoTooltip from "@/components/InfoTooltip";
 import Link from "next/link";
-import { checkVerification, shortenAddress } from "@/utils/api";
+import { shortenAddress } from "@/utils/api";
+import { checkVerification } from "@/utils/check-verification";
 
 interface ProxyResolutionProps {
   proxyResolution: ContractData["proxyResolution"];
@@ -19,7 +20,12 @@ interface ImplementationItemProps {
   chainId: string;
 }
 
-const ImplementationItem = ({ address, name, isVerified, chainId }: ImplementationItemProps) => {
+const ImplementationItem = ({
+  address,
+  name,
+  isVerified,
+  chainId,
+}: ImplementationItemProps) => {
   // Create shortened address display
   const shortenedAddress = shortenAddress(address);
 
@@ -35,7 +41,10 @@ const ImplementationItem = ({ address, name, isVerified, chainId }: Implementati
     <div className="mt-2 first:mt-0 flex items-center">
       {/* If verified, wrap in a link; otherwise just show the address */}
       {isVerified ? (
-        <Link href={`/${chainId}/${address}`} className="text-blue-600 hover:underline">
+        <Link
+          href={`/${chainId}/${address}`}
+          className="text-blue-600 hover:underline"
+        >
           {addressDisplay}
         </Link>
       ) : (
@@ -70,11 +79,16 @@ const ImplementationItem = ({ address, name, isVerified, chainId }: Implementati
   );
 };
 
-export default async function ProxyResolution({ proxyResolution, chainId }: ProxyResolutionProps) {
+export default async function ProxyResolution({
+  proxyResolution,
+  chainId,
+}: ProxyResolutionProps) {
   if (!proxyResolution) return null;
 
   // Fetch verification status for all implementations in parallel
-  const verificationPromises = proxyResolution.implementations.map((impl) => checkVerification(chainId, impl.address));
+  const verificationPromises = proxyResolution.implementations.map((impl) =>
+    checkVerification(chainId, impl.address)
+  );
 
   const verificationResults = await Promise.all(verificationPromises);
 
@@ -97,15 +111,22 @@ export default async function ProxyResolution({ proxyResolution, chainId }: Prox
         <div className="border-t border-gray-200">
           <dl>
             <div className="bg-gray-50 px-4 py-3 md:grid md:grid-cols-[150px_1fr] md:gap-4 md:px-6 md:items-center">
-              <dt className="font-bold text-gray-900 mb-1 md:mb-0">Proxy Type</dt>
+              <dt className="font-bold text-gray-900 mb-1 md:mb-0">
+                Proxy Type
+              </dt>
               <dd className="text-gray-900">{proxyResolution.proxyType}</dd>
             </div>
 
             <div className="bg-white px-4 py-3 grid grid-cols-1 gap-4 md:px-6">
               <div className="font-bold text-gray-900">Implementations</div>
               {proxyResolution.implementations.map((impl, index) => (
-                <div key={index} className="md:grid md:grid-cols-[150px_1fr] md:gap-4 md:items-center ml-4">
-                  <dt className="font-bold text-gray-900 mb-1 md:mb-0">Implementation {index + 1}</dt>
+                <div
+                  key={index}
+                  className="md:grid md:grid-cols-[150px_1fr] md:gap-4 md:items-center ml-4"
+                >
+                  <dt className="font-bold text-gray-900 mb-1 md:mb-0">
+                    Implementation {index + 1}
+                  </dt>
                   <dd className="text-gray-900">
                     <div className="flex flex-col">
                       <ImplementationItem
