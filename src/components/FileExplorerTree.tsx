@@ -111,17 +111,6 @@ const FileExplorerTree: React.FC<FileExplorerTreeProps> = ({
 }) => {
   const treeRef = useRef<TreeApi<FileNode>>(null);
 
-  useEffect(() => {
-    if (treeRef.current && files.length > 0) {
-      // Open only the first level nodes (folders)
-      files.forEach((file) => {
-        if (treeRef.current && file.type === 'folder') {
-          treeRef.current.open(file.id);
-        }
-      });
-    }
-  }, [files, treeRef]);
-
   const handleSelect = useCallback((nodes: NodeApi<FileNode>[]) => {
     if (nodes.length > 0) {
       const node = nodes[0];
@@ -148,7 +137,7 @@ const FileExplorerTree: React.FC<FileExplorerTreeProps> = ({
         <Tree
           ref={treeRef}
           data={files}
-          openByDefault={false}
+          openByDefault={true}
           width="100%"
           height={500}
           indent={16}
