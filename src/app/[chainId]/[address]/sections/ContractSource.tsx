@@ -329,6 +329,7 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
     switchToTab,
   } = useCodeEditor({
     initialFiles: contract.sources,
+    targetContract: contract.compilation.fullyQualifiedName,
   });
 
   // File explorer state
@@ -338,7 +339,7 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
 
   // Build file tree from contract sources
   useEffect(() => {
-    const treeWithIds = buildFileTreeWithIds(contract.sources);
+    const treeWithIds = buildFileTreeWithIds(contract.sources, contract.compilation.fullyQualifiedName);
     setFileTreeWithIds(treeWithIds);
   }, [contract.sources]);
 

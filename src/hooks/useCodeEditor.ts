@@ -3,28 +3,29 @@ import { TabData } from '@/types/codeEditor';
 
 interface UseCodeEditorTabsProps {
   initialFiles: Record<string, { content: string }>;
+  targetContract: string;
 }
 
-export const useCodeEditor = ({ initialFiles }: UseCodeEditorTabsProps) => {
-  const fileNames = Object.keys(initialFiles);
-  const firstFileName = fileNames[0];
-  
+export const useCodeEditor = ({ initialFiles, targetContract }: UseCodeEditorTabsProps) => {
+  const targetPath = targetContract.split(':')[0] || '';
+
   const [tabs, setTabs] = useState<TabData[]>(() => {
-    if (firstFileName) {
+    if (targetPath) {
       return [{
         id: 'tab-default',
-        name: firstFileName.split('/').pop() || firstFileName,
-        path: firstFileName,
-        content: initialFiles[firstFileName].content,
+        name: targetPath.split('/').pop() || targetPath,
+        path: targetPath,
+        content: initialFiles[targetPath].content,
         isDirty: false,
-        isDefault: true
+        isDefault: true,
+        isTargetContract: true
       }];
     }
     return [];
   });
 
   const [activeTabId, setActiveTabId] = useState<string | null>(
-    firstFileName ? 'tab-default' : null
+    targetPath ? 'tab-default' : null
   );
 
   const tabCounterRef = useRef(1); // Start from 1 since we have a default tab

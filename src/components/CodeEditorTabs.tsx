@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { FaEthereum, FaTimes } from 'react-icons/fa';
+import { FaEthereum, FaStar, FaTimes } from 'react-icons/fa';
 import { TabData } from '@/types/codeEditor';
 
 interface CodeEditorTabsProps {
@@ -69,6 +69,15 @@ const CodeEditorTabs: React.FC<CodeEditorTabsProps> = ({
               <span className="text-sm truncate mr-2" title={tab.path}>
                 {tab.name}
               </span>
+
+              {tab.isTargetContract && (
+                <span className="w-3 h-3 text-yellow-500 ml-auto"
+                  data-tooltip-id="global-tooltip"
+                  data-tooltip-content="Compilation target contract"
+                >
+                  <FaStar className="w-3 h-3 text-yellow-500" />
+                </span>
+              )}
               
               {/* Dirty indicator */}
               {tab.isDirty && (

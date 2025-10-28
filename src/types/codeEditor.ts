@@ -6,6 +6,7 @@ export interface FileNode {
   isOpen?: boolean;
   children?: Record<string, FileNode> | FileNode[];
   content?: string;
+  isTarget?: boolean;
 }
 
 export interface TabData {
@@ -15,5 +16,6 @@ export interface TabData {
   content: string;
   isDirty?: boolean;
   isDefault?: boolean;
+  isTargetContract?: boolean;
 }
 

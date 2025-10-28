@@ -6,8 +6,9 @@ import { SourceData } from '@/types/contract';
  * @param sources - Object with file paths as keys and file content as values
  * @returns Array of ExtendedFileNode objects representing the tree structure
  */
-export function buildFileTreeWithIds(sources: Record<string, SourceData>): FileNode[] {
+export function buildFileTreeWithIds(sources: Record<string, SourceData>, fullyQualifiedName: string): FileNode[] {
   const root: Record<string, FileNode> = {};
+  const targetPath = fullyQualifiedName.split(':')[0];
   
   // Process each file path
   Object.entries(sources).forEach(([filePath, fileData]) => {
@@ -27,7 +28,8 @@ export function buildFileTreeWithIds(sources: Record<string, SourceData>): FileN
           type: isLast ? 'file' : 'folder',
           path: currentPath,
           isOpen: false,
-          children: isLast ? undefined : {}
+          children: isLast ? undefined : {},
+          isTarget: currentPath === targetPath
         };
       }
       
