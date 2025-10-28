@@ -1,5 +1,7 @@
 import { Metadata } from "next";
-import { fetchContractData, fetchChains, getChainName } from "@/utils/api";
+import { getChainName } from "@/utils/api";
+import { fetchContractData } from "@/utils/fetch-contract-data";
+import { fetchChains } from "@/utils/fetch-chains";
 import { ContractData } from "@/types/contract";
 
 export async function generateMetadata({

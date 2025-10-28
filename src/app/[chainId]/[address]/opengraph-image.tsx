@@ -1,5 +1,7 @@
 import { ImageResponse } from "next/og";
-import { fetchContractData, fetchChains, getChainName } from "@/utils/api";
+import { getChainName } from "@/utils/api";
+import { fetchContractData } from "@/utils/fetch-contract-data";
+import { fetchChains } from "@/utils/fetch-chains";
 
 export const runtime = "edge";
 
@@ -11,7 +13,11 @@ export const size = {
 
 export const contentType = "image/png";
 
-export default async function Image({ params }: { params: { chainId: string; address: string } }) {
+export default async function Image({
+  params,
+}: {
+  params: { chainId: string; address: string };
+}) {
   const { chainId, address } = params;
 
   let contractName = "Contract";
@@ -19,7 +25,10 @@ export default async function Image({ params }: { params: { chainId: string; add
 
   try {
     // Fetch data in parallel
-    const [contract, chains] = await Promise.all([fetchContractData(chainId, address), fetchChains()]);
+    const [contract, chains] = await Promise.all([
+      fetchContractData(chainId, address),
+      fetchChains(),
+    ]);
 
     contractName = contract.compilation.name || "Contract";
     chainName = getChainName(chainId, chains);
@@ -51,9 +60,15 @@ export default async function Image({ params }: { params: { chainId: string; add
           flexDirection: "column",
         }}
       >
-        <div style={{ fontSize: 40, opacity: 0.8 }}>Sourcify Contract Viewer</div>
-        <div style={{ fontSize: 70, fontWeight: "bold", marginTop: 20 }}>{contractName}</div>
-        <div style={{ fontSize: 30, marginTop: 20, fontFamily: "monospace" }}>{address}</div>
+        <div style={{ fontSize: 40, opacity: 0.8 }}>
+          Sourcify Contract Viewer
+        </div>
+        <div style={{ fontSize: 70, fontWeight: "bold", marginTop: 20 }}>
+          {contractName}
+        </div>
+        <div style={{ fontSize: 30, marginTop: 20, fontFamily: "monospace" }}>
+          {address}
+        </div>
         <div style={{ fontSize: 30, marginTop: 10 }}>{chainName}</div>
       </div>
     ),

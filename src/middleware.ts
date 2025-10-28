@@ -10,13 +10,26 @@ export function middleware(request: NextRequest) {
     throw new Error("SOURCIFY_SERVER_URL is not set");
   }
 
+  const sessionCookie = request.cookies.get("better-auth.session_token");
+  const isLogged = !!sessionCookie;
+  if (!isLogged) {
+    return NextResponse.redirect(
+      `${
+        process.env.NODE_ENV === "production"
+          ? "https://evm.walnut.dev"
+          : "http://evm.walnut.local"
+      }/login`
+    );
+  }
+
   // Check if the path matches a file in the contracts directory
   // From: https://<repo-url>/contracts/partial_match/1/0x1F98431c8aD98523631AE4a59f267346ea31F984/sources/a/very/long/path/MyContract.sol
   // OR From: https://<repo-url>/contracts/partial_match/1/0x1F98431c8aD98523631AE4a59f267346ea31F984/metadata.json
   //
   // To: https://<sourcify-server-url>/repository/contracts/partial_match/1/0x1F98431c8aD98523631AE4a59f267346ea31F984/sources/a/very/long/path/MyContract.sol
   // OR To: https://<sourcify-server-url>/repository/contracts/partial_match/1/0x1F98431c8aD98523631AE4a59f267346ea31F984/metadata.json
-  const staticFilePattern = /^\/contracts\/(.+?)\/(.+?)\/(.+?)\/(.+?)\.([a-zA-Z0-9]+)$/;
+  const staticFilePattern =
+    /^\/contracts\/(.+?)\/(.+?)\/(.+?)\/(.+?)\.([a-zA-Z0-9]+)$/;
   const staticFileMatch = pathname.match(staticFilePattern);
 
   if (staticFileMatch) {
@@ -37,7 +50,8 @@ export function middleware(request: NextRequest) {
   // Or From: https://<repo-url>/contracts/partial_match/1/0x1F98431c8aD98523631AE4a59f267346ea31F984 (no trailing slash)
   // Or From: https://<repo-url>/contracts/full_match/1/0x1F98431c8aD98523631AE4a59f267346ea31F984/sources/a/very/long/path/  (no file extension)
   // To: https://<repo-url>/1/0x1F98431c8aD98523631AE4a59f267346ea31F984/
-  const fallbackPattern = /^\/contracts\/(full_match|partial_match)\/([^\/]+)\/([^\/]+)(\/.*)?$/;
+  const fallbackPattern =
+    /^\/contracts\/(full_match|partial_match)\/([^\/]+)\/([^\/]+)(\/.*)?$/;
   const fallbackMatch = pathname.match(fallbackPattern);
 
   if (fallbackMatch) {
@@ -58,9 +72,9 @@ export function middleware(request: NextRequest) {
 }
 
 // Configure the middleware to run only on specific paths
-export const config = {
-  matcher: [
-    // Match all paths under /contracts
-    "/contracts/:path*",
-  ],
-};
+// export const config = {
+//   matcher: [
+//     // Match all paths under /contracts
+//     "/contracts/:path*",
+//   ],
+// };

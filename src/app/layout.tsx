@@ -2,10 +2,9 @@ import type { Metadata } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Mono, VT323 } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
+import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AppTooltip from "@/components/AppTooltip";
-import Image from "next/image";
-import Link from "next/link";
 
 const ibmPlexSans = IBM_Plex_Sans({
   weight: ["400", "500", "600", "700"],
@@ -29,15 +28,24 @@ const vt323 = VT323({
 });
 
 export const metadata: Metadata = {
-  title: "repo.sourcify.dev",
-  description: "View verified smart contract details, ABI, source code, and bytecode from Sourcify",
-  keywords: ["Ethereum", "Smart Contracts", "Sourcify", "Blockchain", "Solidity", "Contract Verification"],
+  title: "repo.walnut.dev",
+  description:
+    "View verified smart contract details, ABI, source code, and bytecode from Sourcify",
+  keywords: [
+    "Ethereum",
+    "Smart Contracts",
+    "Sourcify",
+    "Blockchain",
+    "Solidity",
+    "Contract Verification",
+  ],
   authors: [{ name: "Sourcify" }],
   openGraph: {
-    title: "repo.sourcify.dev",
-    description: "View verified smart contract details, ABI, source code, and bytecode from Sourcify",
-    url: "https://repo.sourcify.dev",
-    siteName: "repo.sourcify.dev",
+    title: "walnut.sourcify.dev",
+    description:
+      "View verified smart contract details, ABI, source code, and bytecode from Sourcify",
+    url: "https://repo.walnut.dev",
+    siteName: "walnut.sourcify.dev",
     images: [
       {
         url: "https://sourcify.dev/sourcify-logo.svg",
@@ -50,8 +58,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "repo.sourcify.dev",
-    description: "View verified smart contract details, ABI, source code, and bytecode from Sourcify",
+    title: "repo.walnut.dev",
+    description:
+      "View verified smart contract details, ABI, source code, and bytecode from Sourcify",
     images: ["https://sourcify.dev/sourcify-logo.svg"],
   },
   robots: {
@@ -77,15 +86,10 @@ export default function RootLayout({
             strategy="afterInteractive"
           />
         )}
-        <header className="shadow-sm">
-          <div className="mx-auto py-4 flex items-center w-full max-w-[100rem] px-6 md:px-12 lg:px-12 xl:px-24">
-            <Link href="/" className="flex items-center">
-              <Image src="/sourcify.png" alt="Sourcify Logo" className="h-10 w-auto mr-3" width={32} height={32} />
-              <span className="text-gray-700 font-vt323 text-2xl">sourcify.eth</span>
-            </Link>
-          </div>
-        </header>
-        <main className="w-full max-w-[100rem] mx-auto px-6 md:px-12 lg:px-12 xl:px-24 py-6 flex-grow">{children}</main>
+        <Header />
+        <main className="w-full max-w-[100rem] mx-auto px-6 md:px-12 lg:px-12 xl:px-24 py-6 flex-grow">
+          {children}
+        </main>
         <Footer />
         <AppTooltip />
       </body>

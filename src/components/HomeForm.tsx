@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { ChainData } from "@/types/chain";
 import ChainSelect from "./ChainSelect";
 import { isAddress } from "@ethersproject/address";
-import TopContracts from "./TopContracts";
-import ExampleContracts from "./ExampleContracts";
+// import TopContracts from "./TopContracts";
+// import ExampleContracts from "./ExampleContracts";
 
 interface HomeFormProps {
   chains: ChainData[];
@@ -55,21 +55,32 @@ export default function HomeForm({ chains }: HomeFormProps) {
 
   return (
     <>
-      <form className="mt-4 md:mt-8 space-y-6 w-full max-w-xl mx-auto mb-10" onSubmit={handleSubmit}>
+      <form
+        className="mt-4 md:mt-8 space-y-6 w-full max-w-xl mx-auto mb-10"
+        onSubmit={handleSubmit}
+      >
         <div className="space-y-4">
           <div>
-            <label htmlFor="chainId" className="block text-lg font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="chainId"
+              className="block text-lg font-medium text-gray-700 mb-1"
+            >
               Chain
             </label>
             <ChainSelect
               value={chainId}
-              handleChainIdChange={(value: string | string[]) => setChainId(value as string)}
+              handleChainIdChange={(value: string | string[]) =>
+                setChainId(value as string)
+              }
               chains={chains}
               className="block w-full pl-3 pr-10 py-3 text-base bg-cerulean-blue-100 border-2 border-cerulean-blue-300 hover:border-cerulean-blue-400 rounded-md cursor-pointer text-cerulean-blue-600"
             />
           </div>
           <div>
-            <label htmlFor="address" className="block text-lg font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="address"
+              className="block text-lg font-medium text-gray-700 mb-1"
+            >
               Address
             </label>
             <div className="flex rounded-md shadow-sm">
@@ -78,7 +89,9 @@ export default function HomeForm({ chains }: HomeFormProps) {
                 name="address"
                 id="address"
                 className={`block w-full pl-3 pr-10 py-3 text-base bg-cerulean-blue-100 border-2 ${
-                  error ? "border-red-500" : "border-cerulean-blue-300 hover:border-cerulean-blue-400"
+                  error
+                    ? "border-red-500"
+                    : "border-cerulean-blue-300 hover:border-cerulean-blue-400"
                 } rounded-md text-cerulean-blue-600`}
                 placeholder="0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
                 value={address}
@@ -104,7 +117,7 @@ export default function HomeForm({ chains }: HomeFormProps) {
         </div>
       </form>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white p-4 rounded-lg shadow-sm h-full">
           <ExampleContracts chains={chains} />
         </div>
@@ -112,7 +125,7 @@ export default function HomeForm({ chains }: HomeFormProps) {
         <div className="bg-white p-4 rounded-lg shadow-sm h-full">
           <TopContracts />
         </div>
-      </div>
+      </div> */}
     </>
   );
 }
