@@ -341,7 +341,7 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
   useEffect(() => {
     const treeWithIds = buildFileTreeWithIds(contract.sources, contract.compilation.fullyQualifiedName);
     setFileTreeWithIds(treeWithIds);
-  }, [contract.sources]);
+  }, [contract.sources, contract.compilation.fullyQualifiedName]);
 
   // Handle file selection from tree
   const handleFileSelect = (filePath: string, content?: string) => {

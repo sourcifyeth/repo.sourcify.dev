@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useRef } from "react";
 import { Tree, NodeApi, TreeApi } from "react-arborist";
 import { FaChevronDown, FaChevronRight, FaFolder, FaFolderOpen, FaFile, FaEthereum, FaStar } from "react-icons/fa";
 import { FileNode } from "@/types/codeEditor";
