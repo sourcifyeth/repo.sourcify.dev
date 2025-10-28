@@ -1,16 +1,16 @@
 "use client";
 
-import { FileNode } from '@/types/codeEditor';
+import { FileNode } from "@/types/codeEditor";
 import { ContractData } from "@/types/contract";
 import { useState, useEffect, useRef } from "react";
-import type { EditorProps } from '@monaco-editor/react';
-import MonacoEditor from '@monaco-editor/react';
-import type * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
-import CodeEditorTabs from '@/components/CodeEditorTabs';
-import FileExplorerTree from '@/components/FileExplorerTree';
-import { useCodeEditor } from '@/hooks/useCodeEditor';
+import type { EditorProps } from "@monaco-editor/react";
+import MonacoEditor from "@monaco-editor/react";
+import type * as monaco from "monaco-editor/esm/vs/editor/editor.api";
+import CodeEditorTabs from "@/components/CodeEditorTabs";
+import FileExplorerTree from "@/components/FileExplorerTree";
+import { useCodeEditor } from "@/hooks/useCodeEditor";
 import { useIsMobile } from "@/hooks/useResponsive";
-import { buildFileTreeWithIds } from '@/utils/fileExplorer';
+import { buildFileTreeWithIds } from "@/utils/fileExplorer";
 
 type Monaco = typeof monaco;
 
@@ -285,7 +285,7 @@ const configureSolidityLanguage = () => {
   };
 };
 
-const EDITOR_OPTIONS = (isMobile: boolean): EditorProps['options'] => ({
+const EDITOR_OPTIONS = (isMobile: boolean): EditorProps["options"] => ({
   readOnly: true,
   minimap: { enabled: isMobile ? false : true },
   scrollBeyondLastLine: false,
@@ -319,15 +319,7 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
   const monacoRef = useRef<Monaco | null>(null);
 
   // Initialize tabs hook
-  const {
-    tabs,
-    activeTabId,
-    activeTab,
-    openTab,
-    closeTab,
-    closeAllTabs,
-    switchToTab,
-  } = useCodeEditor({
+  const { tabs, activeTabId, activeTab, openTab, closeTab, closeAllTabs, switchToTab } = useCodeEditor({
     initialFiles: contract.sources,
     targetContract: contract.compilation.fullyQualifiedName,
   });
@@ -382,11 +374,7 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
         <div className="flex flex-col md:flex-row">
           {/* File Explorer */}
           <div className="w-full md:w-1/4 border-b md:border-b-0 md:border-r border-gray-700">
-            <FileExplorerTree
-              files={fileTreeWithIds}
-              activeFile={activeTab?.path}
-              onFileSelect={handleFileSelect}
-            />
+            <FileExplorerTree files={fileTreeWithIds} activeFile={activeTab?.path} onFileSelect={handleFileSelect} />
           </div>
           {/* Source code editor */}
           <div className="w-full md:w-3/4 flex flex-col">
@@ -397,9 +385,9 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
               onTabSelect={switchToTab}
               onTabClose={closeTab}
               onTabCloseAll={closeAllTabs}
-            />  
+            />
             {/* Monaco Editor */}
-            <div className="flex-1 relative  h-[500px] md:h-auto">
+            <div className="md:flex-1 relative h-[500px] md:h-auto">
               {activeTab ? (
                 <MonacoEditor
                   className="editor-container"
@@ -412,7 +400,7 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
                   onMount={handleEditorDidMount}
                   loading={
                     <div className="bg-gray-800 text-sm text-gray-500 flex items-center justify-center w-full h-full">
-                        <p>Loading files...</p>
+                      <p>Loading files...</p>
                     </div>
                   }
                   theme="vs-dark"
