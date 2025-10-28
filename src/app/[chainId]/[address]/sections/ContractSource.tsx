@@ -399,7 +399,7 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
               onTabCloseAll={closeAllTabs}
             />  
             {/* Monaco Editor */}
-            <div className="flex-1 relative">
+            <div className="flex-1 relative  h-[500px] md:h-auto">
               {activeTab ? (
                 <MonacoEditor
                   className="editor-container"
