@@ -141,6 +141,7 @@ const FileExplorerTree: React.FC<FileExplorerTreeProps> = ({ files, activeFile, 
           overscanCount={5}
           onSelect={handleSelect}
           selection={activeFile}
+          paddingBottom={24}
         >
           {TreeNode}
         </Tree>
