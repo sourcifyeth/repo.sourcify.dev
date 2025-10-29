@@ -516,14 +516,39 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </section>
 
       {/* Storage Layout Section */}
-      {contractWithPlaceholders.storageLayout?.types && (
-        <section className="mb-8">
-          <div className="sticky top-0 z-10 bg-gray-100 py-4">
-            <h2 className="text-xl font-semibold text-gray-800">Storage Layout</h2>
+      <section className="mb-8">
+        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+          <h2 className="text-xl font-semibold text-gray-800">Storage Layout</h2>
+          <div className="text-gray-700 text-sm">
+            For non-default storage allocations (e.g.{" "}
+            <a href="https://eips.ethereum.org/EIPS/eip-7201" target="_blank" rel="noopener" className="text-blue-500">
+              EIP-7201
+            </a>
+            ) check out{" "}
+            <a
+              href={`https://evm-storage.codes?address=${contractWithPlaceholders.address}&chainId=${contractWithPlaceholders.chainId}`}
+              target="_blank"
+              rel="noopener"
+              className="inline-block"
+            >
+              <Image
+                src="/evm-storage.png"
+                alt="EVM Storage Logo"
+                height={24}
+                width={140}
+                className="inline-block p-1 bg-black rounded-md w-[110px] md:w-[140px] object-contain"
+              />
+            </a>
           </div>
+        </div>
+        {contractWithPlaceholders.storageLayout?.types ? (
           <StorageLayout storageLayout={contractWithPlaceholders.storageLayout} />
-        </section>
-      )}
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full bg-white rounded-lg p-4">
+            <div className="text-gray-700 text-sm">No storage layouts found in the compiler output.</div>
+          </div>
+        )}
+      </section>
 
       {/* Standard JSON Input Section */}
       <section className="mb-8">
