@@ -123,29 +123,19 @@ const FileExplorerTree: React.FC<FileExplorerTreeProps> = ({ files, activeFile, 
   );
 
   return (
-    <div className={`bg-gray-800 text-gray-300 min-h-60 md:min-h-[500px] max-h-60 md:max-h-[500px] px-2`}>
+    <div className={`bg-gray-800 text-gray-300 px-2`}>
       <div className="p-2 border-b border-gray-700">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-gray-200">EXPLORER</span>
-          <button className="text-gray-400 hover:text-gray-200">
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </button>
         </div>
       </div>
 
-      <div className="max-h-50 md:max-h-[460px] overflow-y-auto">
+      <div className="h-[200px] md:h-full overflow-y-auto">
         <Tree
           ref={treeRef}
           data={files}
           openByDefault={true}
           width="100%"
-          height={500}
           indent={8}
           rowHeight={24}
           overscanCount={5}
