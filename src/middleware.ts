@@ -10,7 +10,11 @@ export function middleware(request: NextRequest) {
     throw new Error("SOURCIFY_SERVER_URL is not set");
   }
 
-  const sessionCookie = request.cookies.get("better-auth.session_token");
+  const sessionCookie = request.cookies.get(
+    `${
+      process.env.NODE_ENV === "production" ? "__Secure-" : ""
+    }better-auth.session_token`
+  );
   const isLogged = !!sessionCookie;
   if (!isLogged) {
     return NextResponse.redirect(
