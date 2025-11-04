@@ -41,11 +41,11 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Sourcify" }],
   openGraph: {
-    title: "walnut.sourcify.dev",
+    title: "repo.walnut.dev",
     description:
       "View verified smart contract details, ABI, source code, and bytecode from Sourcify",
     url: "https://repo.walnut.dev",
-    siteName: "walnut.sourcify.dev",
+    siteName: "repo.walnut.dev",
     images: [
       {
         url: "https://sourcify.dev/sourcify-logo.svg",
