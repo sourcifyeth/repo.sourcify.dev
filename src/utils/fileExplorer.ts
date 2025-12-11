@@ -8,7 +8,7 @@ import { SourceData } from '@/types/contract';
  */
 export function buildFileTreeWithIds(sources: Record<string, SourceData>, fullyQualifiedName: string): FileNode[] {
   const root: Record<string, FileNode> = {};
-  const targetPath = fullyQualifiedName.split(':')[0];
+  const targetPath = fullyQualifiedName.substring(0, fullyQualifiedName.lastIndexOf(':'));
   
   // Process each file path
   Object.entries(sources).forEach(([filePath, fileData]) => {

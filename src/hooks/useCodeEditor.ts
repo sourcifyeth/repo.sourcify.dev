@@ -7,7 +7,7 @@ interface UseCodeEditorTabsProps {
 }
 
 export const useCodeEditor = ({ initialFiles, targetContract }: UseCodeEditorTabsProps) => {
-  const targetPath = targetContract.split(':')[0] || '';
+  const targetPath = targetContract.substring(0, targetContract.lastIndexOf(":")) || "";
 
   const [tabs, setTabs] = useState<TabData[]>(() => {
     if (targetPath) {
