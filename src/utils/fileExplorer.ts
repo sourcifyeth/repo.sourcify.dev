@@ -12,7 +12,7 @@ export function buildFileTreeWithIds(sources: Record<string, SourceData>, fullyQ
   
   // Process each file path
   Object.entries(sources).forEach(([filePath, fileData]) => {
-    const parts = filePath.split('/');
+    const parts = filePath.split('/').filter(part => part !== '');
     let current = root;
     let currentPath = '';
     
