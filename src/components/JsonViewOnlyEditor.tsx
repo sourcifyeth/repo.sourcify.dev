@@ -2,11 +2,9 @@
 
 import { useRef } from "react";
 import MonacoEditor from '@monaco-editor/react';
-import type * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
+import type { Monaco } from '@monaco-editor/react';
 import type { editor } from "monaco-editor";
 import { useIsMobile } from "@/hooks/useResponsive";
-
-type Monaco = typeof monaco;
 
 interface JsonViewOnlyEditorProps {
   data: Record<string, unknown> | unknown;
