@@ -251,28 +251,32 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       )}
 
       {/* Read/Write Contract Section */}
-      <section className="my-4 flex flex-row flex-wrap items-center gap-2">
-        <div className="sticky top-0 z-10 bg-gray-100 py-4">
-          <h2 className="text-lg font-semibold text-gray-800">Read/Write Contract on:</h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <a
-            href={`https://builder.openzeppelin.com/?ecosystem=evm&chainId=${chainId}&address=${contract.address}&service=sourcify`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-white rounded-md px-4 py-3 shadow-sm border border-gray-200 hover:bg-gray-100 transition-colors duration-200 text-sm"
-          >
-            <Image src={OpenZeppelinLogo} alt="OpenZeppelin Logo" height={16} />
-          </a>
-        </div>
-      </section>
+      {contractWithPlaceholders.abi?.length > 0 && (
+        <section className="my-4 flex flex-row flex-wrap items-center gap-2">
+          <div className="sticky top-0 z-10 bg-gray-100 py-4">
+            <h2 className="text-lg font-semibold text-gray-800">Read/Write Contract on:</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <a
+              href={`https://builder.openzeppelin.com/?ecosystem=evm&chainId=${chainId}&address=${contract.address}&service=sourcify`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-white rounded-md px-4 py-3 shadow-sm border border-gray-200 hover:bg-gray-100 transition-colors duration-200 text-sm"
+            >
+              <Image src={OpenZeppelinLogo} alt="OpenZeppelin Logo" height={16} />
+            </a>
+          </div>
+        </section>
+      )}
 
       {/* Contract ABI Section */}
-      <section className="mb-8">
-        <Suspense fallback={<LoadingState />}>
-          <ContractAbi abi={contractWithPlaceholders.abi} />
-        </Suspense>
-      </section>
+      {contractWithPlaceholders.abi?.length > 0 && (
+        <section className="mb-8">
+          <Suspense fallback={<LoadingState />}>
+            <ContractAbi abi={contractWithPlaceholders.abi} />
+          </Suspense>
+        </section>
+      )}
 
       {/* Contract Source Code Section */}
       <section className="mb-8">
@@ -344,25 +348,27 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </section>
 
       {/* Contract Metadata Section */}
-      <section className="mb-8">
-        <div className="sticky top-0 z-10 bg-gray-100 py-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-            <h2 className="text-xl font-semibold text-gray-800">Contract Metadata</h2>
-            <div className="flex items-center gap-2">
-              <CopyToClipboardButton data={contractWithPlaceholders.metadata} />
-              <DownloadFileButton
-                data={contractWithPlaceholders.metadata}
-                fileName="metadata"
-                chainId={contractWithPlaceholders.chainId}
-                address={contractWithPlaceholders.address}
-              />
+      {contractWithPlaceholders.metadata && (
+        <section className="mb-8">
+          <div className="sticky top-0 z-10 bg-gray-100 py-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+              <h2 className="text-xl font-semibold text-gray-800">Contract Metadata</h2>
+              <div className="flex items-center gap-2">
+                <CopyToClipboardButton data={contractWithPlaceholders.metadata} />
+                <DownloadFileButton
+                  data={contractWithPlaceholders.metadata}
+                  fileName="metadata"
+                  chainId={contractWithPlaceholders.chainId}
+                  address={contractWithPlaceholders.address}
+                />
+              </div>
             </div>
           </div>
-        </div>
-        <Suspense fallback={<LoadingState />}>
-          <JsonViewOnlyEditor data={contractWithPlaceholders.metadata} />
-        </Suspense>
-      </section>
+          <Suspense fallback={<LoadingState />}>
+            <JsonViewOnlyEditor data={contractWithPlaceholders.metadata} />
+          </Suspense>
+        </section>
+      )}
 
       {/* Creation Bytecode Section */}
       <section className="mb-8 border border-gray-200 rounded-lg p-3 md:p-6">

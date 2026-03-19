@@ -351,6 +351,8 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
         setLanguage("solidity");
       } else if (extension === "vy") {
         setLanguage("elixir");
+      } else if (extension === "fe") {
+        setLanguage("rust");
       } else {
         setLanguage("plaintext");
       }

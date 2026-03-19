@@ -1,7 +1,11 @@
 import React, { useCallback, useRef } from "react";
 import { Tree, NodeApi, TreeApi } from "react-arborist";
-import { FaChevronDown, FaChevronRight, FaFolder, FaFolderOpen, FaFile, FaEthereum, FaStar } from "react-icons/fa";
+import { FaChevronDown, FaChevronRight, FaFolder, FaFolderOpen, FaFile, FaStar } from "react-icons/fa";
 import { FileNode } from "@/types/codeEditor";
+import Image from "next/image";
+import SolidityIcon from "@/assets/solidity.svg";
+import VyperIcon from "@/assets/vyper.svg";
+import FeIcon from "@/assets/fe.svg";
 
 interface FileExplorerTreeProps {
   files: FileNode[];
@@ -18,7 +22,13 @@ interface TreeNodeProps {
 const getFileIcon = (fileName: string) => {
   const extension = fileName.split(".").pop()?.toLowerCase();
   if (extension === "sol") {
-    return <FaEthereum className="w-4 h-4 text-blue-500" />;
+    return <Image src={SolidityIcon} alt="Solidity" width={16} height={16} />;
+  }
+  if (extension === "vy") {
+    return <Image src={VyperIcon} alt="Vyper" width={16} height={16} />;
+  }
+  if (extension === "fe") {
+    return <Image src={FeIcon} alt="Fe" width={16} height={16} />;
   }
   return <FaFile className="w-4 h-4 text-gray-400" />;
 };
