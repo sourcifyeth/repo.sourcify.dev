@@ -251,7 +251,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       )}
 
       {/* Read/Write Contract Section */}
-      {contractWithPlaceholders.abi?.length > 0 && (
+      {(contractWithPlaceholders.abi?.length ?? 0) > 0 && (
         <section className="my-4 flex flex-row flex-wrap items-center gap-2">
           <div className="sticky top-0 z-10 bg-gray-100 py-4">
             <h2 className="text-lg font-semibold text-gray-800">Read/Write Contract on:</h2>
@@ -270,10 +270,10 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       )}
 
       {/* Contract ABI Section */}
-      {contractWithPlaceholders.abi?.length > 0 && (
+      {(contractWithPlaceholders.abi?.length ?? 0) > 0 && (
         <section className="mb-8">
           <Suspense fallback={<LoadingState />}>
-            <ContractAbi abi={contractWithPlaceholders.abi} />
+            <ContractAbi abi={contractWithPlaceholders.abi!} />
           </Suspense>
         </section>
       )}
@@ -427,7 +427,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
                       constructorArguments={
                         contractWithPlaceholders.creationBytecode.transformationValues.constructorArguments
                       }
-                      abi={contractWithPlaceholders.abi}
+                      abi={contractWithPlaceholders.abi ?? []}
                     />
                   </Suspense>
                 )}
