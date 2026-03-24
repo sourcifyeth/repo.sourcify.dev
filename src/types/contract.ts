@@ -8,8 +8,8 @@ export interface ContractData {
   deployment: DeploymentData;
   sources: Record<string, SourceData>;
   compilation: CompilationData;
-  abi: AbiItem[];
-  metadata: Record<string, unknown>;
+  abi: AbiItem[] | null;
+  metadata: Record<string, unknown> | null;
   storageLayout: StorageLayoutData | null;
   userdoc: Record<string, unknown>;
   devdoc: Record<string, unknown>;
