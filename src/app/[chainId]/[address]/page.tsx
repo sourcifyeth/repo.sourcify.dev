@@ -27,6 +27,7 @@ import CborAuxdataTransformations from "./sections/CborAuxdataTransformations";
 import LibrariesSection from "./sections/LibrariesSection";
 import InfoTooltip from "@/components/InfoTooltip";
 import { processContractBytecodes } from "@/utils/bytecodeUtils";
+import semver from "semver";
 
 // Fetch chains data
 async function getChainsData() {
@@ -129,6 +130,12 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
 
   // Check if there are any unverified libraries
   const hasUnverifiedLibraries = Object.entries(allLibraries).some(([, address]) => !verificationStatus[address]);
+
+  // Check Solidity version for storage layout availability
+  const isSolidity = contract.compilation.language.toLowerCase() === "solidity";
+  const compilerVersion = semver.coerce(contract.compilation.compilerVersion);
+  const hasStorageLayoutSupport = isSolidity && compilerVersion && semver.gte(compilerVersion, "0.5.13");
+  const hasTransientStorageLayoutSupport = isSolidity && compilerVersion && semver.gte(compilerVersion, "0.8.27");
 
   // Determine if this is an exact match
   const isExactMatch = contract.creationMatch === "exact_match" || contract.runtimeMatch === "exact_match";
@@ -551,7 +558,29 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           <StorageLayout storageLayout={contractWithPlaceholders.storageLayout} />
         ) : (
           <div className="flex flex-col items-center justify-center h-full bg-white rounded-lg p-4">
-            <div className="text-gray-700 text-sm">No storage layouts found in the compiler output.</div>
+            <div className="text-gray-700 text-sm">
+              {!hasStorageLayoutSupport
+                ? "Storage layout is only available for Solidity contracts compiled with version ≥ 0.5.13."
+                : "No storage layouts found in the compiler output."}
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Transient Storage Layout Section */}
+      <section className="mb-8">
+        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+          <h2 className="text-xl font-semibold text-gray-800">Transient Storage Layout</h2>
+        </div>
+        {contractWithPlaceholders.transientStorageLayout?.types ? (
+          <StorageLayout storageLayout={contractWithPlaceholders.transientStorageLayout} />
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full bg-white rounded-lg p-4">
+            <div className="text-gray-700 text-sm">
+              {!hasTransientStorageLayoutSupport
+                ? "Transient storage layout is only available for Solidity contracts compiled with version ≥ 0.8.27."
+                : "No transient storage layouts found in the compiler output."}
+            </div>
           </div>
         )}
       </section>
