@@ -11,7 +11,7 @@ export interface ContractData {
   abi: AbiItem[] | null;
   metadata: Record<string, unknown> | null;
   storageLayout: StorageLayoutData | null;
-  transientStorageLayout: StorageLayoutData | null;
+  transientStorageLayout?: StorageLayoutData | null;
   userdoc: Record<string, unknown>;
   devdoc: Record<string, unknown>;
   stdJsonInput: Record<string, unknown>;
