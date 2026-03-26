@@ -136,6 +136,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
   const compilerVersion = semver.coerce(contract.compilation.compilerVersion);
   const hasStorageLayoutSupport = isSolidity && compilerVersion && semver.gte(compilerVersion, "0.5.13");
   const hasTransientStorageLayoutSupport = isSolidity && compilerVersion && semver.gte(compilerVersion, "0.8.27");
+  const hasMetadataSupport = isSolidity && compilerVersion && semver.gte(compilerVersion, "0.4.7");
 
   // Determine if this is an exact match
   const isExactMatch = contract.creationMatch === "exact_match" || contract.runtimeMatch === "exact_match";
@@ -355,11 +356,11 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </section>
 
       {/* Contract Metadata Section */}
-      {contractWithPlaceholders.metadata && (
-        <section className="mb-8">
-          <div className="sticky top-0 z-10 bg-gray-100 py-4">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-              <h2 className="text-xl font-semibold text-gray-800">Contract Metadata</h2>
+      <section className="mb-8">
+        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+            <h2 className="text-xl font-semibold text-gray-800">Contract Metadata</h2>
+            {contractWithPlaceholders.metadata && (
               <div className="flex items-center gap-2">
                 <CopyToClipboardButton data={contractWithPlaceholders.metadata} />
                 <DownloadFileButton
@@ -369,13 +370,23 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
                   address={contractWithPlaceholders.address}
                 />
               </div>
-            </div>
+            )}
           </div>
+        </div>
+        {contractWithPlaceholders.metadata ? (
           <Suspense fallback={<LoadingState />}>
             <JsonViewOnlyEditor data={contractWithPlaceholders.metadata} />
           </Suspense>
-        </section>
-      )}
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full bg-white rounded-lg p-4">
+            <div className="text-gray-700 text-sm">
+              {!hasMetadataSupport
+                ? "Contract metadata is only available for Solidity contracts compiled with version ≥ 0.4.7."
+                : "No contract metadata found in the compiler output."}
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* Creation Bytecode Section */}
       <section className="mb-8 border border-gray-200 rounded-lg p-3 md:p-6">
