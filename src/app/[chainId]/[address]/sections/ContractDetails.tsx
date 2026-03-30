@@ -1,6 +1,10 @@
 import { ContractData } from "@/types/contract";
 import { formatTimestamp } from "@/utils/api";
 import CopyToClipboard from "../../../../components/CopyToClipboard";
+import Image from "next/image";
+import SolidityIcon from "@/assets/solidity.svg";
+import VyperIcon from "@/assets/vyper.svg";
+import FeIcon from "@/assets/fe-dark.svg";
 
 interface ContractDetailsProps {
   contract: ContractData;
@@ -10,7 +14,7 @@ interface ContractDetailsProps {
 // Helper component for detail rows
 interface DetailRowProps {
   label: string;
-  value: string;
+  value: React.ReactNode;
   isEven: boolean;
   copyValue?: string;
 }
@@ -35,12 +39,28 @@ const DetailRow = ({ label, value, isEven, copyValue }: DetailRowProps) => {
   );
 };
 
+const languageIcons: Record<string, { src: string; alt: string }> = {
+  solidity: { src: SolidityIcon, alt: "Solidity" },
+  vyper: { src: VyperIcon, alt: "Vyper" },
+  fe: { src: FeIcon, alt: "Fe" },
+};
+
+function LanguageValue({ language }: { language: string }) {
+  const icon = languageIcons[language.toLowerCase()];
+  return (
+    <span className="inline-flex items-center gap-2">
+      {icon && <Image src={icon.src} alt={icon.alt} width={20} height={20} />}
+      {language}
+    </span>
+  );
+}
+
 export default function ContractDetails({ contract }: ContractDetailsProps) {
   // Create an array of details to render
   const details = [
     { label: "Contract Name", value: contract.compilation.name },
     { label: "Compilation Target", value: contract.compilation.fullyQualifiedName },
-    { label: "Language", value: contract.compilation.language },
+    { label: "Language", value: <LanguageValue language={contract.compilation.language} /> },
     { label: "Compiler", value: `${contract.compilation.compiler} ${contract.compilation.compilerVersion}` },
     {
       label: "EVM Version",

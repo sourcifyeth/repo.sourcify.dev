@@ -3,23 +3,21 @@
 import { FileNode } from "@/types/codeEditor";
 import { ContractData } from "@/types/contract";
 import { useState, useEffect, useRef } from "react";
-import type { EditorProps } from "@monaco-editor/react";
+import type { EditorProps, Monaco } from "@monaco-editor/react";
+import type { editor } from "monaco-editor";
 import MonacoEditor from "@monaco-editor/react";
-import type * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 import CodeEditorTabs from "@/components/CodeEditorTabs";
 import FileExplorerTree from "@/components/FileExplorerTree";
 import { useCodeEditor } from "@/hooks/useCodeEditor";
 import { useIsMobile } from "@/hooks/useResponsive";
 import { buildFileTreeWithIds } from "@/utils/fileExplorer";
 
-type Monaco = typeof monaco;
-
 // Define Solidity language configuration
 const configureSolidityLanguage = () => {
   return {
     beforeMount: (monaco: Monaco) => {
       // Register Solidity language if it doesn't exist
-      if (!monaco.languages.getLanguages().some((lang) => lang.id === "solidity")) {
+      if (!monaco.languages.getLanguages().some((lang: { id: string }) => lang.id === "solidity")) {
         // Register the Solidity language
         monaco.languages.register({ id: "solidity" });
 
@@ -315,7 +313,7 @@ interface ContractSourceProps {
 
 export default function ContractSourceV2({ contract }: ContractSourceProps) {
   const [language, setLanguage] = useState<string>("solidity");
-  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
 
   // Initialize tabs hook
@@ -353,6 +351,8 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
         setLanguage("solidity");
       } else if (extension === "vy") {
         setLanguage("elixir");
+      } else if (extension === "fe") {
+        setLanguage("rust");
       } else {
         setLanguage("plaintext");
       }
@@ -360,8 +360,8 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
   }, [activeTab]);
 
   // Handle editor mounting
-  const handleEditorDidMount = (editor: monaco.editor.IStandaloneCodeEditor, monaco: Monaco) => {
-    editorRef.current = editor;
+  const handleEditorDidMount = (editorInstance: editor.IStandaloneCodeEditor, monaco: Monaco) => {
+    editorRef.current = editorInstance;
     monacoRef.current = monaco;
   };
 

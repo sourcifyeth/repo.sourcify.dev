@@ -27,6 +27,7 @@ import CborAuxdataTransformations from "./sections/CborAuxdataTransformations";
 import LibrariesSection from "./sections/LibrariesSection";
 import InfoTooltip from "@/components/InfoTooltip";
 import { processContractBytecodes } from "@/utils/bytecodeUtils";
+import semver from "semver";
 
 // Fetch chains data
 async function getChainsData() {
@@ -129,6 +130,13 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
 
   // Check if there are any unverified libraries
   const hasUnverifiedLibraries = Object.entries(allLibraries).some(([, address]) => !verificationStatus[address]);
+
+  // Check Solidity version for storage layout availability
+  const isSolidity = contract.compilation.language.toLowerCase() === "solidity";
+  const compilerVersion = semver.coerce(contract.compilation.compilerVersion);
+  const hasStorageLayoutSupport = isSolidity && compilerVersion && semver.gte(compilerVersion, "0.5.13");
+  const hasTransientStorageLayoutSupport = isSolidity && compilerVersion && semver.gte(compilerVersion, "0.8.27");
+  const hasMetadataSupport = isSolidity && compilerVersion && semver.gte(compilerVersion, "0.4.7");
 
   // Determine if this is an exact match
   const isExactMatch = contract.creationMatch === "exact_match" || contract.runtimeMatch === "exact_match";
@@ -251,28 +259,32 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       )}
 
       {/* Read/Write Contract Section */}
-      <section className="my-4 flex flex-row flex-wrap items-center gap-2">
-        <div className="sticky top-0 z-10 bg-gray-100 py-4">
-          <h2 className="text-lg font-semibold text-gray-800">Read/Write Contract on:</h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <a
-            href={`https://builder.openzeppelin.com/?ecosystem=evm&chainId=${chainId}&address=${contract.address}&service=sourcify`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-white rounded-md px-4 py-3 shadow-sm border border-gray-200 hover:bg-gray-100 transition-colors duration-200 text-sm"
-          >
-            <Image src={OpenZeppelinLogo} alt="OpenZeppelin Logo" height={16} />
-          </a>
-        </div>
-      </section>
+      {(contractWithPlaceholders.abi?.length ?? 0) > 0 && (
+        <section className="my-4 flex flex-row flex-wrap items-center gap-2">
+          <div className="sticky top-0 z-10 bg-gray-100 py-4">
+            <h2 className="text-lg font-semibold text-gray-800">Read/Write Contract on:</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <a
+              href={`https://builder.openzeppelin.com/?ecosystem=evm&chainId=${chainId}&address=${contract.address}&service=sourcify`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-white rounded-md px-4 py-3 shadow-sm border border-gray-200 hover:bg-gray-100 transition-colors duration-200 text-sm"
+            >
+              <Image src={OpenZeppelinLogo} alt="OpenZeppelin Logo" height={16} />
+            </a>
+          </div>
+        </section>
+      )}
 
       {/* Contract ABI Section */}
-      <section className="mb-8">
-        <Suspense fallback={<LoadingState />}>
-          <ContractAbi abi={contractWithPlaceholders.abi} />
-        </Suspense>
-      </section>
+      {(contractWithPlaceholders.abi?.length ?? 0) > 0 && (
+        <section className="mb-8">
+          <Suspense fallback={<LoadingState />}>
+            <ContractAbi abi={contractWithPlaceholders.abi!} />
+          </Suspense>
+        </section>
+      )}
 
       {/* Contract Source Code Section */}
       <section className="mb-8">
@@ -348,20 +360,32 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
         <div className="sticky top-0 z-10 bg-gray-100 py-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <h2 className="text-xl font-semibold text-gray-800">Contract Metadata</h2>
-            <div className="flex items-center gap-2">
-              <CopyToClipboardButton data={contractWithPlaceholders.metadata} />
-              <DownloadFileButton
-                data={contractWithPlaceholders.metadata}
-                fileName="metadata"
-                chainId={contractWithPlaceholders.chainId}
-                address={contractWithPlaceholders.address}
-              />
-            </div>
+            {contractWithPlaceholders.metadata && (
+              <div className="flex items-center gap-2">
+                <CopyToClipboardButton data={contractWithPlaceholders.metadata} />
+                <DownloadFileButton
+                  data={contractWithPlaceholders.metadata}
+                  fileName="metadata"
+                  chainId={contractWithPlaceholders.chainId}
+                  address={contractWithPlaceholders.address}
+                />
+              </div>
+            )}
           </div>
         </div>
-        <Suspense fallback={<LoadingState />}>
-          <JsonViewOnlyEditor data={contractWithPlaceholders.metadata} />
-        </Suspense>
+        {contractWithPlaceholders.metadata ? (
+          <Suspense fallback={<LoadingState />}>
+            <JsonViewOnlyEditor data={contractWithPlaceholders.metadata} />
+          </Suspense>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full bg-white rounded-lg p-4">
+            <div className="text-gray-700 text-sm">
+              {!hasMetadataSupport
+                ? "Contract metadata is only available for Solidity contracts compiled with version ≥ 0.4.7."
+                : "No contract metadata found in the compiler output."}
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Creation Bytecode Section */}
@@ -421,7 +445,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
                       constructorArguments={
                         contractWithPlaceholders.creationBytecode.transformationValues.constructorArguments
                       }
-                      abi={contractWithPlaceholders.abi}
+                      abi={contractWithPlaceholders.abi ?? []}
                     />
                   </Suspense>
                 )}
@@ -545,7 +569,29 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           <StorageLayout storageLayout={contractWithPlaceholders.storageLayout} />
         ) : (
           <div className="flex flex-col items-center justify-center h-full bg-white rounded-lg p-4">
-            <div className="text-gray-700 text-sm">No storage layouts found in the compiler output.</div>
+            <div className="text-gray-700 text-sm">
+              {!hasStorageLayoutSupport
+                ? "Storage layout is only available for Solidity contracts compiled with version ≥ 0.5.13."
+                : "No storage layouts found in the compiler output."}
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Transient Storage Layout Section */}
+      <section className="mb-8">
+        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+          <h2 className="text-xl font-semibold text-gray-800">Transient Storage Layout</h2>
+        </div>
+        {contractWithPlaceholders.transientStorageLayout?.types ? (
+          <StorageLayout storageLayout={contractWithPlaceholders.transientStorageLayout} />
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full bg-white rounded-lg p-4">
+            <div className="text-gray-700 text-sm">
+              {!hasTransientStorageLayoutSupport
+                ? "Transient storage layout is only available for Solidity contracts compiled with version ≥ 0.8.27."
+                : "No transient storage layouts found in the compiler output."}
+            </div>
           </div>
         )}
       </section>
