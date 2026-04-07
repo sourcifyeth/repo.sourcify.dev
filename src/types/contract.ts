@@ -9,7 +9,7 @@ export interface ContractData {
   sources: Record<string, SourceData>;
   compilation: CompilationData;
   abi: AbiItem[];
-  metadata: Record<string, unknown>;
+  metadata: Record<string, unknown> | null;
   storageLayout: StorageLayoutData | null;
   userdoc: Record<string, unknown>;
   devdoc: Record<string, unknown>;

@@ -298,25 +298,27 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </section>
 
       {/* Contract Metadata Section */}
-      <section className="mb-8">
-        <div className="sticky top-0 z-10 bg-gray-100 py-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-800">Contract Metadata</h2>
-            <div className="flex items-center gap-2">
-              <CopyToClipboardButton data={contract.metadata} />
-              <DownloadFileButton
-                data={contract.metadata}
-                fileName="metadata"
-                chainId={contract.chainId}
-                address={contract.address}
-              />
+      {contract.metadata && (
+        <section className="mb-8">
+          <div className="sticky top-0 z-10 bg-gray-100 py-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-800">Contract Metadata</h2>
+              <div className="flex items-center gap-2">
+                <CopyToClipboardButton data={contract.metadata} />
+                <DownloadFileButton
+                  data={contract.metadata}
+                  fileName="metadata"
+                  chainId={contract.chainId}
+                  address={contract.address}
+                />
+              </div>
             </div>
           </div>
-        </div>
-        <Suspense fallback={<LoadingState />}>
-          <JsonViewOnlyEditor data={contract.metadata} />
-        </Suspense>
-      </section>
+          <Suspense fallback={<LoadingState />}>
+            <JsonViewOnlyEditor data={contract.metadata} />
+          </Suspense>
+        </section>
+      )}
 
       {/* Creation Bytecode Section */}
       <section className="mb-8 border border-gray-200 rounded-lg p-6">
