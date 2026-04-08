@@ -40,7 +40,7 @@ export default function CborAuxdataSection({ cborAuxdata, language }: CborAuxdat
                   View on <Image src={ipfsLogo} alt="IPFS Logo" width={36} height={36} />
                 </a>
                 <div className="text-gray-700 mt-2 md:mt-0 md:ml-2 text-xs md:text-sm md:inline">
-                  Solidity metadata.json IPFS hash:{" "}
+                  {language === "Solidity" ? "Solidity metadata.json" : "Metadata"} IPFS hash:{" "}
                   <span className="font-mono break-all">{(decodedCborAuxdata as SolidityDecodedObject).ipfs}</span>
                 </div>
               </div>
