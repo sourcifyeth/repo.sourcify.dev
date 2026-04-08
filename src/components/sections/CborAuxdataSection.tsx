@@ -29,7 +29,7 @@ export default function CborAuxdataSection({ cborAuxdata, language }: CborAuxdat
         return (
           <div key={key} className="mb-4 rounded-lg border border-gray-200 p-2 md:p-4 md:ml-4">
             <h4 className="md:text-base text-sm font-medium">CBOR Auxdata id: {key}</h4>
-            {(decodedCborAuxdata as SolidityDecodedObject)?.ipfs && (
+            {language === "Solidity" && (decodedCborAuxdata as SolidityDecodedObject)?.ipfs && (
               <div className="my-2">
                 <a
                   href={`https://ipfs.io/ipfs/${(decodedCborAuxdata as SolidityDecodedObject).ipfs}`}
@@ -40,7 +40,7 @@ export default function CborAuxdataSection({ cborAuxdata, language }: CborAuxdat
                   View on <Image src={ipfsLogo} alt="IPFS Logo" width={36} height={36} />
                 </a>
                 <div className="text-gray-700 mt-2 md:mt-0 md:ml-2 text-xs md:text-sm md:inline">
-                  {language === "Solidity" ? "Solidity metadata.json" : "Metadata"} IPFS hash:{" "}
+                  Solidity metadata.json IPFS hash:{" "}
                   <span className="font-mono break-all">{(decodedCborAuxdata as SolidityDecodedObject).ipfs}</span>
                 </div>
               </div>
