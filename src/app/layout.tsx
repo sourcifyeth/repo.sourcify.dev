@@ -84,21 +84,20 @@ export default function RootLayout({
               <Image src="/sourcify.png" alt="Sourcify Logo" className="h-10 w-auto mr-3" width={32} height={32} />
               <span className="text-gray-700 font-vt323 text-2xl">sourcify.eth</span>
             </Link>
-            <nav className="flex items-center gap-4 text-sm text-gray-600">
+            <nav className="flex items-center font-vt323 text-2xl text-gray-700">
               <a
                 href="https://verify.sourcify.dev"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 hover:text-gray-900 transition-colors"
+                className="mx-6 hover:text-cerulean-blue-500 transition-colors"
               >
-                verify.sourcify.dev
-                <FiExternalLink className="w-3.5 h-3.5" />
+                Verify
               </a>
               <a
                 href="https://sourcify.dev"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 hover:text-gray-900 transition-colors"
+                className="flex items-center gap-1 mx-6 hover:text-cerulean-blue-500 transition-colors"
               >
                 sourcify.dev
                 <FiExternalLink className="w-3.5 h-3.5" />
