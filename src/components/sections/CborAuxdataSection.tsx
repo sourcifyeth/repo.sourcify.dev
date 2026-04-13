@@ -29,7 +29,7 @@ export default function CborAuxdataSection({ cborAuxdata, language }: CborAuxdat
         return (
           <div key={key} className="mb-4 rounded-lg border border-gray-200 p-2 md:p-4 md:ml-4">
             <h4 className="md:text-base text-sm font-medium">CBOR Auxdata id: {key}</h4>
-            {(decodedCborAuxdata as SolidityDecodedObject)?.ipfs && (
+            {language === "Solidity" && (decodedCborAuxdata as SolidityDecodedObject)?.ipfs && (
               <div className="my-2">
                 <a
                   href={`https://ipfs.io/ipfs/${(decodedCborAuxdata as SolidityDecodedObject).ipfs}`}

@@ -380,9 +380,11 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
         ) : (
           <div className="flex flex-col items-center justify-center h-full bg-white rounded-lg p-4">
             <div className="text-gray-700 text-sm">
-              {!hasMetadataSupport
-                ? "Contract metadata is only available for Solidity contracts compiled with version ≥ 0.4.7."
-                : "No contract metadata found in the compiler output."}
+              {!isSolidity
+                ? "Contract metadata is not available for non-Solidity contracts."
+                : !hasMetadataSupport
+                  ? "Contract metadata is only available for Solidity contracts compiled with version ≥ 0.4.7."
+                  : "No contract metadata found in the compiler output."}
             </div>
           </div>
         )}
