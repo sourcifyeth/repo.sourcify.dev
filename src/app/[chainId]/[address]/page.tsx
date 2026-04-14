@@ -134,7 +134,9 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
   // Check Solidity version for storage layout availability
   const isSolidity = contract.compilation.language.toLowerCase() === "solidity";
   const compilerVersion = semver.coerce(contract.compilation.compilerVersion);
+  const isVyper = contract.compilation.language.toLowerCase() === "vyper";
   const hasStorageLayoutSupport = isSolidity && compilerVersion && semver.gte(compilerVersion, "0.5.13");
+  const hasVyperStorageLayoutSupport = isVyper && compilerVersion && semver.gte(compilerVersion, "0.4.1");
   const hasTransientStorageLayoutSupport = isSolidity && compilerVersion && semver.gte(compilerVersion, "0.8.27");
   const hasMetadataSupport = isSolidity && compilerVersion && semver.gte(compilerVersion, "0.4.7");
 
@@ -575,7 +577,9 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
             <div className="text-gray-700 text-sm">
               {isSolidity && !hasStorageLayoutSupport
                 ? "Storage layout is only available for Solidity contracts compiled with version ≥ 0.5.13."
-                : "No storage layouts found in the compiler output."}
+                : isVyper && !hasVyperStorageLayoutSupport
+                  ? "Storage layout is only available for Vyper contracts compiled with version ≥ 0.4.1."
+                  : "No storage layouts found in the compiler output."}
             </div>
           </div>
         )}
