@@ -10,8 +10,11 @@ export interface ContractData {
   compilation: CompilationData;
   abi: AbiItem[] | null;
   metadata: Record<string, unknown> | null;
-  storageLayout: StorageLayoutData | null;
+  storageLayout: StorageLayoutData | VyperStorageLayout | null;
   transientStorageLayout?: StorageLayoutData | null;
+  additionalInput?: {
+    storage_layout_overrides?: Record<string, VyperStorageLayout>;
+  } | null;
   userdoc: Record<string, unknown>;
   devdoc: Record<string, unknown>;
   stdJsonInput: Record<string, unknown>;
@@ -177,6 +180,20 @@ export interface StorageLayoutData {
     offset: number;
     contract: string;
   }>;
+}
+
+export interface VyperStorageLayoutEntry {
+  type: string;
+  slot: number;
+  n_slots: number;
+}
+
+export type VyperStorageLayout = Record<string, VyperStorageLayoutEntry>;
+
+export function isSolidityStorageLayout(
+  layout: StorageLayoutData | VyperStorageLayout
+): layout is StorageLayoutData {
+  return "storage" in layout && Array.isArray((layout as StorageLayoutData).storage);
 }
 
 export interface SignatureData {

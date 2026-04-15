@@ -134,7 +134,9 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
   // Check Solidity version for storage layout availability
   const isSolidity = contract.compilation.language.toLowerCase() === "solidity";
   const compilerVersion = semver.coerce(contract.compilation.compilerVersion);
+  const isVyper = contract.compilation.language.toLowerCase() === "vyper";
   const hasStorageLayoutSupport = isSolidity && compilerVersion && semver.gte(compilerVersion, "0.5.13");
+  const hasVyperStorageLayoutSupport = isVyper && compilerVersion && semver.gte(compilerVersion, "0.4.1");
   const hasTransientStorageLayoutSupport = isSolidity && compilerVersion && semver.gte(compilerVersion, "0.8.27");
   const hasMetadataSupport = isSolidity && compilerVersion && semver.gte(compilerVersion, "0.4.7");
 
@@ -567,18 +569,52 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
             </a>
           </div>
         </div>
-        {contractWithPlaceholders.storageLayout?.types ? (
+        {contractWithPlaceholders.storageLayout &&
+        Object.keys(contractWithPlaceholders.storageLayout).length > 0 ? (
           <StorageLayout storageLayout={contractWithPlaceholders.storageLayout} />
         ) : (
           <div className="flex flex-col items-center justify-center h-full bg-white rounded-lg p-4">
             <div className="text-gray-700 text-sm">
-              {!hasStorageLayoutSupport
+              {isSolidity && !hasStorageLayoutSupport
                 ? "Storage layout is only available for Solidity contracts compiled with version ≥ 0.5.13."
-                : "No storage layouts found in the compiler output."}
+                : isVyper && !hasVyperStorageLayoutSupport
+                  ? "Storage layout is only available for Vyper contracts compiled with version ≥ 0.4.1."
+                  : "No storage layouts found in the compiler output."}
             </div>
           </div>
         )}
       </section>
+
+      {/* Storage Layout Overrides Section (Vyper) */}
+      {contractWithPlaceholders.additionalInput?.storage_layout_overrides &&
+        Object.keys(contractWithPlaceholders.additionalInput.storage_layout_overrides).length > 0 && (
+          <section className="mb-8">
+            <div className="sticky top-0 z-10 bg-gray-100 py-4">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                <h2 className="text-xl font-semibold text-gray-800">Storage Layout Overrides</h2>
+                <div className="flex items-center gap-2 text-xs md:text-sm">
+                  <CopyToClipboardButton
+                    data={contractWithPlaceholders.additionalInput.storage_layout_overrides}
+                  />
+                  <DownloadFileButton
+                    data={contractWithPlaceholders.additionalInput.storage_layout_overrides}
+                    fileName="storage-layout-overrides"
+                    chainId={contractWithPlaceholders.chainId}
+                    address={contractWithPlaceholders.address}
+                  />
+                </div>
+              </div>
+              <p className="text-gray-700 text-sm">
+                Custom storage slot assignments provided as compiler input for this Vyper contract.
+              </p>
+            </div>
+            <Suspense fallback={<LoadingState />}>
+              <JsonViewOnlyEditor
+                data={contractWithPlaceholders.additionalInput.storage_layout_overrides}
+              />
+            </Suspense>
+          </section>
+        )}
 
       {/* Transient Storage Layout Section */}
       <section className="mb-8">
