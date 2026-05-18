@@ -1,8 +1,6 @@
 import { ImageResponse } from "next/og";
 import { fetchContractData, fetchChains, getChainName } from "@/utils/api";
 
-export const runtime = "edge";
-
 export const alt = "Sourcify Contract Viewer";
 export const size = {
   width: 1200,
