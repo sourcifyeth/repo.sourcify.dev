@@ -3,9 +3,7 @@ import { fetchGrowthPieChains, fetchTopContractsByChain, checkVerification } fro
 
 // Set cache control headers with a 1-hour cache time
 export const revalidate = 3600; // 1 hour in seconds
-// On Cloudflare, skip build-time prerender (160 outbound fetches blow past the 60s static-gen timeout).
-// Production (Cloud Run) keeps force-static so the response is prerendered.
-export const dynamic = process.env.SKIP_STATIC_PRERENDER === "1" ? "force-dynamic" : "force-static";
+export const dynamic = "force-static";
 
 // Chains with available top contracts data
 const AVAILABLE_CHAINS = ["arbitrum", "base", "ethereum", "linea", "optimism", "taiko", "unichain", "zksync_era"];
