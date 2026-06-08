@@ -2,17 +2,23 @@
 
 import { useEffect, useState } from "react";
 
-// `isStaging` is determined on the server from SOURCIFY_SERVER_URL (see layout.tsx)
-// since that env var is not exposed to the client.
-export default function StagingBanner({ isStaging }: { isStaging: boolean }) {
-  // Set on the client only to avoid an SSR hydration mismatch.
-  const [url, setUrl] = useState("");
+// On Netlify this app is SSR'd through functions where NODE_ENV is always
+// "production", so we can't distinguish staging from production via build/runtime
+// env vars. The hostname is the only reliable signal, so detect it on the client:
+// show the banner everywhere except the known production host(s).
+const PRODUCTION_HOSTS = ["repo.sourcify.dev"];
+
+export default function StagingBanner() {
+  // Computed on the client only to avoid an SSR hydration mismatch.
+  const [url, setUrl] = useState<string | null>(null);
+  const [isStaging, setIsStaging] = useState(false);
 
   useEffect(() => {
     setUrl(window.location.href);
+    setIsStaging(!PRODUCTION_HOSTS.includes(window.location.hostname));
   }, []);
 
-  if (!isStaging) {
+  if (!isStaging || url === null) {
     return null;
   }
 
