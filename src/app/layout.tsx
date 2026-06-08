@@ -67,8 +67,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Staging deployments point SOURCIFY_SERVER_URL at the staging server; production uses sourcify.dev.
-  const isStaging = process.env.SOURCIFY_SERVER_URL?.includes("staging") ?? false;
+  // Production deployments set NODE_ENV=production; anything else is treated as staging/dev.
+  const isStaging = process.env.NODE_ENV !== "production";
 
   return (
     <html lang="en" className={``}>
