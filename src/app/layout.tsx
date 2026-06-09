@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import Footer from "@/components/Footer";
 import AppTooltip from "@/components/AppTooltip";
+import StagingBanner from "@/components/StagingBanner";
 import Image from "next/image";
 import Link from "next/link";
 import { FiExternalLink } from "react-icons/fi";
@@ -71,6 +72,7 @@ export default function RootLayout({
       <body
         className={`bg-gray-100 min-h-screen flex flex-col font-sans ${ibmPlexSans.variable} ${ibmPlexMono.variable} ${vt323.variable}`}
       >
+        <StagingBanner />
         {process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID && (
           <Script
             src="https://cloud.umami.is/script.js"
