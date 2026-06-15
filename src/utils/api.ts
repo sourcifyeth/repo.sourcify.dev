@@ -19,10 +19,11 @@ const revalidateTime = process.env.NODE_ENV === "production" ? 86400 : 3600; // 
  */
 export async function fetchContractData(chainId: string, address: string): Promise<ContractData> {
   const baseUrl = getSourcifyServerUrl();
-  const url = `${baseUrl}/v2/contract/${chainId}/${address}?fields=all`;
+  const normalizedAddress = address.toLowerCase();
+  const url = `${baseUrl}/v2/contract/${chainId}/${normalizedAddress}?fields=all`;
 
   try {
-    const response = await fetch(url, { next: { revalidate: revalidateTime } });
+    const response = await fetch(url, { cache: "no-store" });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch contract data: ${response.status} ${response.statusText}`);
@@ -121,9 +122,10 @@ interface VerificationResponse {
 export async function checkVerification(chainId: string, address: string): Promise<boolean> {
   try {
     const baseUrl = getSourcifyServerUrl();
+    const normalizedAddress = address.toLowerCase();
 
-    const url = `${baseUrl}/v2/contract/${chainId}/${address}`;
-    const response = await fetch(url, { next: { revalidate: revalidateTime } }); // Cache for 1 hour
+    const url = `${baseUrl}/v2/contract/${chainId}/${normalizedAddress}`;
+    const response = await fetch(url, { cache: "no-store" });
 
     // Accept 2xx and 3xx status codes (< 400), but fail on 4xx and 5xx
     if (response.status >= 400) {

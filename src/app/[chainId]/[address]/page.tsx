@@ -1,7 +1,7 @@
 import { fetchContractData, fetchChains, getChainName, checkVerification } from "@/utils/api";
 import { Suspense } from "react";
 import { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import LoadingState from "@/components/LoadingState";
 import { IoCheckmarkDoneCircle, IoCheckmarkCircle, IoWarning, IoCloseCircle } from "react-icons/io5";
 import CopyToClipboard from "@/components/CopyToClipboard";
@@ -46,19 +46,21 @@ export async function generateMetadata({
   params: Promise<{ chainId: string; address: string }>;
 }): Promise<Metadata> {
   const { chainId, address } = await params;
+  const normalizedAddress = address.toLowerCase();
 
   // Fetch chains data to get the network name
-  const [chains, contract] = await Promise.all([getChainsData(), getContractData(chainId, address)]);
+  const [chains, contract] = await Promise.all([getChainsData(), getContractData(chainId, normalizedAddress)]);
 
   if (!contract) {
     notFound();
   }
 
   const chainName = getChainName(chainId, chains);
+  const displayAddress = contract.address || normalizedAddress;
 
   return {
-    title: `${address} on ${chainName}`,
-    description: `View contract ${address} on ${chainName} network`,
+    title: `${displayAddress} on ${chainName}`,
+    description: `View contract ${displayAddress} on ${chainName} network`,
     icons: {
       icon: "/favicon-verified.ico",
     },
@@ -67,9 +69,14 @@ export async function generateMetadata({
 
 export default async function ContractPage({ params }: { params: Promise<{ chainId: string; address: string }> }) {
   const { chainId, address } = await params;
+  const normalizedAddress = address.toLowerCase();
+
+  if (address !== normalizedAddress) {
+    redirect(`/${chainId}/${normalizedAddress}`);
+  }
 
   // Fetch data in parallel
-  const [contract, chains] = await Promise.all([getContractData(chainId, address), getChainsData()]);
+  const [contract, chains] = await Promise.all([getContractData(chainId, normalizedAddress), getChainsData()]);
 
   if (!contract) {
     notFound();
