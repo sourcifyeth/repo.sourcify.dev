@@ -420,6 +420,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           <CborAuxdataSection
             cborAuxdata={contractWithPlaceholders.creationBytecode.cborAuxdata}
             language={contractWithPlaceholders.compilation.language}
+            compilerVersion={contractWithPlaceholders.compilation.compilerVersion}
           />
 
           {/* Creation Transformations Section */}
@@ -494,6 +495,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           <CborAuxdataSection
             cborAuxdata={contractWithPlaceholders.runtimeBytecode.cborAuxdata}
             language={contractWithPlaceholders.compilation.language}
+            compilerVersion={contractWithPlaceholders.compilation.compilerVersion}
           />
 
           {/* Runtime Transformations Section */}
