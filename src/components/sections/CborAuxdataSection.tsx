@@ -10,9 +10,10 @@ import ipfsLogo from "@/assets/ipfs.png";
 interface CborAuxdataSectionProps {
   cborAuxdata: BytecodeData["cborAuxdata"];
   language: string;
+  compilerVersion: string;
 }
 
-export default function CborAuxdataSection({ cborAuxdata, language }: CborAuxdataSectionProps) {
+export default function CborAuxdataSection({ cborAuxdata, language, compilerVersion }: CborAuxdataSectionProps) {
   if (!cborAuxdata || Object.keys(cborAuxdata).length === 0) {
     return null;
   }
@@ -25,7 +26,7 @@ export default function CborAuxdataSection({ cborAuxdata, language }: CborAuxdat
         on-chain bytecode, they will show up in Transformations section.
       </p>
       {Object.entries(cborAuxdata).map(([key, cborAuxdataObj]) => {
-        const decodedCborAuxdata = formatCborAuxdata(cborAuxdataObj.value, language);
+        const decodedCborAuxdata = formatCborAuxdata(cborAuxdataObj.value, language, compilerVersion);
         return (
           <div key={key} className="mb-4 rounded-lg border border-gray-200 p-2 md:p-4 md:ml-4">
             <h4 className="md:text-base text-sm font-medium">CBOR Auxdata id: {key}</h4>
