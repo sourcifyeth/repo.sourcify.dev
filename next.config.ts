@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // "standalone" is needed for Docker but conflicts with @netlify/plugin-nextjs
+  output: process.env.NETLIFY ? undefined : "standalone",
 };
 
 export default nextConfig;
