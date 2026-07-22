@@ -2,6 +2,7 @@ import { fetchContractData, fetchChains, getChainName, checkVerification } from 
 import { Suspense } from "react";
 import { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import { getAddress } from "@ethersproject/address";
 import LoadingState from "@/components/LoadingState";
 import { IoCheckmarkDoneCircle, IoCheckmarkCircle, IoWarning, IoCloseCircle } from "react-icons/io5";
 import CopyToClipboard from "@/components/CopyToClipboard";
@@ -29,6 +30,17 @@ import InfoTooltip from "@/components/InfoTooltip";
 import { processContractBytecodes } from "@/utils/bytecodeUtils";
 import semver from "semver";
 
+// Returns the EIP-55 checksummed address, or null if the address is invalid.
+// Lowercases first so any input casing is normalized to the canonical checksum
+// rather than being rejected for a mismatching checksum.
+function getChecksummedAddress(address: string): string | null {
+  try {
+    return getAddress(address.toLowerCase());
+  } catch {
+    return null;
+  }
+}
+
 // Fetch chains data
 async function getChainsData() {
   try {
@@ -46,17 +58,16 @@ export async function generateMetadata({
   params: Promise<{ chainId: string; address: string }>;
 }): Promise<Metadata> {
   const { chainId, address } = await params;
-  const normalizedAddress = address.toLowerCase();
 
   // Fetch chains data to get the network name
-  const [chains, contract] = await Promise.all([getChainsData(), getContractData(chainId, normalizedAddress)]);
+  const [chains, contract] = await Promise.all([getChainsData(), getContractData(chainId, address)]);
 
   if (!contract) {
     notFound();
   }
 
   const chainName = getChainName(chainId, chains);
-  const displayAddress = contract.address || normalizedAddress;
+  const displayAddress = contract.address || getChecksummedAddress(address) || address;
 
   return {
     title: `${displayAddress} on ${chainName}`,
@@ -69,14 +80,18 @@ export async function generateMetadata({
 
 export default async function ContractPage({ params }: { params: Promise<{ chainId: string; address: string }> }) {
   const { chainId, address } = await params;
-  const normalizedAddress = address.toLowerCase();
 
-  if (address !== normalizedAddress) {
-    redirect(`/${chainId}/${normalizedAddress}`);
+  // Redirect to the checksummed (EIP-55) address as the canonical URL
+  const checksummedAddress = getChecksummedAddress(address);
+  if (!checksummedAddress) {
+    notFound();
+  }
+  if (address !== checksummedAddress) {
+    redirect(`/${chainId}/${checksummedAddress}`);
   }
 
   // Fetch data in parallel
-  const [contract, chains] = await Promise.all([getContractData(chainId, normalizedAddress), getChainsData()]);
+  const [contract, chains] = await Promise.all([getContractData(chainId, checksummedAddress), getChainsData()]);
 
   if (!contract) {
     notFound();
