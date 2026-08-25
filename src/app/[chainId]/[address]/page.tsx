@@ -1,4 +1,5 @@
-import { fetchContractData, fetchChains, getChainName, checkVerification } from "@/utils/api";
+import { fetchContractData, fetchChains, getChainName, checkVerification, getSourcifyServerUrl } from "@/utils/api";
+import SimilarityVerification from "./SimilarityVerification";
 import { Suspense } from "react";
 import { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
@@ -62,11 +63,16 @@ export async function generateMetadata({
   // Fetch chains data to get the network name
   const [chains, contract] = await Promise.all([getChainsData(), getContractData(chainId, address)]);
 
+  const chainName = getChainName(chainId, chains);
+
   if (!contract) {
-    notFound();
+    const displayAddress = getChecksummedAddress(address) || address;
+    return {
+      title: `${displayAddress} on ${chainName}`,
+      description: `Contract ${displayAddress} on ${chainName} network is not verified on Sourcify`,
+    };
   }
 
-  const chainName = getChainName(chainId, chains);
   const displayAddress = contract.address || getChecksummedAddress(address) || address;
 
   return {
@@ -90,11 +96,40 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
     redirect(`/${chainId}/${checksummedAddress}`);
   }
 
-  // Fetch data in parallel
-  const [contract, chains] = await Promise.all([getContractData(chainId, checksummedAddress), getChainsData()]);
+  // Fetch data in parallel. fetchContractData returns null if the contract is
+  // not verified (404); other fetch errors keep the previous "not found" behavior.
+  const [contractResult, chains] = await Promise.all([
+    fetchContractData(chainId, checksummedAddress)
+      .then((contract) => ({ contract, fetchFailed: false }))
+      .catch((error) => {
+        console.error("Error fetching contract data:", error);
+        return { contract: null, fetchFailed: true };
+      }),
+    getChainsData(),
+  ]);
+  const { contract, fetchFailed } = contractResult;
 
-  if (!contract) {
+  if (fetchFailed) {
     notFound();
+  }
+
+  // Get human-readable chain name
+  const chainName = getChainName(chainId, chains);
+
+  // The contract is not verified: try to verify it via similarity search
+  if (!contract) {
+    return (
+      <div>
+        <div className="mt-3 mb-2">
+          <div className="flex items-center">
+            <h1 className="text-base break-all md:text-2xl font-bold font-mono text-gray-900">{checksummedAddress}</h1>
+            <CopyToClipboard text={checksummedAddress} className="ml-2 md:p-0 p-2" />
+          </div>
+          <p className="text-sm md:text-base text-gray-700 mt-1">on {chainName}</p>
+        </div>
+        <SimilarityVerification chainId={chainId} address={checksummedAddress} serverUrl={getSourcifyServerUrl()} />
+      </div>
+    );
   }
 
   // Process bytecodes to insert library placeholders
@@ -112,9 +147,6 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       recompiledBytecode: processedRuntimeBytecode,
     },
   };
-
-  // Get human-readable chain name
-  const chainName = getChainName(chainId, chains);
 
   // Check verification status for all libraries
   const verificationStatus: Record<string, boolean> = {};

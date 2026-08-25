@@ -1,7 +1,7 @@
 import { ContractData } from "@/types/contract";
 import { ChainData, ChainsResponse } from "@/types/chain";
 
-const getSourcifyServerUrl = () => {
+export const getSourcifyServerUrl = () => {
   const serverUrl = process.env.SOURCIFY_SERVER_URL;
   if (!serverUrl) {
     throw new Error("SOURCIFY_SERVER_URL is not set");
@@ -15,15 +15,19 @@ const revalidateTime = process.env.NODE_ENV === "production" ? 86400 : 3600; // 
  * Fetches contract data from the Sourcify API
  * @param chainId The chain ID
  * @param address The contract address
- * @returns The contract data
+ * @returns The contract data, or null if the contract is not verified (404)
  */
-export async function fetchContractData(chainId: string, address: string): Promise<ContractData> {
+export async function fetchContractData(chainId: string, address: string): Promise<ContractData | null> {
   const baseUrl = getSourcifyServerUrl();
   const normalizedAddress = address.toLowerCase();
   const url = `${baseUrl}/v2/contract/${chainId}/${normalizedAddress}?fields=all`;
 
   try {
     const response = await fetch(url, { cache: "no-store" });
+
+    if (response.status === 404) {
+      return null;
+    }
 
     if (!response.ok) {
       throw new Error(`Failed to fetch contract data: ${response.status} ${response.statusText}`);

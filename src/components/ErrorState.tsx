@@ -1,8 +1,9 @@
 interface ErrorStateProps {
   message: string;
+  secondaryMessage?: string;
 }
 
-export default function ErrorState({ message }: ErrorStateProps) {
+export default function ErrorState({ message, secondaryMessage }: ErrorStateProps) {
   return (
     <div className="bg-red-50 border-l-4 border-red-500 p-4 my-6">
       <div className="flex">
@@ -24,6 +25,7 @@ export default function ErrorState({ message }: ErrorStateProps) {
           <h3 className="text-sm font-medium text-red-800">Error</h3>
           <div className="mt-2 text-sm text-red-700">
             <p>{message}</p>
+            {secondaryMessage && <p className="mt-1">{secondaryMessage}</p>}
           </div>
         </div>
       </div>

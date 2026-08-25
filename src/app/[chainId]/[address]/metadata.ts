@@ -1,6 +1,5 @@
 import { Metadata } from "next";
 import { fetchContractData, fetchChains, getChainName } from "@/utils/api";
-import { ContractData } from "@/types/contract";
 
 export async function generateMetadata({
   params,
@@ -11,12 +10,9 @@ export async function generateMetadata({
 
   try {
     // Fetch data in parallel
-    const [contract, chains] = await Promise.all([
-      fetchContractData(chainId, address) as Promise<ContractData>,
-      fetchChains(),
-    ]);
+    const [contract, chains] = await Promise.all([fetchContractData(chainId, address), fetchChains()]);
 
-    const contractName = contract.compilation?.name || "Contract";
+    const contractName = contract?.compilation?.name || "Contract";
     const chainName = getChainName(chainId, chains);
 
     return {
