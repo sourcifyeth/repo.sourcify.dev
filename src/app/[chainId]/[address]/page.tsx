@@ -1,5 +1,6 @@
 import { fetchContractData, fetchChains, getChainName, checkVerification, getSourcifyServerUrl } from "@/utils/api";
 import SimilarityVerification from "./SimilarityVerification";
+import ErrorState from "@/components/ErrorState";
 import { Suspense } from "react";
 import { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
@@ -116,8 +117,12 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
   // Get human-readable chain name
   const chainName = getChainName(chainId, chains);
 
-  // The contract is not verified: try to verify it via similarity search
+  // The contract is not verified: try to verify it via similarity search.
+  // Don't even try for chains Sourcify doesn't support; only trust that check
+  // when the chains list actually loaded.
   if (!contract) {
+    const chain = chains.find((c) => c.chainId.toString() === chainId);
+    const isChainUnsupported = chains.length > 0 && (!chain || chain.supported === false);
     return (
       <div>
         <div className="mt-3 mb-2">
@@ -127,7 +132,14 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           </div>
           <p className="text-sm md:text-base text-gray-700 mt-1">on {chainName}</p>
         </div>
-        <SimilarityVerification chainId={chainId} address={checksummedAddress} serverUrl={getSourcifyServerUrl()} />
+        {isChainUnsupported ? (
+          <ErrorState
+            message="Contract not found"
+            secondaryMessage={`Chain ${chainId} is not supported on Sourcify.`}
+          />
+        ) : (
+          <SimilarityVerification chainId={chainId} address={checksummedAddress} serverUrl={getSourcifyServerUrl()} />
+        )}
       </div>
     );
   }

@@ -29,6 +29,16 @@ export async function fetchContractData(chainId: string, address: string): Promi
       return null;
     }
 
+    // Unknown chains return 400 unsupported_chain. Also treat it as "not
+    // verified" so the page can show the unsupported chain error instead of
+    // a generic not found page.
+    if (response.status === 400) {
+      const error = await response.json().catch(() => null);
+      if (error?.customCode === "unsupported_chain") {
+        return null;
+      }
+    }
+
     if (!response.ok) {
       throw new Error(`Failed to fetch contract data: ${response.status} ${response.statusText}`);
     }
