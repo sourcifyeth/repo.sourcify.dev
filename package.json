@@ -17,7 +17,7 @@
     "fuse.js": "7.5.0",
     "jszip": "3.10.1",
     "monaco-editor": "0.56.0",
-    "next": "15.5.22",
+    "next": "15.5.23",
     "react": "19.2.8",
     "react-arborist": "3.16.0",
     "react-dom": "19.2.8",
@@ -35,7 +35,7 @@
     "@types/semver": "7.8.0",
     "autoprefixer": "10.5.4",
     "eslint": "9.39.5",
-    "eslint-config-next": "15.5.22",
+    "eslint-config-next": "15.5.23",
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3"
   }
