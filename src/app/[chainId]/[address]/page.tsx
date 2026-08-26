@@ -118,11 +118,14 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
   const chainName = getChainName(chainId, chains);
 
   // The contract is not verified: try to verify it via similarity search.
-  // Don't even try for chains Sourcify doesn't support; only trust that check
-  // when the chains list actually loaded.
+  // Don't even try for unknown chains or chains whose verification is
+  // deprecated (verified contracts on deprecated chains are still served from
+  // the database and never reach this branch); only trust these checks when
+  // the chains list actually loaded.
   if (!contract) {
     const chain = chains.find((c) => c.chainId.toString() === chainId);
-    const isChainUnsupported = chains.length > 0 && (!chain || chain.supported === false);
+    const isChainUnknown = chains.length > 0 && !chain;
+    const isChainDeprecated = !!chain && chain.supported === false;
     return (
       <div>
         <div className="mt-3 mb-2">
@@ -132,10 +135,15 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           </div>
           <p className="text-sm md:text-base text-gray-700 mt-1">on {chainName}</p>
         </div>
-        {isChainUnsupported ? (
+        {isChainUnknown ? (
           <ErrorState
             message="Contract not found"
             secondaryMessage={`Chain ${chainId} is not supported on Sourcify.`}
+          />
+        ) : isChainDeprecated ? (
+          <ErrorState
+            message="Contract not found"
+            secondaryMessage="Verification on this chain is deprecated."
           />
         ) : (
           <SimilarityVerification chainId={chainId} address={checksummedAddress} serverUrl={getSourcifyServerUrl()} />
