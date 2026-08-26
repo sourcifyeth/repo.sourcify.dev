@@ -21,7 +21,7 @@ export default async function Image({ params }: { params: { chainId: string; add
     // Fetch data in parallel
     const [contract, chains] = await Promise.all([fetchContractData(chainId, address), fetchChains()]);
 
-    contractName = contract.compilation.name || "Contract";
+    contractName = contract?.compilation.name || "Contract";
     chainName = getChainName(chainId, chains);
   } catch {
     // Use default names if data fetching fails
