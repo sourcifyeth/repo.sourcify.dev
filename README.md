@@ -16,8 +16,12 @@ Create a `.env` file in the root directory with the following variables:
 
 ```bash
 SOURCIFY_SERVER_URL=https://sourcify.dev/server
+SOURCIFY_SERVER_INTERNAL_URL=https://sourcify.dev/server
 # NODE_ENV=development or NODE_ENV=production
 ```
+
+- `SOURCIFY_SERVER_URL`: the public URL of the Sourcify server. The browser uses it (similarity verification) and so do redirects, so it must be reachable from the internet.
+- `SOURCIFY_SERVER_INTERNAL_URL`: the URL the Next.js server uses for its own calls to the Sourcify server (contract pages are rendered server-side). Locally this is just the public URL again. In production it must be the Sourcify server's direct service URL (its Cloud Run `*.run.app` URL, without the `/server` path prefix) so the traffic stays inside the network instead of leaving and re-entering through the public load balancer, where a per-IP rate limit would put every visitor's page view in one shared bucket. Pass both at build time too: the growthepie top-contracts route is pre-rendered during `next build` and would otherwise mark every contract as unverified until its first revalidation.
 
 ### Running Locally
 
@@ -71,22 +75,25 @@ steps:
       - build
       - "--build-arg"
       - "SOURCIFY_SERVER_URL=${_SOURCIFY_SERVER_URL}"
+      - "--build-arg"
+      - "SOURCIFY_SERVER_INTERNAL_URL=${_SOURCIFY_SERVER_INTERNAL_URL}"
 ---
 substitutions:
   _SOURCIFY_SERVER_URL: https://sourcify.dev/server
+  _SOURCIFY_SERVER_INTERNAL_URL: https://<sourcify-server-service>.a.run.app
 ```
 
 1. Build the Docker image:
 
    ```bash
    # Build the image with the Sourcify server URL as a build argument
-   docker build --build-arg SOURCIFY_SERVER_URL=https://sourcify.dev/server -t repo-sourcify .
+   docker build --build-arg SOURCIFY_SERVER_URL=https://sourcify.dev/server --build-arg SOURCIFY_SERVER_INTERNAL_URL=https://sourcify.dev/server -t repo-sourcify .
    ```
 
 2. Run the container:
 
    ```bash
-   docker run -p 3000:3000 -e SOURCIFY_SERVER_URL=https://sourcify.dev/server repo-sourcify
+   docker run -p 3000:3000 -e SOURCIFY_SERVER_URL=https://sourcify.dev/server -e SOURCIFY_SERVER_INTERNAL_URL=https://sourcify.dev/server repo-sourcify
    ```
 
 3. Access the application at [http://localhost:3000](http://localhost:3000).

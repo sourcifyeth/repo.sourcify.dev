@@ -1,10 +1,30 @@
 import { ContractData } from "@/types/contract";
 import { ChainData, ChainsResponse } from "@/types/chain";
 
+/**
+ * Public URL of the Sourcify server. Use it for anything that runs in, or is
+ * handed to, the browser: client components, redirects, links.
+ */
 export const getSourcifyServerUrl = () => {
   const serverUrl = process.env.SOURCIFY_SERVER_URL;
   if (!serverUrl) {
     throw new Error("SOURCIFY_SERVER_URL is not set");
+  }
+  return serverUrl;
+};
+
+/**
+ * URL the server-side code uses for its own calls to the Sourcify server.
+ * Deliberately separate from the public URL: server-to-server traffic must
+ * stay inside the hosting network (the Cloud Run service URL) instead of
+ * leaving and re-entering through the public load balancer, where a per-IP
+ * rate limit would put every visitor's page view in one shared bucket
+ * (github issue #83).
+ */
+const getSourcifyServerInternalUrl = () => {
+  const serverUrl = process.env.SOURCIFY_SERVER_INTERNAL_URL;
+  if (!serverUrl) {
+    throw new Error("SOURCIFY_SERVER_INTERNAL_URL is not set");
   }
   return serverUrl;
 };
@@ -18,7 +38,7 @@ const revalidateTime = process.env.NODE_ENV === "production" ? 86400 : 3600; // 
  * @returns The contract data, or null if the contract is not verified (404)
  */
 export async function fetchContractData(chainId: string, address: string): Promise<ContractData | null> {
-  const baseUrl = getSourcifyServerUrl();
+  const baseUrl = getSourcifyServerInternalUrl();
   const normalizedAddress = address.toLowerCase();
   const url = `${baseUrl}/v2/contract/${chainId}/${normalizedAddress}?fields=all`;
 
@@ -91,7 +111,7 @@ export function truncateString(str: string, maxLength: number = 100): string {
 }
 
 export async function fetchChains(): Promise<ChainData[]> {
-  const baseUrl = getSourcifyServerUrl();
+  const baseUrl = getSourcifyServerInternalUrl();
   const url = `${baseUrl}/chains`;
 
   try {
@@ -135,7 +155,7 @@ interface VerificationResponse {
 
 export async function checkVerification(chainId: string, address: string): Promise<boolean> {
   try {
-    const baseUrl = getSourcifyServerUrl();
+    const baseUrl = getSourcifyServerInternalUrl();
     const normalizedAddress = address.toLowerCase();
 
     const url = `${baseUrl}/v2/contract/${chainId}/${normalizedAddress}`;

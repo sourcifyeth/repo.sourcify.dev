@@ -29,10 +29,12 @@ COPY . .
 # Uncomment the following line in case you want to disable telemetry during the build.
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Add the Sourcify server URL as a build argument
+# Add the Sourcify server URLs as build arguments (the growthepie route is pre-rendered at build time)
 ARG SOURCIFY_SERVER_URL
+ARG SOURCIFY_SERVER_INTERNAL_URL
 ARG NEXT_PUBLIC_UMAMI_WEBSITE_ID
 ENV SOURCIFY_SERVER_URL=${SOURCIFY_SERVER_URL}
+ENV SOURCIFY_SERVER_INTERNAL_URL=${SOURCIFY_SERVER_INTERNAL_URL}
 ENV NEXT_PUBLIC_UMAMI_WEBSITE_ID=${NEXT_PUBLIC_UMAMI_WEBSITE_ID}
 
 RUN \
@@ -50,7 +52,9 @@ ENV NODE_ENV=production
 # Uncomment the following line in case you want to disable telemetry during runtime.
 # ENV NEXT_TELEMETRY_DISABLED=1
 ARG SOURCIFY_SERVER_URL
+ARG SOURCIFY_SERVER_INTERNAL_URL
 ENV SOURCIFY_SERVER_URL=${SOURCIFY_SERVER_URL}
+ENV SOURCIFY_SERVER_INTERNAL_URL=${SOURCIFY_SERVER_INTERNAL_URL}
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
