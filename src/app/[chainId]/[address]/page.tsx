@@ -43,6 +43,12 @@ function getChecksummedAddress(address: string): string | null {
   }
 }
 
+// Chain IDs are numeric. The Sourcify server rejects anything else with a 400,
+// which is a malformed URL rather than an upstream failure: treat it as not found.
+function isValidChainId(chainId: string): boolean {
+  return /^\d+$/.test(chainId);
+}
+
 // Fetch chains data
 async function getChainsData() {
   try {
@@ -61,23 +67,41 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { chainId, address } = await params;
 
-  // Fetch chains data to get the network name
-  const [chains, contract] = await Promise.all([getChainsData(), getContractData(chainId, address)]);
+  // The page 404s on malformed params and redirects non-checksummed addresses
+  // to the canonical URL: no point in fetching the contract for those.
+  const checksummedAddress = getChecksummedAddress(address);
+  if (!isValidChainId(chainId) || !checksummedAddress || address !== checksummedAddress) {
+    return {};
+  }
+
+  // The page reports a failed contract fetch (it throws and renders the error
+  // boundary). Here it only means the verification status is unknown, so fall
+  // back to neutral metadata rather than describing the contract as unverified.
+  const [chains, { contract, fetchFailed }] = await Promise.all([
+    getChainsData(),
+    fetchContractData(chainId, address).then(
+      (contract) => ({ contract, fetchFailed: false }),
+      () => ({ contract: null, fetchFailed: true })
+    ),
+  ]);
 
   const chainName = getChainName(chainId, chains);
+  const displayAddress = contract?.address || checksummedAddress;
+  const title = `${displayAddress} on ${chainName}`;
+
+  if (fetchFailed) {
+    return { title };
+  }
 
   if (!contract) {
-    const displayAddress = getChecksummedAddress(address) || address;
     return {
-      title: `${displayAddress} on ${chainName}`,
+      title,
       description: `Contract ${displayAddress} on ${chainName} network is not verified on Sourcify`,
     };
   }
 
-  const displayAddress = contract.address || getChecksummedAddress(address) || address;
-
   return {
-    title: `${displayAddress} on ${chainName}`,
+    title,
     description: `View contract ${displayAddress} on ${chainName} network`,
     icons: {
       icon: "/favicon-verified.ico",
@@ -87,6 +111,10 @@ export async function generateMetadata({
 
 export default async function ContractPage({ params }: { params: Promise<{ chainId: string; address: string }> }) {
   const { chainId, address } = await params;
+
+  if (!isValidChainId(chainId)) {
+    notFound();
+  }
 
   // Redirect to the checksummed (EIP-55) address as the canonical URL
   const checksummedAddress = getChecksummedAddress(address);
@@ -98,21 +126,11 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
   }
 
   // Fetch data in parallel. fetchContractData returns null if the contract is
-  // not verified (404); other fetch errors keep the previous "not found" behavior.
-  const [contractResult, chains] = await Promise.all([
-    fetchContractData(chainId, checksummedAddress)
-      .then((contract) => ({ contract, fetchFailed: false }))
-      .catch((error) => {
-        console.error("Error fetching contract data:", error);
-        return { contract: null, fetchFailed: true };
-      }),
-    getChainsData(),
-  ]);
-  const { contract, fetchFailed } = contractResult;
-
-  if (fetchFailed) {
-    notFound();
-  }
+  // not verified (404). Any other failure (rate limited, unreachable server,
+  // malformed response...) is deliberately not caught here: it propagates to
+  // the error boundary (error.tsx) and renders as an error, not as "not found"
+  // (github issue #84).
+  const [contract, chains] = await Promise.all([fetchContractData(chainId, checksummedAddress), getChainsData()]);
 
   // Get human-readable chain name
   const chainName = getChainName(chainId, chains);
@@ -763,14 +781,4 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </section>
     </div>
   );
-}
-
-// This function runs on the server
-async function getContractData(chainId: string, address: string) {
-  try {
-    return await fetchContractData(chainId, address);
-  } catch (error) {
-    console.error("Error fetching contract data:", error);
-    return null;
-  }
 }
