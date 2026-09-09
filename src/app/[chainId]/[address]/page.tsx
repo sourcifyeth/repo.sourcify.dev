@@ -77,20 +77,23 @@ export async function generateMetadata({
   // The page reports a failed contract fetch (it throws and renders the error
   // boundary). Here it only means the verification status is unknown, so fall
   // back to neutral metadata rather than describing the contract as unverified.
-  const [chains, contract] = await Promise.all([
+  const [chains, { contract, fetchFailed }] = await Promise.all([
     getChainsData(),
-    fetchContractData(chainId, address).catch(() => undefined),
+    fetchContractData(chainId, address).then(
+      (contract) => ({ contract, fetchFailed: false }),
+      () => ({ contract: null, fetchFailed: true })
+    ),
   ]);
 
   const chainName = getChainName(chainId, chains);
   const displayAddress = contract?.address || checksummedAddress;
   const title = `${displayAddress} on ${chainName}`;
 
-  if (contract === undefined) {
+  if (fetchFailed) {
     return { title };
   }
 
-  if (contract === null) {
+  if (!contract) {
     return {
       title,
       description: `Contract ${displayAddress} on ${chainName} network is not verified on Sourcify`,
