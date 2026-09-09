@@ -1,4 +1,6 @@
-import { fetchContractData, fetchChains, getChainName, checkVerification } from "@/utils/api";
+import { fetchContractData, fetchChains, getChainName, checkVerification, getSourcifyServerUrl } from "@/utils/api";
+import SimilarityVerification from "./SimilarityVerification";
+import ErrorState from "@/components/ErrorState";
 import { Suspense } from "react";
 import { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
@@ -41,6 +43,12 @@ function getChecksummedAddress(address: string): string | null {
   }
 }
 
+// Chain IDs are numeric. The Sourcify server rejects anything else with a 400,
+// which is a malformed URL rather than an upstream failure: treat it as not found.
+function isValidChainId(chainId: string): boolean {
+  return /^\d+$/.test(chainId);
+}
+
 // Fetch chains data
 async function getChainsData() {
   try {
@@ -59,18 +67,41 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { chainId, address } = await params;
 
-  // Fetch chains data to get the network name
-  const [chains, contract] = await Promise.all([getChainsData(), getContractData(chainId, address)]);
-
-  if (!contract) {
-    notFound();
+  // The page 404s on malformed params and redirects non-checksummed addresses
+  // to the canonical URL: no point in fetching the contract for those.
+  const checksummedAddress = getChecksummedAddress(address);
+  if (!isValidChainId(chainId) || !checksummedAddress || address !== checksummedAddress) {
+    return {};
   }
 
+  // The page reports a failed contract fetch (it throws and renders the error
+  // boundary). Here it only means the verification status is unknown, so fall
+  // back to neutral metadata rather than describing the contract as unverified.
+  const [chains, { contract, fetchFailed }] = await Promise.all([
+    getChainsData(),
+    fetchContractData(chainId, address).then(
+      (contract) => ({ contract, fetchFailed: false }),
+      () => ({ contract: null, fetchFailed: true })
+    ),
+  ]);
+
   const chainName = getChainName(chainId, chains);
-  const displayAddress = contract.address || getChecksummedAddress(address) || address;
+  const displayAddress = contract?.address || checksummedAddress;
+  const title = `${displayAddress} on ${chainName}`;
+
+  if (fetchFailed) {
+    return { title };
+  }
+
+  if (!contract) {
+    return {
+      title,
+      description: `Contract ${displayAddress} on ${chainName} network is not verified on Sourcify`,
+    };
+  }
 
   return {
-    title: `${displayAddress} on ${chainName}`,
+    title,
     description: `View contract ${displayAddress} on ${chainName} network`,
     icons: {
       icon: "/favicon-verified.ico",
@@ -81,6 +112,10 @@ export async function generateMetadata({
 export default async function ContractPage({ params }: { params: Promise<{ chainId: string; address: string }> }) {
   const { chainId, address } = await params;
 
+  if (!isValidChainId(chainId)) {
+    notFound();
+  }
+
   // Redirect to the checksummed (EIP-55) address as the canonical URL
   const checksummedAddress = getChecksummedAddress(address);
   if (!checksummedAddress) {
@@ -90,11 +125,49 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
     redirect(`/${chainId}/${checksummedAddress}`);
   }
 
-  // Fetch data in parallel
-  const [contract, chains] = await Promise.all([getContractData(chainId, checksummedAddress), getChainsData()]);
+  // Fetch data in parallel. fetchContractData returns null if the contract is
+  // not verified (404). Any other failure (rate limited, unreachable server,
+  // malformed response...) is deliberately not caught here: it propagates to
+  // the error boundary (error.tsx) and renders as an error, not as "not found"
+  // (github issue #84).
+  const [contract, chains] = await Promise.all([fetchContractData(chainId, checksummedAddress), getChainsData()]);
 
+  // Get human-readable chain name
+  const chainName = getChainName(chainId, chains);
+
+  // The contract is not verified: try to verify it via similarity search.
+  // Don't even try for unknown chains or chains whose verification is
+  // deprecated (verified contracts on deprecated chains are still served from
+  // the database and never reach this branch); only trust these checks when
+  // the chains list actually loaded.
   if (!contract) {
-    notFound();
+    const chain = chains.find((c) => c.chainId.toString() === chainId);
+    const isChainUnknown = chains.length > 0 && !chain;
+    const isChainDeprecated = !!chain && chain.supported === false;
+    return (
+      <div>
+        <div className="mt-3 mb-2">
+          <div className="flex items-center">
+            <h1 className="text-base break-all md:text-2xl font-bold font-mono text-gray-900">{checksummedAddress}</h1>
+            <CopyToClipboard text={checksummedAddress} className="ml-2 md:p-0 p-2" />
+          </div>
+          <p className="text-sm md:text-base text-gray-700 mt-1">on {chainName}</p>
+        </div>
+        {isChainUnknown ? (
+          <ErrorState
+            message="Contract not found"
+            secondaryMessage={`Chain ${chainId} is not supported on Sourcify.`}
+          />
+        ) : isChainDeprecated ? (
+          <ErrorState
+            message="Contract not found"
+            secondaryMessage="Verification on this chain is deprecated."
+          />
+        ) : (
+          <SimilarityVerification chainId={chainId} address={checksummedAddress} serverUrl={getSourcifyServerUrl()} />
+        )}
+      </div>
+    );
   }
 
   // Process bytecodes to insert library placeholders
@@ -112,9 +185,6 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       recompiledBytecode: processedRuntimeBytecode,
     },
   };
-
-  // Get human-readable chain name
-  const chainName = getChainName(chainId, chains);
 
   // Check verification status for all libraries
   const verificationStatus: Record<string, boolean> = {};
@@ -711,14 +781,4 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </section>
     </div>
   );
-}
-
-// This function runs on the server
-async function getContractData(chainId: string, address: string) {
-  try {
-    return await fetchContractData(chainId, address);
-  } catch (error) {
-    console.error("Error fetching contract data:", error);
-    return null;
-  }
 }

@@ -1,10 +1,30 @@
 import { ContractData } from "@/types/contract";
 import { ChainData, ChainsResponse } from "@/types/chain";
 
-const getSourcifyServerUrl = () => {
+/**
+ * Public URL of the Sourcify server. Use it for anything that runs in, or is
+ * handed to, the browser: client components, redirects, links.
+ */
+export const getSourcifyServerUrl = () => {
   const serverUrl = process.env.SOURCIFY_SERVER_URL;
   if (!serverUrl) {
     throw new Error("SOURCIFY_SERVER_URL is not set");
+  }
+  return serverUrl;
+};
+
+/**
+ * URL the server-side code uses for its own calls to the Sourcify server.
+ * Deliberately separate from the public URL: server-to-server traffic must
+ * stay inside the hosting network (the Cloud Run service URL) instead of
+ * leaving and re-entering through the public load balancer, where a per-IP
+ * rate limit would put every visitor's page view in one shared bucket
+ * (github issue #83).
+ */
+const getSourcifyServerInternalUrl = () => {
+  const serverUrl = process.env.SOURCIFY_SERVER_INTERNAL_URL;
+  if (!serverUrl) {
+    throw new Error("SOURCIFY_SERVER_INTERNAL_URL is not set");
   }
   return serverUrl;
 };
@@ -15,15 +35,29 @@ const revalidateTime = process.env.NODE_ENV === "production" ? 86400 : 3600; // 
  * Fetches contract data from the Sourcify API
  * @param chainId The chain ID
  * @param address The contract address
- * @returns The contract data
+ * @returns The contract data, or null if the contract is not verified (404)
  */
-export async function fetchContractData(chainId: string, address: string): Promise<ContractData> {
-  const baseUrl = getSourcifyServerUrl();
+export async function fetchContractData(chainId: string, address: string): Promise<ContractData | null> {
+  const baseUrl = getSourcifyServerInternalUrl();
   const normalizedAddress = address.toLowerCase();
   const url = `${baseUrl}/v2/contract/${chainId}/${normalizedAddress}?fields=all`;
 
   try {
     const response = await fetch(url, { cache: "no-store" });
+
+    if (response.status === 404) {
+      return null;
+    }
+
+    // Unknown chains return 400 unsupported_chain. Also treat it as "not
+    // verified" so the page can show the unsupported chain error instead of
+    // a generic not found page.
+    if (response.status === 400) {
+      const error = await response.json().catch(() => null);
+      if (error?.customCode === "unsupported_chain") {
+        return null;
+      }
+    }
 
     if (!response.ok) {
       throw new Error(`Failed to fetch contract data: ${response.status} ${response.statusText}`);
@@ -77,7 +111,7 @@ export function truncateString(str: string, maxLength: number = 100): string {
 }
 
 export async function fetchChains(): Promise<ChainData[]> {
-  const baseUrl = getSourcifyServerUrl();
+  const baseUrl = getSourcifyServerInternalUrl();
   const url = `${baseUrl}/chains`;
 
   try {
@@ -121,7 +155,7 @@ interface VerificationResponse {
 
 export async function checkVerification(chainId: string, address: string): Promise<boolean> {
   try {
-    const baseUrl = getSourcifyServerUrl();
+    const baseUrl = getSourcifyServerInternalUrl();
     const normalizedAddress = address.toLowerCase();
 
     const url = `${baseUrl}/v2/contract/${chainId}/${normalizedAddress}`;
