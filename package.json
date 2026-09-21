@@ -26,14 +26,14 @@
     "semver": "7.8.5"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "3.3.6",
+    "@eslint/eslintrc": "3.3.7",
     "@tailwindcss/postcss": "4.3.3",
     "@types/diff": "7.0.2",
     "@types/node": "20.19.43",
     "@types/react": "19.2.18",
-    "@types/react-dom": "19.2.5",
+    "@types/react-dom": "19.2.7",
     "@types/semver": "7.8.0",
-    "autoprefixer": "10.5.4",
+    "autoprefixer": "10.5.5",
     "eslint": "9.39.5",
     "eslint-config-next": "15.5.25",
     "tailwindcss": "4.3.3",
