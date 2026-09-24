@@ -33,7 +33,7 @@ export default function CborAuxdataSection({ cborAuxdata, language, compilerVers
             {language === "Solidity" && (decodedCborAuxdata as SolidityDecodedObject)?.ipfs && (
               <div className="my-2">
                 <a
-                  href={`https://ipfs.io/ipfs/${(decodedCborAuxdata as SolidityDecodedObject).ipfs}`}
+                  href={`https://ipfs.filebase.io/ipfs/${(decodedCborAuxdata as SolidityDecodedObject).ipfs}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs inline-flex items-center gap-2 shadow-sm rounded-md bg-white border border-gray-300 px-3 py-1 hover:bg-gray-200 transition-colors duration-200 cursor-pointer"
