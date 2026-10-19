@@ -6,7 +6,7 @@ export const revalidate = 3600; // 1 hour in seconds
 export const dynamic = "force-static";
 
 // Chains with available top contracts data
-const AVAILABLE_CHAINS = ["arbitrum", "base", "ethereum", "linea", "optimism", "taiko", "unichain", "zksync_era"];
+const AVAILABLE_CHAINS = ["arbitrum", "base", "ethereum", "linea", "optimism", "robinhood", "zksync_era"];
 
 interface ChainDataItem {
   name: string;
