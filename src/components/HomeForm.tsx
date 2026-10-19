@@ -135,12 +135,12 @@ export default function HomeForm({ chains, serverUrl }: HomeFormProps) {
     inputRef.current?.focus();
   };
 
-  // Arrow down from the input jumps into the dropdown
+  // Arrow down from the input opens the dropdown, or jumps into it if it is open
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "ArrowDown" && dropdownRef.current) {
-      e.preventDefault();
-      dropdownRef.current.querySelector("a")?.focus();
-    }
+    if (e.key !== "ArrowDown") return;
+    e.preventDefault();
+    if (isOpen && dropdownRef.current) dropdownRef.current.querySelector("a")?.focus();
+    else setIsOpen(true);
   };
 
   // Escape anywhere in the search bar or the dropdown closes the dropdown
@@ -181,8 +181,7 @@ export default function HomeForm({ chains, serverUrl }: HomeFormProps) {
               value={address}
               onChange={(e) => updateAddress(e.target.value)}
               onKeyDown={handleInputKeyDown}
-              onFocus={() => setIsOpen(true)}
-              // autoFocus focuses the input before hydration, so onFocus does not fire for the first click
+              // Open on click, not on focus: autoFocus would otherwise open the dropdown on page load
               onClick={() => setIsOpen(true)}
             />
             {isNavigating ? (
