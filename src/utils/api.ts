@@ -1,4 +1,5 @@
-import { ContractData } from "@/types/contract";
+import { ContractData, VerifiedContractMinimal } from "@/types/contract";
+import { fetchVerifiedAllChains } from "@/utils/allChains";
 import { ChainData, ChainsResponse } from "@/types/chain";
 
 /**
@@ -227,4 +228,12 @@ export async function fetchVerifiedContractsTotal(): Promise<number | null> {
     console.error("Error fetching stats.json:", error);
     return null;
   }
+}
+
+/**
+ * Server-side lookup of all verified deployments of an address.
+ * Uses the internal URL, like the other server-side calls.
+ */
+export async function fetchVerifiedAllChainsServer(address: string): Promise<VerifiedContractMinimal[]> {
+  return fetchVerifiedAllChains(getSourcifyServerInternalUrl(), address, { cache: "no-store" });
 }

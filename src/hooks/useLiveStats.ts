@@ -3,6 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { LiveItem, mergeLiveItems, parseLiveEvent } from "@/utils/liveStats";
 
+// If no event arrives in this time, show the feed as unavailable. EventSource keeps retrying,
+// so a later event still switches the feed to live.
+const FIRST_EVENT_TIMEOUT_MS = 10_000;
+
 export type LiveStatus =
   | "connecting" // no event yet
   | "live" // the stream is open and has sent data
@@ -71,7 +75,16 @@ export default function useLiveStats(url: string): LiveStats {
       else if (source.readyState === EventSource.CLOSED) setStatus("unavailable");
     };
 
-    return () => source.close();
+    // A retryable error (5xx, network) before the first event leaves readyState at CONNECTING,
+    // so onerror alone would keep the placeholder rows forever
+    const timeout = setTimeout(() => {
+      if (!hasReceivedRef.current) setStatus("unavailable");
+    }, FIRST_EVENT_TIMEOUT_MS);
+
+    return () => {
+      clearTimeout(timeout);
+      source.close();
+    };
   }, [url, isPageVisible]);
 
   return { total, items, status };

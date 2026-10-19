@@ -1,8 +1,8 @@
 import { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { getAddress } from "@ethersproject/address";
-import { fetchChains, getSourcifyServerUrl } from "@/utils/api";
-import { fetchVerifiedAllChains, orderByChains } from "@/utils/allChains";
+import { fetchChains, fetchVerifiedAllChainsServer } from "@/utils/api";
+import { orderByChains } from "@/utils/allChains";
 import ChainMatchList from "@/components/ChainMatchList";
 import CopyToClipboard from "@/components/CopyToClipboard";
 import ErrorState from "@/components/ErrorState";
@@ -39,8 +39,7 @@ export default async function AddressPage({ params }: { params: Promise<{ addres
 
   const [chains, results] = await Promise.all([
     fetchChains().catch(() => []),
-    // One infrequent call per page view, so the public URL is fine here
-    fetchVerifiedAllChains(getSourcifyServerUrl(), checksummedAddress, { cache: "no-store" }).catch((error) => {
+    fetchVerifiedAllChainsServer(checksummedAddress).catch((error) => {
       console.error("Error fetching all-chains verification data:", error);
       return null;
     }),
