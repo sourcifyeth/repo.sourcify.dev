@@ -156,7 +156,7 @@ export default function HomeForm({ chains, serverUrl }: HomeFormProps) {
   const showDropdown = isOpen && (lookup.status !== "idle" || showRecent);
 
   return (
-    <div className="w-full max-w-2xl mx-auto mt-4 md:mt-8 mb-10 space-y-4">
+    <div className="w-full max-w-2xl mx-auto mt-6 md:mt-12 mb-10 space-y-4">
       <form onSubmit={handleSubmit}>
         <div ref={comboRef} className="relative" onKeyDown={handleComboKeyDown}>
           <label htmlFor="address" className="sr-only">

@@ -15,9 +15,8 @@ export default async function Home() {
   return (
     <div className="w-full mx-auto">
       <div className="md:px-4 py-5 md:p-6 text-center">
-        <h1 className="font-semibold tracking-tight text-gray-800 text-2xl md:text-4xl mb-4 md:mb-8">
-          Sourcify Verified Contract Repository
-        </h1>
+        {/* Hidden visually; kept for screen readers and search engines */}
+        <h1 className="sr-only">Sourcify Verified Contract Repository</h1>
         <HomeForm chains={chains} serverUrl={serverUrl} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
