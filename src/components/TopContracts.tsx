@@ -1,15 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { FaCheckCircle, FaExclamationTriangle, FaTimes } from "react-icons/fa";
+import Link from "next/link";
+import { FaExclamationTriangle, FaTimes } from "react-icons/fa";
 import Image from "next/image";
+import OptionDropdown from "./OptionDropdown";
+import { MatchBadge } from "./ChainMatchList";
 
 interface TopContract {
   address: string;
   name: string;
   owner_project: string | null;
   verified?: boolean;
+  match?: "match" | "exact_match" | null;
 }
 
 interface ChainData {
@@ -18,7 +21,6 @@ interface ChainData {
 }
 
 export default function TopContracts() {
-  const router = useRouter();
   const [chains, setChains] = useState<Record<string, ChainData>>({});
   const [selectedChain, setSelectedChain] = useState<string>("ethereum");
   const [allContracts, setAllContracts] = useState<Record<string, TopContract[]>>({});
@@ -83,13 +85,7 @@ export default function TopContracts() {
     }
   }, [selectedChain, allContracts]);
 
-  const handleContractClick = (contract: TopContract) => {
-    // Get the chain ID from the selected chain
-    const chainId = chains[selectedChain]?.evm_chain_id.toString();
-    if (chainId) {
-      router.push(`/${chainId}/${contract.address}`);
-    }
-  };
+  const chainId = chains[selectedChain]?.evm_chain_id.toString();
 
   if (Object.keys(chains).length === 0 && !error) {
     return <div className="text-center py-4">Loading chains...</div>;
@@ -111,27 +107,18 @@ export default function TopContracts() {
       </div>
 
       <div className="mb-4">
-        <label htmlFor="chainSelect" className="block text-sm font-medium text-gray-700 mb-1 text-left">
-          Select Chain
-        </label>
-        <select
+        <OptionDropdown
           id="chainSelect"
+          ariaLabel="Select chain"
           value={selectedChain}
-          onChange={(e) => setSelectedChain(e.target.value)}
-          className="block w-full pl-3 pr-10 py-2 text-sm bg-cerulean-blue-100 border border-cerulean-blue-300 rounded-md cursor-pointer text-cerulean-blue-600 focus:outline-none focus:ring-cerulean-blue-500 focus:border-cerulean-blue-500"
+          onChange={setSelectedChain}
           disabled={loading}
-        >
-          {Object.entries(chains).map(([key, chain]) => (
-            <option key={key} value={key}>
-              {chain.name} ({chain.evm_chain_id})
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="text-xs text-gray-500 mb-2 flex items-center">
-        <FaCheckCircle className="h-3 w-3 text-green-500 mr-1" />
-        <span>Verified contracts can be viewed in Sourcify</span>
+          options={Object.entries(chains).map(([key, chain]) => ({
+            value: key,
+            label: chain.name,
+            detail: `Chain ID: ${chain.evm_chain_id}`,
+          }))}
+        />
       </div>
 
       {loading ? (
@@ -142,70 +129,47 @@ export default function TopContracts() {
           <span>{error}</span>
         </div>
       ) : (
-        <div className="overflow-auto max-h-[400px]">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50 sticky top-0 z-10">
-              <tr>
-                <th scope="col" className="pl-3 pr-1 py-2 w-6">
-                  {/* No header text for verified column */}
-                </th>
-                <th
-                  scope="col"
-                  className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5"
-                >
-                  Name
-                </th>
-                <th
-                  scope="col"
-                  className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Address
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {topContracts.map((contract) => (
-                <tr
-                  key={contract.address}
-                  onClick={contract.verified ? () => handleContractClick(contract) : undefined}
-                  className={`${
-                    contract.verified ? "cursor-pointer hover:bg-gray-50" : "cursor-not-allowed opacity-75"
-                  }`}
-                  data-tooltip-id={!contract.verified ? "global-tooltip" : undefined}
-                  data-tooltip-content={!contract.verified ? "Not verified on Sourcify" : undefined}
-                  data-tooltip-anchor-select={!contract.verified ? ".verification-icon" : undefined}
-                >
-                  <td className="pl-3 pr-1 py-2 whitespace-nowrap text-sm text-gray-500 text-center w-6">
-                    {contract.verified ? (
-                      <FaCheckCircle
-                        className="h-4 w-4 text-green-500 inline cursor-help verification-icon"
-                        data-tooltip-id="global-tooltip"
-                        data-tooltip-content="Verified on Sourcify"
-                      />
-                    ) : (
-                      <span
-                        className="cursor-help"
-                        data-tooltip-id="global-tooltip"
-                        data-tooltip-content="Not verified on Sourcify"
-                      >
-                        <FaTimes className="h-4 w-4 text-red-500 inline verification-icon" />
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-left max-w-[170px] truncate">
-                    <span className={contract.verified ? "text-blue-600 hover:underline" : "text-gray-600"}>
-                      {contract.name || "Unknown"}
+        <ul className="scrollbar-visible h-[420px] overflow-y-auto rounded-md border border-gray-200 bg-white divide-y divide-gray-100 text-left">
+          {topContracts.map((contract, index) => {
+            const text = (
+              <>
+                <span className="w-[18px] shrink-0 text-center text-sm tabular-nums text-gray-400">
+                  {index + 1}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="truncate text-sm font-medium text-gray-900">{contract.name || "Unknown"}</div>
+                  <div className="truncate text-xs font-mono text-cerulean-blue-600">{contract.address}</div>
+                  {contract.owner_project && (
+                    <div className="truncate text-xs text-gray-500">{contract.owner_project}</div>
+                  )}
+                </div>
+              </>
+            );
+            return (
+              <li key={contract.address}>
+                {contract.verified && chainId ? (
+                  <Link
+                    href={`/${chainId}/${contract.address}`}
+                    className="flex items-center gap-3 px-3 py-2 hover:bg-cerulean-blue-100 focus:bg-cerulean-blue-100 focus:outline-none"
+                  >
+                    {text}
+                    <span className="shrink-0">
+                      <MatchBadge match={contract.match ?? "match"} />
                     </span>
-                    {contract.owner_project && (
-                      <div className="text-xs text-gray-500 font-normal">{contract.owner_project}</div>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500 text-left">{contract.address}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-3 px-3 py-2 opacity-60">
+                    {text}
+                    <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-medium bg-gray-100 text-gray-600 border-gray-200">
+                      <FaTimes className="w-3 h-3" />
+                      Not verified
+                    </span>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
       )}
     </>
   );

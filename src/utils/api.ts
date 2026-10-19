@@ -1,4 +1,5 @@
-import { ContractData } from "@/types/contract";
+import { ContractData, VerifiedContractMinimal } from "@/types/contract";
+import { fetchVerifiedAllChains } from "@/utils/allChains";
 import { ChainData, ChainsResponse } from "@/types/chain";
 
 /**
@@ -153,7 +154,11 @@ interface VerificationResponse {
   address: string;
 }
 
-export async function checkVerification(chainId: string, address: string): Promise<boolean> {
+/**
+ * Returns the match status of a contract on Sourcify, or null if it is not verified
+ * (or if the lookup fails).
+ */
+export async function getMatchStatus(chainId: string, address: string): Promise<"match" | "exact_match" | null> {
   try {
     const baseUrl = getSourcifyServerInternalUrl();
     const normalizedAddress = address.toLowerCase();
@@ -163,17 +168,19 @@ export async function checkVerification(chainId: string, address: string): Promi
 
     // Accept 2xx and 3xx status codes (< 400), but fail on 4xx and 5xx
     if (response.status >= 400) {
-      return false;
+      return null;
     }
 
     const data = (await response.json()) as VerificationResponse;
-
-    // Check if the contract is verified (match field is not null)
-    return !!data.match;
+    return data.match === "match" || data.match === "exact_match" ? data.match : null;
   } catch (error) {
     console.error(`Error checking verification for ${address}:`, error);
-    return false;
+    return null;
   }
+}
+
+export async function checkVerification(chainId: string, address: string): Promise<boolean> {
+  return (await getMatchStatus(chainId, address)) !== null;
 }
 
 // GrowthPie API functions
@@ -204,4 +211,29 @@ export async function fetchTopContractsByChain(chainKey: string) {
     console.error(`Error fetching top contracts for ${chainKey}:`, error);
     return [];
   }
+}
+
+/**
+ * Total number of verified contracts from the daily stats.json, which sits next to the server.
+ * Used until the live total arrives. Returns null if the file is not available.
+ */
+export async function fetchVerifiedContractsTotal(): Promise<number | null> {
+  try {
+    const url = `${new URL(getSourcifyServerUrl()).origin}/static/stats.json`;
+    const response = await fetch(url, { next: { revalidate: 3600 } });
+    if (!response.ok) return null;
+    const stats = (await response.json()) as Record<string, { full_match: number; partial_match: number }>;
+    return Object.values(stats).reduce((sum, chain) => sum + chain.full_match + chain.partial_match, 0);
+  } catch (error) {
+    console.error("Error fetching stats.json:", error);
+    return null;
+  }
+}
+
+/**
+ * Server-side lookup of all verified deployments of an address.
+ * Uses the internal URL, like the other server-side calls.
+ */
+export async function fetchVerifiedAllChainsServer(address: string): Promise<VerifiedContractMinimal[]> {
+  return fetchVerifiedAllChains(getSourcifyServerInternalUrl(), address, { cache: "no-store" });
 }
