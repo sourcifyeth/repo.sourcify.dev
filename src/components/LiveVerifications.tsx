@@ -147,7 +147,7 @@ export default function LiveVerifications({ streamUrl, initialTotal, chains }: L
 
   return (
     <div className="text-left flex flex-1 flex-col">
-      <div className="flex items-start justify-between gap-3 mb-4">
+      <div className="relative mb-4 text-center">
         <div>
           <div className="text-2xl md:text-3xl font-semibold text-cerulean-blue-600 tabular-nums">
             {total !== null ? formatNumber(total) : "—"}
@@ -164,7 +164,11 @@ export default function LiveVerifications({ streamUrl, initialTotal, chains }: L
             </a>
           </div>
         </div>
-        {live.status === "live" && <LiveDot />}
+        {live.status === "live" && (
+          <div className="absolute right-0 top-0">
+            <LiveDot />
+          </div>
+        )}
       </div>
 
       {live.status === "unavailable" ? (
