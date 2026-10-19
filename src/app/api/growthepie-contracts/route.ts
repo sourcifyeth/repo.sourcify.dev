@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { fetchGrowthPieChains, fetchTopContractsByChain, checkVerification } from "@/utils/api";
+import { fetchGrowthPieChains, fetchTopContractsByChain, getMatchStatus } from "@/utils/api";
 
 // Set cache control headers with a 1-hour cache time
 export const revalidate = 3600; // 1 hour in seconds
@@ -25,6 +25,7 @@ interface TopContract {
   txcount_180d: number;
   gas_fees_usd_180d: number;
   verified?: boolean;
+  match?: "match" | "exact_match" | null;
 }
 
 export async function GET() {
@@ -57,7 +58,7 @@ export async function GET() {
     // Prepare results object
     const result: {
       chains: Record<string, Pick<ChainDataItem, "name" | "evm_chain_id">>;
-      contracts: Record<string, Pick<TopContract, "address" | "name" | "owner_project" | "verified">[]>;
+      contracts: Record<string, Pick<TopContract, "address" | "name" | "owner_project" | "verified" | "match">[]>;
     } = {
       chains: filteredChains,
       contracts: {},
@@ -76,14 +77,15 @@ export async function GET() {
               const chainId = contract.chain_id.split(":")[1];
 
               // Check verification status
-              const verified = await checkVerification(chainId, contract.address);
+              const match = await getMatchStatus(chainId, contract.address);
 
               // Only include the specified fields
               return {
                 address: contract.address,
                 name: contract.name,
                 owner_project: contract.owner_project,
-                verified,
+                verified: match !== null,
+                match,
               };
             } catch (err) {
               console.error("Error checking verification:", err);
@@ -92,6 +94,7 @@ export async function GET() {
                 name: contract.name,
                 owner_project: contract.owner_project,
                 verified: false,
+                match: null,
               };
             }
           })

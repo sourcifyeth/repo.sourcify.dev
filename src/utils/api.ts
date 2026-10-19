@@ -153,7 +153,11 @@ interface VerificationResponse {
   address: string;
 }
 
-export async function checkVerification(chainId: string, address: string): Promise<boolean> {
+/**
+ * Returns the match status of a contract on Sourcify, or null if it is not verified
+ * (or if the lookup fails).
+ */
+export async function getMatchStatus(chainId: string, address: string): Promise<"match" | "exact_match" | null> {
   try {
     const baseUrl = getSourcifyServerInternalUrl();
     const normalizedAddress = address.toLowerCase();
@@ -163,17 +167,19 @@ export async function checkVerification(chainId: string, address: string): Promi
 
     // Accept 2xx and 3xx status codes (< 400), but fail on 4xx and 5xx
     if (response.status >= 400) {
-      return false;
+      return null;
     }
 
     const data = (await response.json()) as VerificationResponse;
-
-    // Check if the contract is verified (match field is not null)
-    return !!data.match;
+    return data.match === "match" || data.match === "exact_match" ? data.match : null;
   } catch (error) {
     console.error(`Error checking verification for ${address}:`, error);
-    return false;
+    return null;
   }
+}
+
+export async function checkVerification(chainId: string, address: string): Promise<boolean> {
+  return (await getMatchStatus(chainId, address)) !== null;
 }
 
 // GrowthPie API functions

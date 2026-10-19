@@ -146,7 +146,7 @@ export default function LiveVerifications({ streamUrl, initialTotal, chains }: L
     chains.find((chain) => chain.chainId.toString() === chainId)?.name ?? `Chain ${chainId}`;
 
   return (
-    <div className="text-left">
+    <div className="text-left flex flex-1 flex-col">
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
           <div className="text-2xl md:text-3xl font-semibold text-cerulean-blue-600 tabular-nums">
@@ -172,7 +172,7 @@ export default function LiveVerifications({ streamUrl, initialTotal, chains }: L
       ) : (
         <ul
           ref={listRef}
-          className="scrollbar-visible h-[420px] overflow-y-auto [overflow-anchor:none] rounded-md border border-gray-200 bg-white divide-y divide-gray-100"
+          className="scrollbar-visible flex-1 basis-0 min-h-[420px] overflow-y-auto [overflow-anchor:none] rounded-md border border-gray-200 bg-white divide-y divide-gray-100"
         >
           {live.items.length === 0
             ? Array.from({ length: PLACEHOLDER_ROWS }, (_, i) => (
