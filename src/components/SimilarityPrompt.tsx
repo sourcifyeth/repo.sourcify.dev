@@ -21,10 +21,10 @@ function ButtonIcon() {
   return pending ? (
     <span
       aria-label="Loading"
-      className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+      className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-cerulean-blue-200 border-t-cerulean-blue-600"
     />
   ) : (
-    <IoArrowForward className="w-4 h-4" />
+    <IoArrowForward className="w-3.5 h-3.5" />
   );
 }
 
@@ -52,11 +52,12 @@ export default function SimilarityPrompt({ address, chains, excludeChainIds = []
           options={options}
           value={chainId}
           onChange={setChainId}
+          size="sm"
         />
       </div>
       <Link
         href={`/${chainId}/${address}`}
-        className="shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white bg-cerulean-blue hover:bg-cerulean-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cerulean-blue-500"
+        className="shrink-0 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md border border-cerulean-blue-300 bg-white text-xs font-medium text-cerulean-blue-600 hover:bg-cerulean-blue-100 focus:outline-none focus:ring-2 focus:ring-cerulean-blue-500"
       >
         Try similarity
         <ButtonIcon />

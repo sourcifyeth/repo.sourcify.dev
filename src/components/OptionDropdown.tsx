@@ -19,6 +19,8 @@ interface OptionDropdownProps {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
+  /** "sm" for a smaller button, e.g. for secondary actions */
+  size?: "md" | "sm";
 }
 
 // Show the filter input only when the list is long enough to need it
@@ -28,7 +30,7 @@ const FILTER_THRESHOLD = 8;
  * A select with the same look as the search dropdown on the home page:
  * a white button, and a floating grey panel with a white list.
  */
-export default function OptionDropdown({ id, ariaLabel, options, value, onChange, disabled }: OptionDropdownProps) {
+export default function OptionDropdown({ id, ariaLabel, options, value, onChange, disabled, size = "md" }: OptionDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [filter, setFilter] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
@@ -100,7 +102,7 @@ export default function OptionDropdown({ id, ariaLabel, options, value, onChange
             setIsOpen(true);
           }
         }}
-        className="flex w-full items-center gap-2 pl-3 pr-2 py-2 text-sm text-left bg-white border border-gray-300 rounded-md cursor-pointer text-gray-900 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-cerulean-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+        className={`flex w-full items-center gap-2 pl-3 pr-2 ${size === "sm" ? "py-1.5 text-xs" : "py-2 text-sm"} text-left bg-white border border-gray-300 rounded-md cursor-pointer text-gray-900 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-cerulean-blue-500 disabled:cursor-not-allowed disabled:opacity-60`}
       >
         <span className="flex-1 truncate">
           {selected ? (

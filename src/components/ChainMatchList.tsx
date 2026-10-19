@@ -2,7 +2,7 @@
 
 import { useState, type RefObject } from "react";
 import Link, { useLinkStatus } from "next/link";
-import { IoCheckmarkCircle, IoCheckmarkDoneCircle, IoChevronForward } from "react-icons/io5";
+import { IoCheckmarkCircle, IoCheckmarkDoneCircle, IoChevronForward, IoCloseCircle } from "react-icons/io5";
 import { ChainMatch } from "@/utils/allChains";
 import { ChainData } from "@/types/chain";
 import SimilarityPrompt, { SIMILARITY_DOCS_URL } from "./SimilarityPrompt";
@@ -55,7 +55,7 @@ function RowStatusIcon() {
 
 function SimilarityHint({ text }: { text: string }) {
   return (
-    <p className="mb-2 text-gray-600">
+    <p className="mb-2 text-xs text-gray-500">
       {text}{" "}
       <a
         href={SIMILARITY_DOCS_URL}
@@ -71,18 +71,26 @@ function SimilarityHint({ text }: { text: string }) {
 
 function NotVerifiedMessage({ address, chains }: { address: string; chains: ChainData[] }) {
   return (
-    <div className="rounded-md border border-gray-200 bg-white p-4 text-left text-sm text-gray-700">
-      <p className="font-medium mb-3">This address is not verified on Sourcify on any chain.</p>
-      <SimilarityHint text="Try a similarity verification on a chain." />
-      <SimilarityPrompt address={address} chains={chains} />
-      <a
-        href="https://verify.sourcify.dev"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-3 inline-block text-cerulean-blue-600 hover:underline"
-      >
-        Or verify it with source code on verify.sourcify.dev →
-      </a>
+    <div className="rounded-md border border-gray-200 bg-white p-4 text-left">
+      <div className="flex items-center gap-3">
+        <IoCloseCircle className="shrink-0 w-8 h-8 text-red-500" />
+        <div>
+          <p className="text-base font-semibold text-gray-900">Not verified</p>
+          <p className="text-sm text-gray-600">This address is not verified on Sourcify on any chain.</p>
+        </div>
+      </div>
+      <div className="mt-4 pt-3 border-t border-gray-100">
+        <SimilarityHint text="Try a similarity verification on a chain." />
+        <SimilarityPrompt address={address} chains={chains} />
+        <a
+          href="https://verify.sourcify.dev"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 inline-block text-xs text-cerulean-blue-600 hover:underline"
+        >
+          Or verify it with source code on verify.sourcify.dev →
+        </a>
+      </div>
     </div>
   );
 }
@@ -163,7 +171,7 @@ export default function ChainMatchList({ address, matches, chains, listRef, onSe
         {visible.length === 0 && <li className="px-3 py-2.5 text-sm text-gray-500">No chains match “{filter}”.</li>}
       </ul>
       {showSimilarity ? (
-        <div className="mt-2 rounded-md border border-gray-200 bg-white p-3 text-sm">
+        <div className="mt-2 rounded-md border border-gray-200 bg-white p-3">
           <SimilarityHint text="Try a similarity verification on another chain." />
           <SimilarityPrompt
             address={address}
@@ -175,7 +183,7 @@ export default function ChainMatchList({ address, matches, chains, listRef, onSe
         <button
           type="button"
           onClick={() => setShowSimilarity(true)}
-          className="mt-2 text-sm text-cerulean-blue-600 hover:underline cursor-pointer"
+          className="mt-2 text-xs text-cerulean-blue-600 hover:underline cursor-pointer"
         >
           Not on your chain? Try similarity verification on another chain
         </button>
