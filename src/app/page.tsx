@@ -20,7 +20,7 @@ export default async function Home() {
         <HomeForm chains={chains} serverUrl={serverUrl} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white p-4 rounded-lg shadow-sm h-full flex flex-col">
+          <div className="bg-white p-4 pt-5 rounded-lg shadow-sm h-full flex flex-col">
             <LiveVerifications streamUrl={liveStreamUrl} initialTotal={verifiedTotal} chains={chains} />
           </div>
           <div className="bg-white p-4 rounded-lg shadow-sm h-full">
