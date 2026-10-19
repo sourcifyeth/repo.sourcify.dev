@@ -272,7 +272,7 @@ export default function HomeForm({ chains, serverUrl }: HomeFormProps) {
                 </p>
               )}
 
-              {lookup.status === "done" && <ChainMatchList key={address} matches={matches} onSelect={rememberSearch} />}
+              {lookup.status === "done" && <ChainMatchList key={address} address={address} matches={matches} chains={chains} onSelect={rememberSearch} />}
             </div>
           )}
         </div>

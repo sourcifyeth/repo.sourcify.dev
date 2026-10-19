@@ -55,7 +55,7 @@ export default async function AddressPage({ params }: { params: Promise<{ addres
       {results === null ? (
         <ErrorState message="Could not look up this address on Sourcify. Please try again later." />
       ) : (
-        <ChainMatchList matches={orderByChains(results, chains)} />
+        <ChainMatchList address={checksummedAddress} matches={orderByChains(results, chains)} chains={chains} />
       )}
     </div>
   );

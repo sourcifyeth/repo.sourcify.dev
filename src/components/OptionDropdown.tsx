@@ -79,6 +79,8 @@ export default function OptionDropdown({ id, ariaLabel, options, value, onChange
       onKeyDown={(e) => {
         if (e.key === "Escape" && isOpen) {
           e.preventDefault();
+          // Keep a parent dropdown (e.g. the search dropdown) open
+          e.stopPropagation();
           close();
         }
       }}

@@ -4,13 +4,19 @@ import { useState, type RefObject } from "react";
 import Link, { useLinkStatus } from "next/link";
 import { IoCheckmarkCircle, IoCheckmarkDoneCircle, IoChevronForward } from "react-icons/io5";
 import { ChainMatch } from "@/utils/allChains";
+import { ChainData } from "@/types/chain";
+import SimilarityPrompt, { SIMILARITY_DOCS_URL } from "./SimilarityPrompt";
 import { moveFocusInList } from "@/utils/listKeyboard";
 
 // Show the filter input only when the list is long enough to need it
 const FILTER_THRESHOLD = 8;
 
 interface ChainMatchListProps {
+  /** The address that was looked up */
+  address: string;
   matches: ChainMatch[];
+  /** All Sourcify chains, for the similarity verification chain picker */
+  chains: ChainData[];
   listRef?: RefObject<HTMLUListElement | null>;
   /** Called when the user opens one of the rows */
   onSelect?: (match: ChainMatch) => void;
@@ -47,26 +53,45 @@ function RowStatusIcon() {
   );
 }
 
-export function NotVerifiedMessage() {
+function SimilarityHint({ text }: { text: string }) {
+  return (
+    <p className="mb-2 text-gray-600">
+      {text}{" "}
+      <a
+        href={SIMILARITY_DOCS_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-cerulean-blue-600 hover:underline"
+      >
+        What is this?
+      </a>
+    </p>
+  );
+}
+
+function NotVerifiedMessage({ address, chains }: { address: string; chains: ChainData[] }) {
   return (
     <div className="rounded-md border border-gray-200 bg-white p-4 text-left text-sm text-gray-700">
-      <p className="font-medium">This address is not verified on Sourcify on any chain.</p>
+      <p className="font-medium mb-3">This address is not verified on Sourcify on any chain.</p>
+      <SimilarityHint text="Try a similarity verification on a chain." />
+      <SimilarityPrompt address={address} chains={chains} />
       <a
         href="https://verify.sourcify.dev"
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-1 inline-block text-cerulean-blue-600 hover:underline"
+        className="mt-3 inline-block text-cerulean-blue-600 hover:underline"
       >
-        Verify it on verify.sourcify.dev →
+        Or verify it with source code on verify.sourcify.dev →
       </a>
     </div>
   );
 }
 
-export default function ChainMatchList({ matches, listRef, onSelect }: ChainMatchListProps) {
+export default function ChainMatchList({ address, matches, chains, listRef, onSelect }: ChainMatchListProps) {
   const [filter, setFilter] = useState("");
+  const [showSimilarity, setShowSimilarity] = useState(false);
 
-  if (matches.length === 0) return <NotVerifiedMessage />;
+  if (matches.length === 0) return <NotVerifiedMessage address={address} chains={chains} />;
 
   const query = filter.trim().toLowerCase();
   const visible = query
@@ -137,6 +162,24 @@ export default function ChainMatchList({ matches, listRef, onSelect }: ChainMatc
         })}
         {visible.length === 0 && <li className="px-3 py-2.5 text-sm text-gray-500">No chains match “{filter}”.</li>}
       </ul>
+      {showSimilarity ? (
+        <div className="mt-2 rounded-md border border-gray-200 bg-white p-3 text-sm">
+          <SimilarityHint text="Try a similarity verification on another chain." />
+          <SimilarityPrompt
+            address={address}
+            chains={chains}
+            excludeChainIds={matches.map(({ contract }) => contract.chainId)}
+          />
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setShowSimilarity(true)}
+          className="mt-2 text-sm text-cerulean-blue-600 hover:underline cursor-pointer"
+        >
+          Not on your chain? Try similarity verification on another chain
+        </button>
+      )}
     </div>
   );
 }
