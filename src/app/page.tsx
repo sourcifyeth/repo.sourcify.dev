@@ -1,5 +1,5 @@
 import HomeForm from "@/components/HomeForm";
-import { fetchChains } from "@/utils/api";
+import { fetchChains, getSourcifyServerUrl } from "@/utils/api";
 
 // Force dynamic rendering to avoid passing SOURCIFY_SERVER_URL env var as a build arg
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ export default async function Home() {
           Sourcify Verified Contract Repository
         </h1>
         <div className="w-full">
-          <HomeForm chains={chains} />
+          <HomeForm chains={chains} serverUrl={getSourcifyServerUrl()} />
         </div>
       </div>
     </div>

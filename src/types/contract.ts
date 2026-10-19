@@ -207,3 +207,14 @@ export interface SignatureItem {
   signatureHash32: string;
   signatureHash4: string;
 }
+
+// One verified deployment, as returned by /v2/contract/all-chains/{address}
+export interface VerifiedContractMinimal {
+  match: "match" | "exact_match" | null;
+  creationMatch: "match" | "exact_match" | null;
+  runtimeMatch: "match" | "exact_match" | null;
+  matchId: string;
+  chainId: string;
+  address: string;
+  verifiedAt: string;
+}
