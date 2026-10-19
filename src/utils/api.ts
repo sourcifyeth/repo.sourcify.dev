@@ -205,3 +205,20 @@ export async function fetchTopContractsByChain(chainKey: string) {
     return [];
   }
 }
+
+/**
+ * Total number of verified contracts from the daily stats.json, which sits next to the server.
+ * Used until the live total arrives. Returns null if the file is not available.
+ */
+export async function fetchVerifiedContractsTotal(): Promise<number | null> {
+  try {
+    const url = `${new URL(getSourcifyServerUrl()).origin}/static/stats.json`;
+    const response = await fetch(url, { next: { revalidate: 3600 } });
+    if (!response.ok) return null;
+    const stats = (await response.json()) as Record<string, { full_match: number; partial_match: number }>;
+    return Object.values(stats).reduce((sum, chain) => sum + chain.full_match + chain.partial_match, 0);
+  } catch (error) {
+    console.error("Error fetching stats.json:", error);
+    return null;
+  }
+}

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, type KeyboardEvent, type RefObject } from "react";
+import { useState, type RefObject } from "react";
 import Link, { useLinkStatus } from "next/link";
 import { IoCheckmarkCircle, IoCheckmarkDoneCircle, IoChevronForward } from "react-icons/io5";
 import { ChainMatch } from "@/utils/allChains";
+import { moveFocusInList } from "@/utils/listKeyboard";
 
 // Show the filter input only when the list is long enough to need it
 const FILTER_THRESHOLD = 8;
@@ -11,6 +12,8 @@ const FILTER_THRESHOLD = 8;
 interface ChainMatchListProps {
   matches: ChainMatch[];
   listRef?: RefObject<HTMLUListElement | null>;
+  /** Called when the user opens one of the rows */
+  onSelect?: (match: ChainMatch) => void;
 }
 
 export function MatchBadge({ match }: { match: ChainMatch["contract"]["match"] }) {
@@ -60,7 +63,7 @@ export function NotVerifiedMessage() {
   );
 }
 
-export default function ChainMatchList({ matches, listRef }: ChainMatchListProps) {
+export default function ChainMatchList({ matches, listRef, onSelect }: ChainMatchListProps) {
   const [filter, setFilter] = useState("");
 
   if (matches.length === 0) return <NotVerifiedMessage />;
@@ -71,18 +74,6 @@ export default function ChainMatchList({ matches, listRef }: ChainMatchListProps
         ({ contract, chain }) => contract.chainId.includes(query) || chain?.name.toLowerCase().includes(query)
       )
     : matches;
-
-  // Arrow keys move the focus between the row links; Enter on a focused link opens it
-  const handleKeyDown = (e: KeyboardEvent<HTMLUListElement>) => {
-    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
-    const links = Array.from(e.currentTarget.querySelectorAll<HTMLAnchorElement>("a"));
-    const current = links.indexOf(document.activeElement as HTMLAnchorElement);
-    const next = e.key === "ArrowDown" ? current + 1 : current - 1;
-    if (next >= 0 && next < links.length) {
-      e.preventDefault();
-      links[next].focus();
-    }
-  };
 
   return (
     <div className="text-left">
@@ -104,15 +95,17 @@ export default function ChainMatchList({ matches, listRef }: ChainMatchListProps
       </div>
       <ul
         ref={listRef}
-        onKeyDown={handleKeyDown}
+        onKeyDown={moveFocusInList}
         className="scrollbar-visible max-h-80 overflow-y-auto rounded-md border border-gray-200 bg-white divide-y divide-gray-100"
       >
-        {visible.map(({ contract, chain }) => {
+        {visible.map((match) => {
+          const { contract, chain } = match;
           const deprecated = chain ? !chain.supported : false;
           return (
             <li key={`${contract.chainId}-${contract.matchId}`}>
               <Link
                 href={`/${contract.chainId}/${contract.address}`}
+                onClick={() => onSelect?.(match)}
                 className="flex items-center gap-2 sm:gap-3 px-3 py-2 hover:bg-cerulean-blue-100 focus:bg-cerulean-blue-100 focus:outline-none"
               >
                 <div className={`flex-1 min-w-0 ${deprecated ? "opacity-50" : ""}`}>
