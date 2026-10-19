@@ -118,7 +118,7 @@ export default function TopContracts() {
           id="chainSelect"
           value={selectedChain}
           onChange={(e) => setSelectedChain(e.target.value)}
-          className="block w-full pl-3 pr-10 py-2 text-sm bg-cerulean-blue-100 border border-cerulean-blue-300 rounded-md cursor-pointer text-cerulean-blue-600 focus:outline-none focus:ring-cerulean-blue-500 focus:border-cerulean-blue-500"
+          className="block w-full pl-3 pr-10 py-2 text-sm bg-white border border-gray-300 rounded-md cursor-pointer text-gray-900 focus:outline-none focus:ring-2 focus:ring-cerulean-blue-500"
           disabled={loading}
         >
           {Object.entries(chains).map(([key, chain]) => (
@@ -129,11 +129,6 @@ export default function TopContracts() {
         </select>
       </div>
 
-      <div className="text-xs text-gray-500 mb-2 flex items-center">
-        <FaCheckCircle className="h-3 w-3 text-green-500 mr-1" />
-        <span>Verified contracts can be viewed in Sourcify</span>
-      </div>
-
       {loading ? (
         <div className="text-center py-4">Loading contracts...</div>
       ) : error ? (
@@ -142,7 +137,7 @@ export default function TopContracts() {
           <span>{error}</span>
         </div>
       ) : (
-        <div className="overflow-auto max-h-[400px]">
+        <div className="scrollbar-visible overflow-auto max-h-[400px] rounded-md border border-gray-200">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50 sticky top-0 z-10">
               <tr>
@@ -151,25 +146,25 @@ export default function TopContracts() {
                 </th>
                 <th
                   scope="col"
-                  className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5"
+                  className="px-3 py-2 text-left text-xs font-medium text-gray-500 w-1/5"
                 >
                   Name
                 </th>
                 <th
                   scope="col"
-                  className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  className="px-3 py-2 text-left text-xs font-medium text-gray-500"
                 >
                   Address
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-100">
               {topContracts.map((contract) => (
                 <tr
                   key={contract.address}
                   onClick={contract.verified ? () => handleContractClick(contract) : undefined}
                   className={`${
-                    contract.verified ? "cursor-pointer hover:bg-gray-50" : "cursor-not-allowed opacity-75"
+                    contract.verified ? "cursor-pointer hover:bg-cerulean-blue-100" : "cursor-not-allowed opacity-75"
                   }`}
                   data-tooltip-id={!contract.verified ? "global-tooltip" : undefined}
                   data-tooltip-content={!contract.verified ? "Not verified on Sourcify" : undefined}

@@ -167,7 +167,6 @@ export default function LiveVerifications({ streamUrl, initialTotal, chains }: L
         {live.status === "live" && <LiveDot />}
       </div>
 
-      <h4 className="text-xs font-medium uppercase tracking-wider text-gray-500 mb-2">Just verified</h4>
       {live.status === "unavailable" ? (
         <p className="text-sm text-gray-500 py-4">The live feed is not available right now.</p>
       ) : (
