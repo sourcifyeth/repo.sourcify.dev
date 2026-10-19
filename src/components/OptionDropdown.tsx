@@ -13,6 +13,8 @@ export interface DropdownOption {
 
 interface OptionDropdownProps {
   id?: string;
+  /** Accessible name for the button when there is no visible label */
+  ariaLabel?: string;
   options: DropdownOption[];
   value: string;
   onChange: (value: string) => void;
@@ -26,7 +28,7 @@ const FILTER_THRESHOLD = 8;
  * A select with the same look as the search dropdown on the home page:
  * a white button, and a floating grey panel with a white list.
  */
-export default function OptionDropdown({ id, options, value, onChange, disabled }: OptionDropdownProps) {
+export default function OptionDropdown({ id, ariaLabel, options, value, onChange, disabled }: OptionDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [filter, setFilter] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
@@ -86,6 +88,7 @@ export default function OptionDropdown({ id, options, value, onChange, disabled 
         id={id}
         type="button"
         disabled={disabled}
+        aria-label={ariaLabel}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         onClick={() => setIsOpen((open) => !open)}

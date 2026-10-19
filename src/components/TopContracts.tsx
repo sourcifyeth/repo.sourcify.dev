@@ -107,11 +107,9 @@ export default function TopContracts() {
       </div>
 
       <div className="mb-4">
-        <label htmlFor="chainSelect" className="block text-sm font-medium text-gray-700 mb-1 text-left">
-          Select Chain
-        </label>
         <OptionDropdown
           id="chainSelect"
+          ariaLabel="Select chain"
           value={selectedChain}
           onChange={setSelectedChain}
           disabled={loading}
