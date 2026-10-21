@@ -7,6 +7,21 @@ import { useEffect, useState } from "react";
 // env vars. The hostname is the only reliable signal, so detect it on the client:
 // show the banner everywhere except the known production host(s).
 const PRODUCTION_HOSTS = ["repo.sourcify.dev"];
+const TITLE_PREFIX = "(staging) ";
+
+// Next.js sets document.title again on every client-side navigation, so watch
+// the <head> and add the prefix back whenever a new title lacks it.
+function prefixTitle() {
+  const addPrefix = () => {
+    if (!document.title.startsWith(TITLE_PREFIX)) {
+      document.title = TITLE_PREFIX + document.title;
+    }
+  };
+  addPrefix();
+  const observer = new MutationObserver(addPrefix);
+  observer.observe(document.head, { subtree: true, childList: true, characterData: true });
+  return () => observer.disconnect();
+}
 
 export default function StagingBanner() {
   // Computed on the client only to avoid an SSR hydration mismatch.
@@ -19,6 +34,13 @@ export default function StagingBanner() {
     setUrl(window.location.href);
     setIsStaging(!PRODUCTION_HOSTS.includes(window.location.hostname));
   }, []);
+
+  // Runs even after the banner is closed, because the component stays mounted.
+  useEffect(() => {
+    if (isStaging) {
+      return prefixTitle();
+    }
+  }, [isStaging]);
 
   if (!isStaging || url === null || isClosed) {
     return null;
