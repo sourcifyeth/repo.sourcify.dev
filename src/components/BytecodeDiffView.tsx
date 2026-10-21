@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useLayoutEffect, useState, useRef, useCallback } from "react";
 import InfoTooltip from "./InfoTooltip";
 import { BytecodeData, Transformations, TransformationValues, SignatureData } from "@/types/contract";
 import { useIsMobile } from "@/hooks/useResponsive";
@@ -21,6 +21,25 @@ interface AnnotationInfo {
   value: string;
   offset: number;
 }
+
+// A mark in the overview ruler. top and height are fractions (0..1) of the full scroll height.
+interface RulerMark {
+  reason: string;
+  top: number;
+  height: number;
+}
+
+// Stronger colors than the inline highlights, so that thin marks stay visible in the ruler
+const RULER_MARK_COLORS: Record<string, string> = {
+  library: "bg-blue-500",
+  immutable: "bg-purple-500",
+  callProtection: "bg-amber-500",
+  constructorArguments: "bg-green-500",
+  cborAuxdata: "bg-cyan-500",
+  functionSignature: "bg-orange-400",
+  errorSignature: "bg-rose-400",
+  eventSignature: "bg-teal-500",
+};
 
 interface SignatureTransformation {
   reason: string;
@@ -46,7 +65,15 @@ export default function BytecodeDiffView({
   const [currentView, setCurrentView] = useState<string>(recompiledBytecode);
   const [activeAnnotation, setActiveAnnotation] = useState<AnnotationInfo | null>(null);
   const [isTooltipHovered, setIsTooltipHovered] = useState(false);
+  // Signatures are off by default because they clutter the view. Transformations are on by default.
+  const [showSignatures, setShowSignatures] = useState(false);
+  const [showTransformations, setShowTransformations] = useState(true);
   const tooltipCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Overview ruler: the bytecode box, the marks for each annotation, and the part of the box that is in view
+  const bytecodeBoxRef = useRef<HTMLDivElement | null>(null);
+  const [rulerMarks, setRulerMarks] = useState<RulerMark[]>([]);
+  const [rulerViewport, setRulerViewport] = useState({ top: 0, height: 1 });
 
   // Use the isMobile hook to check screen size
   const isMobile = useIsMobile();
@@ -55,6 +82,10 @@ export default function BytecodeDiffView({
 
   // Check if there are library references in the transformations
   const hasLibraryTransformations = transformations?.some((t) => t.reason === "library");
+
+  const hasTransformations = !!transformations && transformations.length > 0 && !!transformationValues;
+  const hasSignatures =
+    !!signatures && signatures.function.length + signatures.error.length + signatures.event.length > 0;
 
   // Clear any existing close timer when component unmounts
   useEffect(() => {
@@ -72,6 +103,62 @@ export default function BytecodeDiffView({
       setCurrentView(recompiledBytecode);
     }
   }, [viewMode, onchainBytecode, recompiledBytecode]);
+
+  const updateRulerViewport = useCallback(() => {
+    const box = bytecodeBoxRef.current;
+    if (!box || box.scrollHeight === 0) return;
+    setRulerViewport({ top: box.scrollTop / box.scrollHeight, height: box.clientHeight / box.scrollHeight });
+  }, []);
+
+  // The bytecode wraps, so the vertical place of an annotation depends on the box width.
+  // Measure each annotation after it renders, and measure again when the box changes size.
+  const measureRulerMarks = useCallback(() => {
+    const box = bytecodeBoxRef.current;
+    if (!box) return;
+    const boxRect = box.getBoundingClientRect();
+    const scrollHeight = box.scrollHeight;
+    const marks: RulerMark[] = [];
+    box.querySelectorAll<HTMLElement>("[data-annotation-reason]").forEach((el) => {
+      const rect = el.getBoundingClientRect();
+      marks.push({
+        reason: el.dataset.annotationReason || "",
+        top: (rect.top - boxRect.top + box.scrollTop) / scrollHeight,
+        height: rect.height / scrollHeight,
+      });
+    });
+    setRulerMarks(marks);
+    updateRulerViewport();
+  }, [updateRulerViewport]);
+
+  useLayoutEffect(() => {
+    if (viewMode !== "annotations") {
+      setRulerMarks([]);
+      return;
+    }
+    measureRulerMarks();
+  }, [viewMode, showSignatures, showTransformations, onchainBytecode, recompiledBytecode, isMobile, measureRulerMarks]);
+
+  useEffect(() => {
+    const box = bytecodeBoxRef.current;
+    if (!box || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => {
+      if (viewMode === "annotations") measureRulerMarks();
+    });
+    observer.observe(box);
+    return () => observer.disconnect();
+  }, [viewMode, measureRulerMarks]);
+
+  // Click on the ruler: scroll the box so that the clicked place is in the middle of the view
+  const handleRulerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const box = bytecodeBoxRef.current;
+    if (!box) return;
+    const rulerRect = e.currentTarget.getBoundingClientRect();
+    const fraction = (e.clientY - rulerRect.top) / rulerRect.height;
+    box.scrollTo({ top: fraction * box.scrollHeight - box.clientHeight / 2, behavior: "smooth" });
+  };
+
+  // Show the ruler only if there is something to mark and the box must scroll
+  const showRuler = viewMode === "annotations" && rulerMarks.length > 0 && rulerViewport.height < 1;
 
   const handleAnnotationMouseEnter = (annotationInfo: AnnotationInfo) => {
     // Clear any existing close timer
@@ -253,14 +340,13 @@ export default function BytecodeDiffView({
   };
 
   const renderAnnotations = () => {
-    // Get signature annotations
-    const signatureAnnotations = detectSignatures();
+    // Only include the annotation kinds that the user has switched on
+    const signatureAnnotations = showSignatures ? detectSignatures() : [];
+    const transformationAnnotations = showTransformations && hasTransformations ? transformations ?? [] : [];
 
-    // Combine transformations and signatures, or just use signatures if no transformations
-    const allAnnotations =
-      transformations && transformationValues
-        ? [...transformations, ...signatureAnnotations].sort((a, b) => a.offset - b.offset)
-        : signatureAnnotations.sort((a, b) => a.offset - b.offset);
+    const allAnnotations = [...transformationAnnotations, ...signatureAnnotations].sort(
+      (a, b) => a.offset - b.offset
+    );
 
     if (allAnnotations.length === 0) return onchainBytecode;
 
@@ -350,6 +436,7 @@ export default function BytecodeDiffView({
       result.push(
         <span
           key={`annotation-${index}`}
+          data-annotation-reason={annotation.reason}
           className={`break-all ${colorClasses} cursor-help rounded-xs hover:brightness-110 transition-all duration-200 relative overflow-x-clip ring-1 ring-inset ring-current`}
           onMouseEnter={() => handleAnnotationMouseEnter(annotationInfo)}
           onMouseLeave={handleAnnotationMouseLeave}
@@ -483,12 +570,66 @@ export default function BytecodeDiffView({
         )}
       </div>
 
-      <div
-        className={`w-full max-h-64 p-3 bg-gray-50 rounded font-mono border border-gray-200 cursor-text break-words overflow-y-auto whitespace-pre-wrap overflow-x-clip ${isMobile ? "text-[0.65rem]" : "text-xs"
-          }`}
-      >
-        {viewMode === "annotations" ? renderAnnotations() : currentView}
+      <div className="flex gap-1">
+        <div
+          ref={bytecodeBoxRef}
+          onScroll={updateRulerViewport}
+          className={`flex-1 min-w-0 max-h-64 p-3 bg-gray-50 rounded font-mono border border-gray-200 cursor-text break-words overflow-y-auto whitespace-pre-wrap overflow-x-clip ${isMobile ? "text-[0.65rem]" : "text-xs"
+            }`}
+        >
+          {viewMode === "annotations" ? renderAnnotations() : currentView}
+        </div>
+
+        {showRuler && (
+          <div
+            className={`relative shrink-0 ${isMobile ? "w-2" : "w-3"} bg-gray-100 border border-gray-200 rounded cursor-pointer overflow-hidden`}
+            onClick={handleRulerClick}
+            title="Overview of annotations. Click to jump."
+          >
+            {rulerMarks.map((mark, i) => (
+              <div
+                key={i}
+                className={`absolute left-0 right-0 min-h-[2px] pointer-events-none ${RULER_MARK_COLORS[mark.reason] || "bg-gray-500"
+                  }`}
+                style={{ top: `${mark.top * 100}%`, height: `${mark.height * 100}%` }}
+              />
+            ))}
+            {/* The part of the bytecode that is in view */}
+            <div
+              className="absolute left-0 right-0 bg-gray-500/20 border-y border-gray-400 pointer-events-none"
+              style={{ top: `${rulerViewport.top * 100}%`, height: `${rulerViewport.height * 100}%` }}
+            />
+          </div>
+        )}
       </div>
+
+      {viewMode === "annotations" && (hasTransformations || hasSignatures) && (
+        <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-gray-700">
+          <span className="font-medium text-gray-500">Show Annotations:</span>
+          {hasTransformations && (
+            <label className="flex items-center gap-1 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showTransformations}
+                onChange={(e) => setShowTransformations(e.target.checked)}
+                className="h-3.5 w-3.5 text-cyan-600 focus:ring-cyan-500 border-gray-300 rounded"
+              />
+              Transformations
+            </label>
+          )}
+          {hasSignatures && (
+            <label className="flex items-center gap-1 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showSignatures}
+                onChange={(e) => setShowSignatures(e.target.checked)}
+                className="h-3.5 w-3.5 text-cyan-600 focus:ring-cyan-500 border-gray-300 rounded"
+              />
+              Function, error and event signatures
+            </label>
+          )}
+        </div>
+      )}
 
       {/* Add library placeholder info message */}
       {viewMode === "recompiled" && hasLibraryTransformations && (
