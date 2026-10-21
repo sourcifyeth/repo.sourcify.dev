@@ -223,19 +223,28 @@ const configureSolidityLanguage = () => {
               // Strings
               [/"([^"\\]|\\.)*$/, "string.invalid"],
               [/"/, { token: "string.quote", bracket: "@open", next: "@string" }],
+              [/'([^'\\]|\\.)*$/, "string.invalid"],
+              [/'/, { token: "string.quote", bracket: "@open", next: "@stringSingle" }],
             ],
 
+            // Solidity block comments do not nest: the first "*/" always ends the comment,
+            // even if a "/*" appears inside it (e.g. "/*////" ... "////*/" banners).
             comment: [
-              [/[^\/*]+/, "comment"],
-              [/\/\*/, "comment", "@push"],
-              ["\\*/", "comment", "@pop"],
-              [/[\/*]/, "comment"],
+              [/[^*]+/, "comment"],
+              [/\*\//, "comment", "@pop"],
+              [/\*/, "comment"],
             ],
 
             string: [
               [/[^\\"]+/, "string"],
               [/\\./, "string.escape"],
               [/"/, { token: "string.quote", bracket: "@close", next: "@pop" }],
+            ],
+
+            stringSingle: [
+              [/[^\\']+/, "string"],
+              [/\\./, "string.escape"],
+              [/'/, { token: "string.quote", bracket: "@close", next: "@pop" }],
             ],
 
             whitespace: [
