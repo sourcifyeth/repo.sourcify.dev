@@ -7,6 +7,9 @@ export interface ContractData {
   runtimeBytecode: BytecodeData;
   deployment: DeploymentData;
   sources: Record<string, SourceData>;
+  // The files of the compilation, with the id that source maps use. Files in
+  // `sources` but not here are not used by the compiled contract.
+  sourceIds?: Record<string, { id: number }>;
   compilation: CompilationData;
   abi: AbiItem[] | null;
   metadata: Record<string, unknown> | null;

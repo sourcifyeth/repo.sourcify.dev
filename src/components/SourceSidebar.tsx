@@ -50,7 +50,7 @@ export default function SourceSidebar({ view, onViewChange, searchShortcut, expl
         ))}
         <span className="ml-2 text-xs font-medium uppercase tracking-wide text-gray-200">{VIEW_TITLES[view]}</span>
       </div>
-      <div className="h-[200px] md:h-[500px] min-h-0">
+      <div className="h-[200px] md:h-auto md:flex-1 min-h-0">
         <div
           id="source-view-explorer"
           role="tabpanel"

@@ -85,6 +85,23 @@ If the regular expression is not valid, the panel shows the error and no results
 
 The search code is in `src/utils/sourceSearch.ts`. It runs in the browser on the source files that the page already has, so it sends no requests to the server.
 
+## Browsing the source files
+
+### File tree
+
+- The box above the tree filters the tree by path. Type a part of a path (any case), and the tree shows only the files whose path contains it. **Esc** or the **×** button clears the filter.
+- The main contract file has a star.
+- Library files are dimmed and have a **LIB** tag. A folder that holds only library files is dimmed too. A file counts as library code if its path is in `node_modules/`, starts with `lib/`, has a folder that starts with `@` (an npm scope such as `@openzeppelin/`), has a folder with the name of a well-known library (OpenZeppelin, solmate, solady, forge-std, ds-test), or starts with the prefix of a remapping that points into library code. The rules are in `src/utils/libraryFiles.ts`. They are a best guess from the path.
+- **Other files**: some contracts were verified with more files than they use. These files were in the compiler input, but the contract's metadata does not list them, so they have no effect on the bytecode. They show in a separate "Other files" group at the end of the tree. The group starts closed. If a link or a search result opens one of these files, the tree opens the group to show it.
+
+### Go to file
+
+Press **Cmd+P** (macOS) or **Ctrl+P** (Windows, Linux) while the focus is in the Source Code section, or click **Go to file** in the editor toolbar. Then type a part of a file name. The match is fuzzy, and a match in the file name counts more than a match in the folders. Use the arrow keys and **Enter** to open a file, or **Esc** to close the box. Without a query, the list shows the project's own files first, then library files, then other files. Outside the Source Code section, Cmd/Ctrl+P is still the browser's Print.
+
+### Size and fullscreen
+
+On a desktop screen, the source view is about 75% of the window height (at least 540 px). The fullscreen button in the editor toolbar makes the source view fill the window. To leave fullscreen, click the button again or press **Esc**. In the editor, Esc first closes the find box or clears a selection, and the next Esc leaves fullscreen.
+
 ## Getting Started
 
 ### Prerequisites

@@ -11,10 +11,12 @@ import FileExplorerTree from "@/components/FileExplorerTree";
 import SourceToolbar from "@/components/SourceToolbar";
 import SourceSidebar, { SidebarView } from "@/components/SourceSidebar";
 import SourceSearchPanel, { ActiveSearchMatch } from "@/components/SourceSearchPanel";
+import SourceFileFinder, { FinderFile } from "@/components/SourceFileFinder";
 import { useCodeEditor } from "@/hooks/useCodeEditor";
 import { useIsMobile } from "@/hooks/useResponsive";
 import { useSourceHash } from "@/hooks/useSourceHash";
 import { buildFileTreeWithIds } from "@/utils/fileExplorer";
+import { createLibraryPathCheck } from "@/utils/libraryFiles";
 import { formatSourceHash, LineRange, SourceLocation } from "@/utils/sourceHash";
 import {
   buildSearchRegExp,
@@ -382,11 +384,22 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
 
   const isMobile = useIsMobile();
 
+  // The files that the compiled contract uses. Other files in `sources` go into the "Other files" group.
+  const compiledPaths = useMemo(
+    () => (contract.sourceIds ? new Set(Object.keys(contract.sourceIds)) : undefined),
+    [contract.sourceIds]
+  );
+  const remappings = contract.compilation.compilerSettings?.remappings as string[] | undefined;
+  const isLibraryPath = useMemo(() => createLibraryPathCheck(remappings ?? []), [remappings]);
+
   // Build file tree from contract sources
   useEffect(() => {
-    const treeWithIds = buildFileTreeWithIds(contract.sources, contract.compilation.fullyQualifiedName);
+    const treeWithIds = buildFileTreeWithIds(contract.sources, contract.compilation.fullyQualifiedName, {
+      compiledPaths,
+      isLibrary: isLibraryPath,
+    });
     setFileTreeWithIds(treeWithIds);
-  }, [contract.sources, contract.compilation.fullyQualifiedName]);
+  }, [contract.sources, contract.compilation.fullyQualifiedName, compiledPaths, isLibraryPath]);
 
   // Handle file selection from tree
   const handleFileSelect = (filePath: string, content?: string) => {
@@ -644,13 +657,66 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
     );
   }, [editorReady, activeTab, searchRegExp, sidebarView, activeMatch]);
 
-  // Cmd/Ctrl+Shift+F while the focus is in the source section but outside the
-  // editor (the editor has its own command, registered on mount)
+  // ---- Go to file (Cmd/Ctrl+P) ----
+  const [finderOpen, setFinderOpen] = useState(false);
+  const finderFiles = useMemo<FinderFile[]>(
+    () =>
+      Object.keys(contract.sources).map((path) => ({
+        path,
+        isLibrary: isLibraryPath(path),
+        isCompiled: !compiledPaths || compiledPaths.size === 0 || compiledPaths.has(path),
+      })),
+    [contract.sources, isLibraryPath, compiledPaths]
+  );
+  const openFinder = useCallback(() => setFinderOpen(true), []);
+  const openFinderRef = useRef(openFinder);
+  useEffect(() => {
+    openFinderRef.current = openFinder;
+  }, [openFinder]);
+  const closeFinder = () => {
+    setFinderOpen(false);
+    editorRef.current?.focus();
+  };
+  const openFileFromFinder = (path: string) => {
+    setFinderOpen(false);
+    handleFileSelect(path);
+    editorRef.current?.focus();
+  };
+
+  // ---- Fullscreen: the source view fills the window ----
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  // Monaco context key, so that the editor's own Esc command knows about fullscreen
+  const fullscreenContextKeyRef = useRef<editor.IContextKey<boolean> | null>(null);
+  useEffect(() => {
+    fullscreenContextKeyRef.current?.set(isFullscreen);
+    if (!isFullscreen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    // Esc leaves fullscreen, unless something else (a search box, a popover) used it.
+    // Monaco marks every Esc as used, so the editor has its own command (see the mount handler).
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !event.defaultPrevented) setIsFullscreen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isFullscreen]);
+
+  // Shortcuts while the focus is in the source section but outside the editor
+  // (the editor has its own commands, registered on mount):
+  // Cmd/Ctrl+Shift+F opens the search, Cmd/Ctrl+P opens Go to file.
   const onSourceKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!(event.metaKey || event.ctrlKey) || !event.shiftKey || event.code !== "KeyF") return;
+    if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
     if (editorRef.current?.hasTextFocus()) return;
-    event.preventDefault();
-    openSearch();
+    if (event.shiftKey && event.code === "KeyF") {
+      event.preventDefault();
+      openSearch();
+    } else if (!event.shiftKey && event.code === "KeyP") {
+      event.preventDefault();
+      openFinder();
+    }
   };
 
   const [isMac, setIsMac] = useState(false);
@@ -744,6 +810,18 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
       openSearchRef.current(selectedText);
     });
 
+    // In fullscreen, Esc in the editor leaves fullscreen, but only when Monaco does not need Esc
+    // itself: no find widget or suggestion list is open, and there is no selection to clear.
+    fullscreenContextKeyRef.current = editorInstance.createContextKey("sourceFullscreen", false);
+    editorInstance.addCommand(
+      monaco.KeyCode.Escape,
+      () => setIsFullscreen(false),
+      "sourceFullscreen && !findWidgetVisible && !suggestWidgetVisible && !editorHasSelection && !editorHasMultipleSelections"
+    );
+
+    // Cmd/Ctrl+P opens Go to file (instead of the browser's Print while the editor has the focus)
+    editorInstance.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyP, () => openFinderRef.current());
+
     setEditorReady(true);
   };
 
@@ -751,79 +829,109 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
   const solidityConfig = configureSolidityLanguage();
 
   return (
-    <div className="bg-white shadow overflow-hidden sm:rounded-lg" onKeyDown={onSourceKeyDown}>
-      <div className="border-t border-gray-200">
-        <div className="flex flex-col md:flex-row">
-          {/* File Explorer */}
-          <div className="w-full md:w-1/4 border-b md:border-b-0 md:border-r border-gray-700">
-            <SourceSidebar
-              view={sidebarView}
-              onViewChange={changeSidebarView}
-              searchShortcut={isMac ? "⌘⇧F" : "Ctrl+Shift+F"}
-              explorer={
-                <FileExplorerTree files={fileTreeWithIds} activeFile={activeTab?.path} onFileSelect={handleFileSelect} />
-              }
-              search={
-                <SourceSearchPanel
-                  options={searchOptions}
-                  onOptionsChange={setSearchOptions}
-                  result={searchResult}
-                  error={searchError}
-                  fileCount={Object.keys(contract.sources).length}
-                  activeMatch={activeMatch}
-                  onOpenMatch={openSearchMatch}
-                  onEscape={() => editorRef.current?.focus()}
-                  inputRef={searchInputRef}
-                />
-              }
-            />
-          </div>
-          {/* Source code editor */}
-          <div className="w-full md:w-3/4 flex flex-col">
-            {/* Code Editor Tabs */}
-            <CodeEditorTabs
-              tabs={tabs}
-              activeTabId={activeTabId}
-              onTabSelect={switchToTab}
-              onTabClose={closeTab}
-              onTabCloseAll={closeAllTabs}
-            />
-            {activeTab && (
-              <SourceToolbar
-                path={activeTab.path}
-                getLink={getLink}
-                fileContent={activeTab.content}
-                wordWrap={wordWrap}
-                onToggleWordWrap={toggleWordWrap}
+    <div
+      className={
+        isFullscreen
+          ? "fixed inset-0 z-[60] flex flex-col bg-gray-800"
+          : "bg-white shadow overflow-hidden sm:rounded-lg"
+      }
+      onKeyDown={onSourceKeyDown}
+      role={isFullscreen ? "dialog" : undefined}
+      aria-modal={isFullscreen || undefined}
+      aria-label={isFullscreen ? "Source code, fullscreen" : undefined}
+    >
+      {/* Desktop height: about 75% of the window, at least 540 px. Fullscreen: the whole window. */}
+      <div
+        className={`relative flex flex-col md:flex-row border-t border-gray-200 ${
+          isFullscreen ? "flex-1 min-h-0" : "md:h-[max(540px,75vh)]"
+        }`}
+      >
+        {/* File Explorer */}
+        <div className="w-full md:w-1/4 md:h-full border-b md:border-b-0 md:border-r border-gray-700">
+          <SourceSidebar
+            view={sidebarView}
+            onViewChange={changeSidebarView}
+            searchShortcut={isMac ? "⌘⇧F" : "Ctrl+Shift+F"}
+            explorer={
+              <FileExplorerTree
+                files={fileTreeWithIds}
+                fileCount={Object.keys(contract.sources).length}
+                activeFile={activeTab?.path}
+                onFileSelect={handleFileSelect}
               />
+            }
+            search={
+              <SourceSearchPanel
+                options={searchOptions}
+                onOptionsChange={setSearchOptions}
+                result={searchResult}
+                error={searchError}
+                fileCount={Object.keys(contract.sources).length}
+                activeMatch={activeMatch}
+                onOpenMatch={openSearchMatch}
+                onEscape={() => editorRef.current?.focus()}
+                inputRef={searchInputRef}
+              />
+            }
+          />
+        </div>
+        {/* Source code editor */}
+        <div className={`w-full md:w-3/4 md:h-full flex flex-col min-h-0 ${isFullscreen ? "flex-1" : ""}`}>
+          {/* Code Editor Tabs */}
+          <CodeEditorTabs
+            tabs={tabs}
+            activeTabId={activeTabId}
+            onTabSelect={switchToTab}
+            onTabClose={closeTab}
+            onTabCloseAll={closeAllTabs}
+          />
+          {activeTab && (
+            <SourceToolbar
+              path={activeTab.path}
+              getLink={getLink}
+              fileContent={activeTab.content}
+              wordWrap={wordWrap}
+              onToggleWordWrap={toggleWordWrap}
+              onOpenFinder={openFinder}
+              finderShortcut={isMac ? "⌘P" : "Ctrl+P"}
+              isFullscreen={isFullscreen}
+              onToggleFullscreen={() => setIsFullscreen((value) => !value)}
+            />
+          )}
+          {/* Monaco Editor */}
+          <div className={`source-editor relative min-h-0 md:flex-1 ${isFullscreen ? "flex-1" : "h-[500px] md:h-auto"}`}>
+            {activeTab ? (
+              <MonacoEditor
+                className="editor-container"
+                height="100%"
+                language={language}
+                path={activeTab.path}
+                defaultValue={activeTab.content}
+                options={editorOptions}
+                beforeMount={solidityConfig.beforeMount}
+                onMount={handleEditorDidMount}
+                loading={
+                  <div className="bg-gray-800 text-sm text-gray-500 flex items-center justify-center w-full h-full">
+                    <p>Loading files...</p>
+                  </div>
+                }
+                theme="vs-dark"
+              />
+            ) : (
+              <div className="bg-gray-800 p-4 text-sm text-gray-500 flex items-center justify-center w-full h-full">
+                <p>No source files available.</p>
+              </div>
             )}
-            {/* Monaco Editor */}
-            <div className="source-editor md:flex-1 relative h-[500px] md:h-auto">
-              {activeTab ? (
-                <MonacoEditor
-                  className="editor-container"
-                  height="100%"
-                  language={language}
-                  path={activeTab.path}
-                  defaultValue={activeTab.content}
-                  options={editorOptions}
-                  beforeMount={solidityConfig.beforeMount}
-                  onMount={handleEditorDidMount}
-                  loading={
-                    <div className="bg-gray-800 text-sm text-gray-500 flex items-center justify-center w-full h-full">
-                      <p>Loading files...</p>
-                    </div>
-                  }
-                  theme="vs-dark"
-                />
-              ) : (
-                <div className="bg-gray-800 p-4 text-sm text-gray-500 flex items-center justify-center w-full h-full">
-                  <p>No source files available.</p>
-                </div>
-              )}
-            </div>
           </div>
         </div>
+        {finderOpen && (
+          <SourceFileFinder
+            files={finderFiles}
+            shortcut={isMac ? "⌘P" : "Ctrl+P"}
+            onOpen={openFileFromFinder}
+            onClose={closeFinder}
+          />
+        )}
       </div>
     </div>
   );

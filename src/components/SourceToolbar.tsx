@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FaCheck, FaLink, FaRegCopy, FaRegQuestionCircle } from "react-icons/fa";
 import { MdWrapText } from "react-icons/md";
+import { VscGoToFile, VscScreenFull, VscScreenNormal } from "react-icons/vsc";
 import { formatSourceHash } from "@/utils/sourceHash";
 
 interface SourceToolbarProps {
@@ -12,6 +13,10 @@ interface SourceToolbarProps {
   fileContent: string;
   wordWrap: boolean;
   onToggleWordWrap: () => void;
+  onOpenFinder: () => void;
+  finderShortcut: string;
+  isFullscreen: boolean;
+  onToggleFullscreen: () => void;
 }
 
 type Copied = "link" | "file" | null;
@@ -19,7 +24,17 @@ type Copied = "link" | "file" | null;
 const buttonClass =
   "inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs text-gray-300 hover:bg-gray-700 hover:text-white transition-colors cursor-pointer";
 
-export default function SourceToolbar({ path, getLink, fileContent, wordWrap, onToggleWordWrap }: SourceToolbarProps) {
+export default function SourceToolbar({
+  path,
+  getLink,
+  fileContent,
+  wordWrap,
+  onToggleWordWrap,
+  onOpenFinder,
+  finderShortcut,
+  isFullscreen,
+  onToggleFullscreen,
+}: SourceToolbarProps) {
   const [copied, setCopied] = useState<Copied>(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const resetTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -34,16 +49,19 @@ export default function SourceToolbar({ path, getLink, fileContent, wordWrap, on
   // Close the help popover on Esc or on a click outside it
   useEffect(() => {
     if (!helpOpen) return;
+    // Capture phase, and preventDefault: this Esc closes only the popover, not fullscreen
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setHelpOpen(false);
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setHelpOpen(false);
     };
     const onPointerDown = (event: PointerEvent) => {
       if (helpRef.current && !helpRef.current.contains(event.target as Node)) setHelpOpen(false);
     };
-    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("keydown", onKeyDown, true);
     document.addEventListener("pointerdown", onPointerDown);
     return () => {
-      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("keydown", onKeyDown, true);
       document.removeEventListener("pointerdown", onPointerDown);
     };
   }, [helpOpen]);
@@ -64,6 +82,16 @@ export default function SourceToolbar({ path, getLink, fileContent, wordWrap, on
       <span className="flex-1 min-w-0 truncate text-xs text-gray-400 font-mono" title={path}>
         {path}
       </span>
+      <button
+        type="button"
+        className={buttonClass}
+        onClick={onOpenFinder}
+        data-tooltip-id="global-tooltip"
+        data-tooltip-content={`Go to a file by name (${finderShortcut})`}
+      >
+        <VscGoToFile className="w-3.5 h-3.5" />
+        <span className="hidden lg:inline">Go to file</span>
+      </button>
       <button
         type="button"
         className={buttonClass}
@@ -94,6 +122,17 @@ export default function SourceToolbar({ path, getLink, fileContent, wordWrap, on
       >
         <MdWrapText className="w-3.5 h-3.5" />
         <span className="hidden sm:inline">Wrap</span>
+      </button>
+      <button
+        type="button"
+        className={buttonClass}
+        onClick={onToggleFullscreen}
+        aria-pressed={isFullscreen}
+        aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+        data-tooltip-id="global-tooltip"
+        data-tooltip-content={isFullscreen ? "Exit fullscreen (Esc)" : "Fullscreen"}
+      >
+        {isFullscreen ? <VscScreenNormal className="w-3.5 h-3.5" /> : <VscScreenFull className="w-3.5 h-3.5" />}
       </button>
 
       <div className="relative" ref={helpRef}>
