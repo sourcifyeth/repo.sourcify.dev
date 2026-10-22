@@ -239,3 +239,50 @@ export async function fetchVerifiedContractsTotal(): Promise<number | null> {
 export async function fetchVerifiedAllChainsServer(address: string): Promise<VerifiedContractMinimal[]> {
   return fetchVerifiedAllChains(getSourcifyServerInternalUrl(), address, { cache: "no-store" });
 }
+
+export interface BlockExplorer {
+  name: "Etherscan" | "Blockscout";
+  // Base URL without a trailing slash. Both explorers use /tx/<hash>, /address/<address> and /block/<number>
+  url: string;
+}
+
+const EXPLORER_LIST_REVALIDATE = 86400; // The lists change rarely: cache them for a day
+
+/** Etherscan's chain list: one explorer URL per chain that Etherscan supports. */
+async function etherscanExplorers(): Promise<Map<string, string>> {
+  const response = await fetch("https://api.etherscan.io/v2/chainlist", { next: { revalidate: EXPLORER_LIST_REVALIDATE } });
+  if (!response.ok) throw new Error(`Etherscan chain list: ${response.status}`);
+  const body = (await response.json()) as { result?: Array<{ chainid: string; blockexplorer: string; status: number }> };
+  return new Map((body.result ?? []).filter((chain) => chain.status === 1).map((chain) => [chain.chainid, chain.blockexplorer]));
+}
+
+/** Blockscout's chain list (chains.blockscout.com): the explorers of each chain that runs Blockscout. */
+async function blockscoutExplorers(): Promise<Map<string, string>> {
+  const response = await fetch("https://chains.blockscout.com/api/chains", { next: { revalidate: EXPLORER_LIST_REVALIDATE } });
+  if (!response.ok) throw new Error(`Blockscout chain list: ${response.status}`);
+  const body = (await response.json()) as Record<string, { explorers?: Array<{ url: string }> }>;
+  return new Map(
+    Object.entries(body).flatMap(([chainId, chain]) => (chain.explorers?.[0] ? [[chainId, chain.explorers[0].url]] : []))
+  );
+}
+
+/**
+ * The block explorers of a chain: Etherscan first, then Blockscout, from the
+ * chain lists that each of them publishes. Either list can fail on its own;
+ * the result then has only the other explorer, or none.
+ */
+export async function fetchBlockExplorers(chainId: string): Promise<BlockExplorer[]> {
+  const [etherscan, blockscout] = await Promise.allSettled([etherscanExplorers(), blockscoutExplorers()]);
+  const explorers: BlockExplorer[] = [];
+  const add = (name: BlockExplorer["name"], list: PromiseSettledResult<Map<string, string>>) => {
+    if (list.status === "rejected") {
+      console.error(`Error fetching the ${name} chain list:`, list.reason);
+      return;
+    }
+    const url = list.value.get(chainId);
+    if (url) explorers.push({ name, url: url.replace(/\/+$/, "") });
+  };
+  add("Etherscan", etherscan);
+  add("Blockscout", blockscout);
+  return explorers;
+}

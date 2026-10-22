@@ -1,4 +1,11 @@
-import { fetchContractData, fetchChains, getChainName, checkVerification, getSourcifyServerUrl } from "@/utils/api";
+import {
+  fetchContractData,
+  fetchChains,
+  getChainName,
+  checkVerification,
+  getSourcifyServerUrl,
+  fetchBlockExplorers,
+} from "@/utils/api";
 import SimilarityVerification from "./SimilarityVerification";
 import ErrorState from "@/components/ErrorState";
 import { Suspense } from "react";
@@ -14,6 +21,7 @@ import ContractDetails from "@/app/[chainId]/[address]/sections/ContractDetails"
 import ProxyResolution from "./sections/ProxyResolution";
 import ContractAbi from "./sections/ABI";
 import ContractSource from "./sections/ContractSource";
+import ExplorerLinks from "@/components/ExplorerLinks";
 import { SourceViewData } from "@/types/contract";
 import JsonViewOnlyEditor from "@/components/JsonViewOnlyEditor";
 import BytecodeDiffView from "@/components/BytecodeDiffView";
@@ -173,6 +181,9 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
     );
   }
 
+  // Links to block explorers for the deployment details (cached lists; empty if they fail)
+  const explorers = await fetchBlockExplorers(chainId);
+
   // Process bytecodes to insert library placeholders
   const { processedCreationBytecode, processedRuntimeBytecode } = processContractBytecodes(contract);
 
@@ -283,11 +294,16 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
   return (
     <div>
       <div className="mt-3 mb-2">
-        <div className="flex items-center">
-          <h1 className="text-base break-all md:text-2xl font-bold font-mono text-gray-900">{contract.address}</h1>
-          <CopyToClipboard text={contract.address} className="ml-2 md:p-0 p-2" />
+        {/* The contract name is the title; the address and the chain follow */}
+        <h1 className="text-xl md:text-3xl font-bold text-gray-900 break-words">{contract.compilation.name}</h1>
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="flex items-center">
+            <span className="text-sm break-all md:text-base font-mono text-gray-700">{contract.address}</span>
+            <CopyToClipboard text={contract.address} className="ml-2 md:p-0 p-2" />
+          </span>
+          <ExplorerLinks explorers={explorers} path={`address/${contract.address}`} />
         </div>
-        <p className="text-sm md:text-base text-gray-700 mt-1">
+        <p className="text-sm md:text-base text-gray-700 mt-0.5">
           on {chainName}
           {chains.find((c) => c.chainId.toString() === chainId)?.supported === false && (
             <span className="text-gray-500 text-sm ml-2"> (verification on this chain is deprecated)</span>
@@ -347,6 +363,24 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
             </div>
           </div>
 
+          {/* Proxy badge: jumps to the Proxy section */}
+          {contract.proxyResolution?.isProxy && (
+            <a
+              href="#proxy"
+              className="inline-flex items-center gap-1 rounded-md border border-purple-200 bg-purple-50 px-2 py-0.5 text-xs md:text-sm font-medium text-purple-800 hover:bg-purple-100"
+              data-tooltip-id="global-tooltip"
+              data-tooltip-content={`This contract is a proxy${
+                contract.proxyResolution.implementations?.length
+                  ? ` for ${contract.proxyResolution.implementations
+                      .map((implementation) => implementation.name || implementation.address)
+                      .join(", ")}`
+                  : ""
+              }`}
+            >
+              Proxy
+            </a>
+          )}
+
           {/* Unverified libraries warning */}
           {hasUnverifiedLibraries && (
             <span
@@ -378,7 +412,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
 
       {/* Contract Details Section */}
       <section id="contract-details" className="my-6 page-section">
-        <ContractDetails contract={contractWithPlaceholders} chainName={chainName} />
+        <ContractDetails contract={contractWithPlaceholders} explorers={explorers} />
       </section>
 
       {/* Proxy Resolution Section */}
