@@ -31,14 +31,16 @@ function SectionHeader({ title, open, onToggle }: { title: string; open: boolean
  */
 export default function ExplorerSections({ files, outline, outlineOpenByDefault }: ExplorerSectionsProps) {
   const [filesOpen, setFilesOpen] = useState(true);
-  const [outlineOpen, setOutlineOpen] = useState(outlineOpenByDefault);
+  // The outline follows the default (which changes with the screen width) until the user opens or closes it
+  const [outlineChoice, setOutlineChoice] = useState<boolean | null>(null);
+  const outlineOpen = outlineChoice ?? outlineOpenByDefault;
 
   return (
     <div className="flex h-full flex-col">
       <SectionHeader title="Files" open={filesOpen} onToggle={() => setFilesOpen((open) => !open)} />
       {filesOpen && <div className="min-h-0" style={{ flex: outlineOpen ? "3 1 0" : "1 1 0" }}>{files}</div>}
       <div className={filesOpen ? "border-t border-gray-700" : ""}>
-        <SectionHeader title="Outline" open={outlineOpen} onToggle={() => setOutlineOpen((open) => !open)} />
+        <SectionHeader title="Outline" open={outlineOpen} onToggle={() => setOutlineChoice(!outlineOpen)} />
       </div>
       {outlineOpen && <div className="min-h-0" style={{ flex: filesOpen ? "2 1 0" : "1 1 0" }}>{outline}</div>}
     </div>
