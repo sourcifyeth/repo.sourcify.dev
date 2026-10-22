@@ -144,3 +144,13 @@
   width: 3px !important;
   margin-left: 3px;
 }
+
+/* Sticky bars at the top of the window publish their heights (see src/utils/stickyHeight.ts).
+   Jumps to a section stop below them. */
+:root {
+  --sticky-banner-height: 0px;
+  --section-nav-height: 0px;
+}
+.page-section {
+  scroll-margin-top: calc(var(--sticky-banner-height) + var(--section-nav-height) + 8px);
+}

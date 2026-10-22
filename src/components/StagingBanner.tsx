@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { trackStickyHeight } from "@/utils/stickyHeight";
 
 // On Netlify this app is SSR'd through functions where NODE_ENV is always
 // "production", so we can't distinguish staging from production via build/runtime
@@ -42,12 +43,16 @@ export default function StagingBanner() {
     }
   }, [isStaging]);
 
+  // Publish the banner height, so that sticky headings below it do not slide under it (0 when it is hidden)
+  const bannerRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => trackStickyHeight(bannerRef.current, "--sticky-banner-height"), [isStaging, url, isClosed]);
+
   if (!isStaging || url === null || isClosed) {
     return null;
   }
 
   return (
-    <div data-sticky-top className="sticky top-0 z-50 w-full bg-cerulean-blue-500 text-white text-center font-medium py-3 pl-4 pr-12">
+    <div ref={bannerRef} data-sticky-top className="sticky top-0 z-50 w-full bg-cerulean-blue-500 text-white text-center font-medium py-3 pl-4 pr-12">
       🚧 You are on the <span className="font-bold">staging/dev</span> environment{" "}
       <span className="mx-1 text-xl align-middle">—</span>{" "}
       <span className="font-mono font-normal">{url}</span>

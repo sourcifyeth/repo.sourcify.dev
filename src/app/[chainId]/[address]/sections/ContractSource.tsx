@@ -204,15 +204,20 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
   }, [external, location, contract.sources, openTab]);
 
   // The hash follows the open tab. The target file without a hash keeps a clean URL.
+  const previousActivePathRef = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (!activeTab) return;
+    const tabChanged = previousActivePathRef.current !== activeTab.path;
+    previousActivePathRef.current = activeTab.path;
     if (pendingFileRef.current) {
       if (pendingFileRef.current !== activeTab.path) return;
       pendingFileRef.current = null;
     }
     if (location && !location.file) return; // a location without a file (a symbol link) is not ours to replace
     if (location?.file === activeTab.path) return;
-    if (!location && activeTab.isTargetContract) return;
+    // No source position in the hash: keep the URL clean for the target file, and keep a
+    // plain anchor (such as #abi) unless the user switches to another tab
+    if (!location && (activeTab.isTargetContract || !tabChanged)) return;
     setLocation({ file: activeTab.path });
   }, [activeTab, location, setLocation]);
 

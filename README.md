@@ -151,6 +151,10 @@ In a Solidity file, the path of each `import` is a link. **Cmd+click** (macOS) o
 
 On a desktop screen, the source view is about 75% of the window height (at least 540 px). The fullscreen button in the editor toolbar makes the source view fill the window. To leave fullscreen, click the button again or press **Esc**. In the editor, Esc first closes the find box or clears a selection, and the next Esc leaves fullscreen.
 
+## Page sections
+
+A bar under the contract header links to each section of the page (Details, ABI, Source Code, Compiler, Metadata, the bytecode sections, Storage, and the Standard JSON sections). It sticks to the top while you scroll and marks the section you are in. A click scrolls to the section and does not change the URL hash, because the hash holds the source position. Links with a plain section anchor, such as `#abi` or `#storage-layout`, also work.
+
 ## Getting Started
 
 ### Prerequisites

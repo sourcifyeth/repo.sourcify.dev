@@ -8,6 +8,7 @@ import { getAddress } from "@ethersproject/address";
 import LoadingState from "@/components/LoadingState";
 import { IoCheckmarkDoneCircle, IoCheckmarkCircle, IoWarning, IoCloseCircle } from "react-icons/io5";
 import CopyToClipboard from "@/components/CopyToClipboard";
+import SectionNav, { PageSection } from "@/components/SectionNav";
 import ContractDetails from "@/app/[chainId]/[address]/sections/ContractDetails";
 import ProxyResolution from "./sections/ProxyResolution";
 import ContractAbi from "./sections/ABI";
@@ -244,6 +245,22 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
     ? "Exact match: The onchain and compiled bytecode match exactly, including the metadata hashes."
     : "Match: The onchain and compiled bytecode match, but metadata hashes differ or don't exist.";
 
+  // The sections in the section bar, in page order (only those that the page shows)
+  const pageSections: PageSection[] = [
+    { id: "contract-details", label: "Details" },
+    ...(contractWithPlaceholders.proxyResolution?.isProxy ? [{ id: "proxy", label: "Proxy" }] : []),
+    ...((contractWithPlaceholders.abi?.length ?? 0) > 0 ? [{ id: "abi", label: "ABI" }] : []),
+    { id: "source-code", label: "Source Code" },
+    { id: "compiler-settings", label: "Compiler" },
+    { id: "metadata", label: "Metadata" },
+    { id: "creation-bytecode", label: "Creation Bytecode" },
+    { id: "runtime-bytecode", label: "Runtime Bytecode" },
+    { id: "storage-layout", label: "Storage" },
+    { id: "transient-storage-layout", label: "Transient Storage" },
+    { id: "standard-json-input", label: "JSON Input" },
+    { id: "standard-json-output", label: "JSON Output" },
+  ];
+
   return (
     <div>
       <div className="mt-3 mb-2">
@@ -338,15 +355,17 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
         )}
       </div>
 
+      <SectionNav sections={pageSections} />
+
       {/* Contract Details Section */}
-      <section className="my-6">
+      <section id="contract-details" className="my-6 page-section">
         <ContractDetails contract={contractWithPlaceholders} chainName={chainName} />
       </section>
 
       {/* Proxy Resolution Section */}
       {contractWithPlaceholders.proxyResolution && contractWithPlaceholders.proxyResolution.isProxy && (
-        <section className="mt-6 mb-4">
-          <div className="sticky top-0 z-10 bg-gray-100">
+        <section id="proxy" className="mt-6 mb-4 page-section">
+          <div className="bg-gray-100">
             <ProxyResolution proxyResolution={contractWithPlaceholders.proxyResolution} chainId={chainId} />
           </div>
         </section>
@@ -355,7 +374,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       {/* Read/Write Contract Section */}
       {(contractWithPlaceholders.abi?.length ?? 0) > 0 && (
         <section className="my-4 flex flex-row flex-wrap items-center gap-2">
-          <div className="sticky top-0 z-10 bg-gray-100 py-4">
+          <div className="bg-gray-100 py-4">
             <h2 className="text-lg font-semibold text-gray-800">Read/Write Contract on:</h2>
           </div>
           <div className="flex items-center gap-2">
@@ -373,7 +392,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
 
       {/* Contract ABI Section */}
       {(contractWithPlaceholders.abi?.length ?? 0) > 0 && (
-        <section className="mb-8">
+        <section id="abi" className="mb-8 page-section">
           <Suspense fallback={<LoadingState />}>
             <ContractAbi abi={contractWithPlaceholders.abi!} />
           </Suspense>
@@ -381,8 +400,8 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       )}
 
       {/* Contract Source Code Section. The id is the scroll target for #file=… links. */}
-      <section id="source-code" className="mb-8">
-        <div className="sticky top-0 z-10 bg-gray-100 pt-4 pb-2">
+      <section id="source-code" className="mb-8 page-section">
+        <div className="bg-gray-100 pt-4 pb-2">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <h2 className="text-xl font-semibold text-gray-800">Source Code</h2>
             <div className="flex items-center gap-2 text-xs md:text-sm">
@@ -416,8 +435,8 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </section>
 
       {/* Compiler Settings Section */}
-      <section className="mb-8">
-        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+      <section id="compiler-settings" className="mb-8 page-section">
+        <div className="bg-gray-100 py-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <h2 className="text-xl font-semibold text-gray-800">Compiler Settings</h2>
             <div className="flex items-center gap-2 text-xs md:text-sm">
@@ -450,8 +469,8 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </section>
 
       {/* Contract Metadata Section */}
-      <section className="mb-8">
-        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+      <section id="metadata" className="mb-8 page-section">
+        <div className="bg-gray-100 py-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div className="flex items-baseline gap-3">
               <h2 className="text-xl font-semibold text-gray-800">Metadata.json</h2>
@@ -495,7 +514,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </section>
 
       {/* Creation Bytecode Section */}
-      <section className="mb-8 border border-gray-200 rounded-lg p-3 md:p-6">
+      <section id="creation-bytecode" className="mb-8 border border-gray-200 rounded-lg p-3 md:p-6 page-section">
         {!contractWithPlaceholders.creationMatch && (
           <div className="mb-4 text-sm text-gray-700 bg-yellow-50 border border-yellow-200 p-3 rounded">
             Contract couldn&apos;t be verified with the creation bytecode but with the runtime bytecode. Below is what
@@ -503,7 +522,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           </div>
         )}
         <div className={`${!contractWithPlaceholders.creationMatch ? "opacity-60" : ""}`}>
-          <div className="sticky top-0 z-10 bg-gray-100">
+          <div className="bg-gray-100">
             <h2 className="text-xl font-semibold text-gray-800">Creation Bytecode</h2>
           </div>
           <Suspense fallback={<LoadingState />}>
@@ -572,7 +591,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </section>
 
       {/* Runtime Bytecode Section */}
-      <section className="mb-8 border border-gray-200 rounded-lg p-3 md:p-6">
+      <section id="runtime-bytecode" className="mb-8 border border-gray-200 rounded-lg p-3 md:p-6 page-section">
         {!contractWithPlaceholders.runtimeMatch && (
           <div className="mb-4 text-xs md:text-sm text-gray-700 bg-yellow-50 border border-yellow-200 p-3 rounded">
             Contract couldn&apos;t be verified with the runtime bytecode but with the creation bytecode. Below is what
@@ -580,7 +599,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           </div>
         )}
         <div className={`${!contractWithPlaceholders.runtimeMatch ? "opacity-60" : ""}`}>
-          <div className="sticky top-0 z-10 bg-gray-100">
+          <div className="bg-gray-100">
             <h2 className="text-xl font-semibold text-gray-800">Runtime Bytecode</h2>
           </div>
           <Suspense fallback={<LoadingState />}>
@@ -652,8 +671,8 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </section>
 
       {/* Storage Layout Section */}
-      <section className="mb-8">
-        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+      <section id="storage-layout" className="mb-8 page-section">
+        <div className="bg-gray-100 py-4">
           <h2 className="text-xl font-semibold text-gray-800">Storage Layout</h2>
           <div className="text-gray-700 text-sm">
             For non-default storage allocations (e.g.{" "}
@@ -700,7 +719,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       {contractWithPlaceholders.additionalInput?.storage_layout_overrides &&
         Object.keys(contractWithPlaceholders.additionalInput.storage_layout_overrides).length > 0 && (
           <section className="mb-8">
-            <div className="sticky top-0 z-10 bg-gray-100 py-4">
+            <div className="bg-gray-100 py-4">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                 <h2 className="text-xl font-semibold text-gray-800">Storage Layout Overrides</h2>
                 <div className="flex items-center gap-2 text-xs md:text-sm">
@@ -728,8 +747,8 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
         )}
 
       {/* Transient Storage Layout Section */}
-      <section className="mb-8">
-        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+      <section id="transient-storage-layout" className="mb-8 page-section">
+        <div className="bg-gray-100 py-4">
           <h2 className="text-xl font-semibold text-gray-800">Transient Storage Layout</h2>
         </div>
         {contractWithPlaceholders.transientStorageLayout?.types ? (
@@ -749,8 +768,8 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </section>
 
       {/* Standard JSON Input Section */}
-      <section className="mb-8">
-        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+      <section id="standard-json-input" className="mb-8 page-section">
+        <div className="bg-gray-100 py-4">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between">
             <div>
               <h2 className="text-xl font-semibold text-gray-800">Standard JSON Input</h2>
@@ -775,8 +794,8 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </section>
 
       {/* Standard JSON Output Section */}
-      <section className="mb-8">
-        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+      <section id="standard-json-output" className="mb-8 page-section">
+        <div className="bg-gray-100 py-4">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between">
             <div>
               <h2 className="text-xl font-semibold text-gray-800">Standard JSON Output</h2>
