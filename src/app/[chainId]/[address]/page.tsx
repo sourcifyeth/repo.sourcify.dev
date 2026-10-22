@@ -4,7 +4,6 @@ import {
   getChainName,
   checkVerification,
   getSourcifyServerUrl,
-  fetchBlockExplorers,
 } from "@/utils/api";
 import SimilarityVerification from "./SimilarityVerification";
 import ErrorState from "@/components/ErrorState";
@@ -21,7 +20,7 @@ import ContractDetails from "@/app/[chainId]/[address]/sections/ContractDetails"
 import ProxyResolution from "./sections/ProxyResolution";
 import ContractAbi from "./sections/ABI";
 import ContractSource from "./sections/ContractSource";
-import ExplorerLinks from "@/components/ExplorerLinks";
+import { ChainExplorerLinks } from "@/components/ExplorerLinks";
 import { SourceViewData } from "@/types/contract";
 import JsonViewOnlyEditor from "@/components/JsonViewOnlyEditor";
 import BytecodeDiffView from "@/components/BytecodeDiffView";
@@ -181,9 +180,6 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
     );
   }
 
-  // Links to block explorers for the deployment details (cached lists; empty if they fail)
-  const explorers = await fetchBlockExplorers(chainId);
-
   // Process bytecodes to insert library placeholders
   const { processedCreationBytecode, processedRuntimeBytecode } = processContractBytecodes(contract);
 
@@ -301,7 +297,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
             <span className="text-sm break-all md:text-base font-mono text-gray-700">{contract.address}</span>
             <CopyToClipboard text={contract.address} className="ml-2 md:p-0 p-2" />
           </span>
-          <ExplorerLinks explorers={explorers} path={`address/${contract.address}`} />
+          <ChainExplorerLinks chainId={chainId} path={`address/${contract.address}`} />
         </div>
         <p className="text-sm md:text-base text-gray-700 mt-0.5">
           on {chainName}
@@ -412,7 +408,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
 
       {/* Contract Details Section */}
       <section id="contract-details" className="my-6 page-section">
-        <ContractDetails contract={contractWithPlaceholders} explorers={explorers} />
+        <ContractDetails contract={contractWithPlaceholders} chainId={chainId} />
       </section>
 
       {/* Proxy Resolution Section */}

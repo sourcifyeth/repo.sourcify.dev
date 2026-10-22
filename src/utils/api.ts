@@ -1,6 +1,7 @@
 import { ContractPageData, LAZY_CONTRACT_FIELDS, VerifiedContractMinimal } from "@/types/contract";
 import { fetchVerifiedAllChains } from "@/utils/allChains";
 import { ChainData, ChainsResponse } from "@/types/chain";
+import { cache } from "react";
 
 /**
  * Public URL of the Sourcify server. Use it for anything that runs in, or is
@@ -247,29 +248,39 @@ export interface BlockExplorer {
 }
 
 const EXPLORER_LIST_REVALIDATE = 86400; // The lists change rarely: cache them for a day
+// A slow or hanging explorer API must not hold up the page: give up after 3 s and show no links.
+// (Without a timeout, Node's fetch can wait up to 5 minutes for the response headers.)
+const EXPLORER_LIST_TIMEOUT_MS = 3000;
 
-/** Etherscan's chain list: one explorer URL per chain that Etherscan supports. */
-async function etherscanExplorers(): Promise<Map<string, string>> {
-  const response = await fetch("https://api.etherscan.io/v2/chainlist", { next: { revalidate: EXPLORER_LIST_REVALIDATE } });
+/** Etherscan's chain list: one explorer URL per chain that Etherscan supports. Loaded once per request (React cache). */
+const etherscanExplorers = cache(async (): Promise<Map<string, string>> => {
+  const response = await fetch("https://api.etherscan.io/v2/chainlist", {
+    next: { revalidate: EXPLORER_LIST_REVALIDATE },
+    signal: AbortSignal.timeout(EXPLORER_LIST_TIMEOUT_MS),
+  });
   if (!response.ok) throw new Error(`Etherscan chain list: ${response.status}`);
   const body = (await response.json()) as { result?: Array<{ chainid: string; blockexplorer: string; status: number }> };
   return new Map((body.result ?? []).filter((chain) => chain.status === 1).map((chain) => [chain.chainid, chain.blockexplorer]));
-}
+});
 
-/** Blockscout's chain list (chains.blockscout.com): the explorers of each chain that runs Blockscout. */
-async function blockscoutExplorers(): Promise<Map<string, string>> {
-  const response = await fetch("https://chains.blockscout.com/api/chains", { next: { revalidate: EXPLORER_LIST_REVALIDATE } });
+/** Blockscout's chain list (chains.blockscout.com): the explorers of each chain that runs Blockscout. Loaded once per request. */
+const blockscoutExplorers = cache(async (): Promise<Map<string, string>> => {
+  const response = await fetch("https://chains.blockscout.com/api/chains", {
+    next: { revalidate: EXPLORER_LIST_REVALIDATE },
+    signal: AbortSignal.timeout(EXPLORER_LIST_TIMEOUT_MS),
+  });
   if (!response.ok) throw new Error(`Blockscout chain list: ${response.status}`);
   const body = (await response.json()) as Record<string, { explorers?: Array<{ url: string }> }>;
   return new Map(
     Object.entries(body).flatMap(([chainId, chain]) => (chain.explorers?.[0] ? [[chainId, chain.explorers[0].url]] : []))
   );
-}
+});
 
 /**
  * The block explorers of a chain: Etherscan first, then Blockscout, from the
- * chain lists that each of them publishes. Either list can fail on its own;
- * the result then has only the other explorer, or none.
+ * chain lists that each of them publishes. Either list can fail or time out on
+ * its own; the result then has only the other explorer, or none. The page shows
+ * the links inside a Suspense boundary (ExplorerLinks.tsx), so it never waits for them.
  */
 export async function fetchBlockExplorers(chainId: string): Promise<BlockExplorer[]> {
   const [etherscan, blockscout] = await Promise.allSettled([etherscanExplorers(), blockscoutExplorers()]);

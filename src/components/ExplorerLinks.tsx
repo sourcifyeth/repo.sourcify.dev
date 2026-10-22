@@ -1,5 +1,6 @@
+import { Suspense } from "react";
 import { FiExternalLink } from "react-icons/fi";
-import { BlockExplorer } from "@/utils/api";
+import { BlockExplorer, fetchBlockExplorers } from "@/utils/api";
 
 /**
  * Small links to the same item on each block explorer of the chain.
@@ -22,5 +23,24 @@ export default function ExplorerLinks({ explorers = [], path }: { explorers?: Bl
         </a>
       ))}
     </span>
+  );
+}
+
+// Loads the explorer list of the chain (once per request), then renders the links
+async function LoadedExplorerLinks({ chainId, path }: { chainId: string; path: string }) {
+  const explorers = await fetchBlockExplorers(chainId);
+  return <ExplorerLinks explorers={explorers} path={path} />;
+}
+
+/**
+ * Explorer links that never hold up the page: the page renders at once, and
+ * the links stream in when the explorer lists arrive (or never, if the lists
+ * fail or time out).
+ */
+export function ChainExplorerLinks({ chainId, path }: { chainId: string; path: string }) {
+  return (
+    <Suspense fallback={null}>
+      <LoadedExplorerLinks chainId={chainId} path={path} />
+    </Suspense>
   );
 }

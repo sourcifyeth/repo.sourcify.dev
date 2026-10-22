@@ -1,9 +1,9 @@
 import { ReactNode } from "react";
 import { ContractPageData } from "@/types/contract";
-import { BlockExplorer, formatTimestamp } from "@/utils/api";
+import { formatTimestamp } from "@/utils/api";
 import { formatSourceHash } from "@/utils/sourceHash";
 import CopyToClipboard from "@/components/CopyToClipboard";
-import ExplorerLinks from "@/components/ExplorerLinks";
+import { ChainExplorerLinks } from "@/components/ExplorerLinks";
 import LanguageIcon from "@/components/LanguageIcon";
 import InfoTooltip from "@/components/InfoTooltip";
 import { createLibraryPathCheck } from "@/utils/libraryFiles";
@@ -11,7 +11,8 @@ import { hexByteLength, INITCODE_SIZE_LIMIT, lineStats, RUNTIME_SIZE_LIMIT } fro
 
 interface ContractDetailsProps {
   contract: ContractPageData;
-  explorers?: BlockExplorer[];
+  // For the block explorer links, which load on their own (ChainExplorerLinks)
+  chainId: string;
 }
 
 /** `0x87c343…6913d1f`: the start and the end of a long hex value. People compare those parts. */
@@ -66,7 +67,7 @@ function Unknown() {
 }
 
 /** A long hex value: shortened, the full value on hover, a copy button, and explorer links. */
-function HexValue({ value, explorers, path }: { value: string; explorers: BlockExplorer[]; path: string }) {
+function HexValue({ value, chainId, path }: { value: string; chainId: string; path: string }) {
   return (
     <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5">
       <span className="inline-flex items-center gap-1.5">
@@ -75,7 +76,7 @@ function HexValue({ value, explorers, path }: { value: string; explorers: BlockE
         </span>
         <CopyToClipboard text={value} />
       </span>
-      <ExplorerLinks explorers={explorers} path={path} />
+      <ChainExplorerLinks chainId={chainId} path={path} />
     </span>
   );
 }
@@ -119,7 +120,7 @@ function Card({ title, rows }: { title: string; rows: Array<{ label: string; val
  * The facts about a verified contract, in three groups: the contract itself,
  * how it was compiled, and how it was deployed.
  */
-export default function ContractDetails({ contract, explorers = [] }: ContractDetailsProps) {
+export default function ContractDetails({ contract, chainId }: ContractDetailsProps) {
   const { compilation, deployment } = contract;
   const settings = compilation.compilerSettings as {
     evmVersion?: string;
@@ -278,7 +279,7 @@ export default function ContractDetails({ contract, explorers = [] }: ContractDe
     {
       label: "Deployer",
       value: deployment?.deployer ? (
-        <HexValue value={deployment.deployer} explorers={explorers} path={`address/${deployment.deployer}`} />
+        <HexValue value={deployment.deployer} chainId={chainId} path={`address/${deployment.deployer}`} />
       ) : (
         <Unknown />
       ),
@@ -286,7 +287,7 @@ export default function ContractDetails({ contract, explorers = [] }: ContractDe
     {
       label: "Transaction",
       value: deployment?.transactionHash ? (
-        <HexValue value={deployment.transactionHash} explorers={explorers} path={`tx/${deployment.transactionHash}`} />
+        <HexValue value={deployment.transactionHash} chainId={chainId} path={`tx/${deployment.transactionHash}`} />
       ) : (
         <Unknown />
       ),
@@ -308,7 +309,7 @@ export default function ContractDetails({ contract, explorers = [] }: ContractDe
               </span>
             )}
           </span>
-          <ExplorerLinks explorers={explorers} path={`block/${deployment.blockNumber}`} />
+          <ChainExplorerLinks chainId={chainId} path={`block/${deployment.blockNumber}`} />
         </span>
       ) : (
         <Unknown />
