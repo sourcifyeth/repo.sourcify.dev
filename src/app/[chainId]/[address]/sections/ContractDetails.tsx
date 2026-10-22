@@ -5,6 +5,9 @@ import { formatSourceHash } from "@/utils/sourceHash";
 import CopyToClipboard from "@/components/CopyToClipboard";
 import ExplorerLinks from "@/components/ExplorerLinks";
 import LanguageIcon from "@/components/LanguageIcon";
+import InfoTooltip from "@/components/InfoTooltip";
+import { createLibraryPathCheck } from "@/utils/libraryFiles";
+import { hexByteLength, INITCODE_SIZE_LIMIT, lineStats, RUNTIME_SIZE_LIMIT } from "@/utils/codeStats";
 
 interface ContractDetailsProps {
   contract: ContractPageData;
@@ -77,6 +80,25 @@ function HexValue({ value, explorers, path }: { value: string; explorers: BlockE
   );
 }
 
+/** One bytecode size against its limit: the bytes, the share of the limit, and an (i) that names the rule. */
+function SizeLine({ label, bytes, limit, rule }: { label: string; bytes: number; limit: number; rule: string }) {
+  // Round down: 24,535 of 24,576 bytes is under the limit, so it shows 99%, not 100%
+  const percent = Math.floor((bytes / limit) * 100);
+  return (
+    <div className="grid grid-cols-[4.5rem_auto_auto] items-center justify-start gap-x-2">
+      <span className="text-gray-600">{label}</span>
+      <span className="tabular-nums">{formatNumber(bytes)} bytes</span>
+      <span className="inline-flex items-center gap-1 tabular-nums text-gray-600">
+        {percent}%
+        <InfoTooltip
+          content={`${formatNumber(bytes)} of ${formatNumber(limit)} bytes: the ${rule} limit on Ethereum. Other chains can have other limits.`}
+          iconClassName="text-base text-gray-400 hover:text-gray-600"
+        />
+      </span>
+    </div>
+  );
+}
+
 function Card({ title, rows }: { title: string; rows: Array<{ label: string; value: ReactNode }> }) {
   return (
     <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
@@ -110,7 +132,24 @@ export default function ContractDetails({ contract, explorers = [] }: ContractDe
   // The main file is the part of the fully qualified name before the last ":"
   const mainFile = compilation.fullyQualifiedName.slice(0, compilation.fullyQualifiedName.lastIndexOf(":"));
   const fileCount = Object.keys(contract.sources ?? {}).length;
-  const compiledCount = contract.sourceIds ? Object.keys(contract.sourceIds).length : undefined;
+
+  // Lines of the compiled files (all files if the compiled list is unknown); own files versus library files
+  const remappings = compilation.compilerSettings?.remappings as string[] | undefined;
+  const lines = lineStats(
+    contract.sources ?? {},
+    createLibraryPathCheck(remappings ?? []),
+    mainFile,
+    contract.sourceIds ? new Set(Object.keys(contract.sourceIds)) : undefined
+  );
+
+  // Sizes: the on-chain code if there is one, else the recompiled code. The on-chain creation code is the
+  // whole initcode of the deployment (with constructor arguments), which is what EIP-3860 limits.
+  const runtimeBytes = hexByteLength(
+    contract.runtimeBytecode?.onchainBytecode || contract.runtimeBytecode?.recompiledBytecode
+  );
+  const creationBytes = hexByteLength(
+    contract.creationBytecode?.onchainBytecode || contract.creationBytecode?.recompiledBytecode
+  );
 
   const [version, commit] = compilation.compilerVersion.split("+");
 
@@ -144,10 +183,41 @@ export default function ContractDetails({ contract, explorers = [] }: ContractDe
     },
     {
       label: "Files",
-      value:
-        compiledCount !== undefined && compiledCount !== fileCount
-          ? `${formatNumber(fileCount)} (${formatNumber(compiledCount)} compiled)`
-          : formatNumber(fileCount),
+      value: (
+        <span
+          data-tooltip-id="global-tooltip"
+          data-tooltip-content={`${contract.sourceIds ? "The compiled files. " : ""}Library files: node_modules, lib/, @scope/ folders and remapped library paths.`}
+        >
+          {formatNumber(lines.files.total)}
+          {fileCount > lines.files.total && " compiled"}
+          {lines.files.library > 0 && (
+            <span className="text-gray-600">
+              {" "}
+              · {formatNumber(lines.files.own)} own · {formatNumber(lines.files.library)} library
+            </span>
+          )}
+          {fileCount > lines.files.total && (
+            <span className="text-gray-600"> · {formatNumber(fileCount - lines.files.total)} not compiled</span>
+          )}
+        </span>
+      ),
+    },
+    {
+      label: "Lines",
+      value: (
+        <span
+          data-tooltip-id="global-tooltip"
+          data-tooltip-content={`Lines in the ${contract.sourceIds ? "compiled " : ""}files. Library files: node_modules, lib/, @scope/ folders and remapped library paths.`}
+        >
+          {formatNumber(lines.total)}
+          {lines.library > 0 && (
+            <span className="text-gray-600">
+              {" "}
+              · {formatNumber(lines.own)} own · {formatNumber(lines.library)} library
+            </span>
+          )}
+        </span>
+      ),
     },
     {
       label: "Verified",
@@ -185,6 +255,23 @@ export default function ContractDetails({ contract, explorers = [] }: ContractDe
     },
     { label: "Optimizer", value: optimizer },
     ...(isSolidity ? [{ label: "Via IR", value: settings.viaIR ? "On" : "Off" }] : []),
+    ...(runtimeBytes || creationBytes
+      ? [
+          {
+            label: "Code Size",
+            value: (
+              <div className="flex flex-col gap-1">
+                {runtimeBytes > 0 && (
+                  <SizeLine label="Runtime" bytes={runtimeBytes} limit={RUNTIME_SIZE_LIMIT} rule="EIP-170" />
+                )}
+                {creationBytes > 0 && (
+                  <SizeLine label="Creation" bytes={creationBytes} limit={INITCODE_SIZE_LIMIT} rule="EIP-3860" />
+                )}
+              </div>
+            ),
+          },
+        ]
+      : []),
   ];
 
   const deploymentRows = [
