@@ -1,7 +1,7 @@
 "use client";
 
 import { FileNode } from "@/types/codeEditor";
-import { ContractPageData } from "@/types/contract";
+import { SourceViewData } from "@/types/contract";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import type { EditorProps, Monaco } from "@monaco-editor/react";
 import type { editor } from "monaco-editor";
@@ -17,7 +17,7 @@ import SourceOutline from "@/components/SourceOutline";
 import SourceStatusBar from "@/components/SourceStatusBar";
 import { sourceShortcuts } from "@/utils/shortcuts";
 import { createUtf8Mapper, decodeSourceMap, instructionsInRange } from "@/utils/sourceMap";
-import { registerSources, SHOW_IN_BYTECODE_EVENT, ShowInBytecodeDetail } from "@/utils/sourceRegistry";
+import { registeredSourceMap, registerSources, SHOW_IN_BYTECODE_EVENT, ShowInBytecodeDetail } from "@/utils/sourceRegistry";
 import ExplorerSections from "@/components/ExplorerSections";
 import { useSourceSymbols } from "@/hooks/useSourceSymbols";
 import { parseRemappings, resolveImportPath } from "@/utils/importResolution";
@@ -105,7 +105,7 @@ const EDITOR_OPTIONS = (isMobile: boolean, wordWrap: boolean): EditorProps["opti
 });
 
 interface ContractSourceProps {
-  contract: ContractPageData;
+  contract: SourceViewData;
 }
 
 export default function ContractSourceV2({ contract }: ContractSourceProps) {
@@ -661,8 +661,9 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
     const endByte = mapper.indexToByte(lines.end < starts.length ? starts[lines.end] : content.length);
     const count = (sourceMap?: string) =>
       sourceMap ? instructionsInRange(decodeSourceMap(sourceMap), fileIndex, startByte, endByte).length : 0;
-    const runtime = count(contract.runtimeBytecode?.sourceMap);
-    const creation = count(contract.creationBytecode?.sourceMap);
+    // The bytecode sections register their source maps in the browser
+    const runtime = count(registeredSourceMap("runtime"));
+    const creation = count(registeredSourceMap("creation"));
     const name = path.split("/").pop();
     const label = lines.start === lines.end ? `${name} line ${lines.start}` : `${name} lines ${lines.start}–${lines.end}`;
     if (runtime === 0 && creation === 0) {

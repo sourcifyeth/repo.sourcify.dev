@@ -5,12 +5,13 @@ import InfoTooltip from "./InfoTooltip";
 import { BytecodeData, Transformations, TransformationValues, SignatureData } from "@/types/contract";
 import { useIsMobile } from "@/hooks/useResponsive";
 import BytecodeOpcodes from "./BytecodeOpcodes";
-import { SHOW_IN_BYTECODE_EVENT, ShowInBytecodeDetail } from "@/utils/sourceRegistry";
 import { decodeSourceMap, instructionsInRange } from "@/utils/sourceMap";
+import { registerSourceMap, SHOW_IN_BYTECODE_EVENT, ShowInBytecodeDetail } from "@/utils/sourceRegistry";
 
 interface BytecodeDiffViewProps {
   onchainBytecode: string;
-  recompiledBytecode: string;
+  // Leave it out if it is the same as onchainBytecode: the page then sends the text only once
+  recompiledBytecode?: string;
   id: string;
   transformations?: Transformations;
   transformationValues?: TransformationValues;
@@ -59,7 +60,7 @@ interface SignatureTransformation {
 
 export default function BytecodeDiffView({
   onchainBytecode,
-  recompiledBytecode,
+  recompiledBytecode: recompiledBytecodeProp,
   id,
   transformations,
   transformationValues,
@@ -68,6 +69,9 @@ export default function BytecodeDiffView({
   sourceMap,
   sourceIds,
 }: BytecodeDiffViewProps) {
+  const recompiledBytecode = recompiledBytecodeProp ?? onchainBytecode;
+  // "Show in Bytecode" in the source view reads the source map from here (see sourceRegistry.ts)
+  useEffect(() => registerSourceMap(id, sourceMap), [id, sourceMap]);
   // annotations view is hidden if no onchain code is available
   const [viewMode, setViewMode] = useState<"annotations" | "onchain" | "recompiled" | "opcodes">(
     onchainBytecode ? "annotations" : "onchain"

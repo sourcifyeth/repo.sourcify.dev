@@ -14,6 +14,7 @@ import ContractDetails from "@/app/[chainId]/[address]/sections/ContractDetails"
 import ProxyResolution from "./sections/ProxyResolution";
 import ContractAbi from "./sections/ABI";
 import ContractSource from "./sections/ContractSource";
+import { SourceViewData } from "@/types/contract";
 import JsonViewOnlyEditor from "@/components/JsonViewOnlyEditor";
 import BytecodeDiffView from "@/components/BytecodeDiffView";
 import LibraryTransformations from "./sections/LibraryTransformations";
@@ -246,6 +247,23 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
     ? "Exact match: The onchain and compiled bytecode match exactly, including the metadata hashes."
     : "Match: The onchain and compiled bytecode match, but metadata hashes differ or don't exist.";
 
+  // Only the fields that the source view reads: React writes long strings (bytecodes, source maps)
+  // into the page again for every client component that gets them. Objects are sent once.
+  const sourceViewData: SourceViewData = {
+    sources: contractWithPlaceholders.sources,
+    sourceIds: contractWithPlaceholders.sourceIds,
+    signatures: contractWithPlaceholders.signatures,
+    userdoc: contractWithPlaceholders.userdoc,
+    devdoc: contractWithPlaceholders.devdoc,
+    compilation: {
+      fullyQualifiedName: contractWithPlaceholders.compilation.fullyQualifiedName,
+      compilerSettings: contractWithPlaceholders.compilation.compilerSettings,
+    },
+  };
+  // A bytecode viewer gets the recompiled text only if it differs from the on-chain text
+  const differentOrUndefined = (onchain: string, recompiled: string) =>
+    onchain && onchain === recompiled ? undefined : recompiled;
+
   // The sections in the section bar, in page order (only those that the page shows)
   const pageSections: PageSection[] = [
     { id: "contract-details", label: "Details" },
@@ -431,7 +449,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
         </div>
 
         <Suspense fallback={<LoadingState />}>
-          <ContractSource contract={contractWithPlaceholders} />
+          <ContractSource contract={sourceViewData} />
         </Suspense>
       </section>
 
@@ -516,7 +534,10 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           <Suspense fallback={<LoadingState />}>
             <BytecodeDiffView
               onchainBytecode={contractWithPlaceholders.creationBytecode.onchainBytecode}
-              recompiledBytecode={contractWithPlaceholders.creationBytecode.recompiledBytecode}
+              recompiledBytecode={differentOrUndefined(
+                contractWithPlaceholders.creationBytecode.onchainBytecode,
+                contractWithPlaceholders.creationBytecode.recompiledBytecode
+              )}
               id="creation"
               transformations={contractWithPlaceholders.creationBytecode.transformations}
               transformationValues={contractWithPlaceholders.creationBytecode.transformationValues}
@@ -593,7 +614,10 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           <Suspense fallback={<LoadingState />}>
             <BytecodeDiffView
               onchainBytecode={contractWithPlaceholders.runtimeBytecode.onchainBytecode}
-              recompiledBytecode={contractWithPlaceholders.runtimeBytecode.recompiledBytecode}
+              recompiledBytecode={differentOrUndefined(
+                contractWithPlaceholders.runtimeBytecode.onchainBytecode,
+                contractWithPlaceholders.runtimeBytecode.recompiledBytecode
+              )}
               id="runtime"
               transformations={contractWithPlaceholders.runtimeBytecode.transformations}
               transformationValues={contractWithPlaceholders.runtimeBytecode.transformationValues}

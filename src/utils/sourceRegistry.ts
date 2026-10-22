@@ -38,6 +38,27 @@ export function useRegisteredSources(): Sources | null {
 }
 
 /**
+ * The source maps of the bytecode sections ("runtime", "creation"), shared
+ * the other way: each bytecode section gets its source map from the page and
+ * registers it here, and "Show in Bytecode" in the source view reads it. So
+ * the page sends each source map only once.
+ */
+const sourceMaps = new Map<string, string>();
+
+export function registerSourceMap(id: string, sourceMap: string | undefined): () => void {
+  if (!sourceMap) return () => {};
+  sourceMaps.set(id, sourceMap);
+  return () => {
+    if (sourceMaps.get(id) === sourceMap) sourceMaps.delete(id);
+  };
+}
+
+/** The registered source map of a bytecode section, if it has one. */
+export function registeredSourceMap(id: "runtime" | "creation"): string | undefined {
+  return sourceMaps.get(id);
+}
+
+/**
  * The event that "Show in Bytecode" sends to the bytecode sections: a byte
  * range in one source file. `target` names the section that scrolls into view.
  */

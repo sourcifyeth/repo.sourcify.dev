@@ -39,6 +39,17 @@ export type LazyContractField = (typeof LAZY_CONTRACT_FIELDS)[number];
 /** The contract as the page requests it: all fields except the lazy ones. */
 export type ContractPageData = Omit<ContractData, LazyContractField>;
 
+/**
+ * The fields that the source view reads. The page gives it only these: each
+ * prop of a client component goes into the page, and React writes a long
+ * string (a bytecode, a source map) again for every component that gets it.
+ * The source view reads the source maps from the bytecode sections in the
+ * browser (registeredSourceMap in sourceRegistry.ts).
+ */
+export type SourceViewData = Pick<ContractPageData, "sources" | "sourceIds" | "signatures" | "userdoc" | "devdoc"> & {
+  compilation: Pick<CompilationData, "fullyQualifiedName" | "compilerSettings">;
+};
+
 export interface LibraryReferenceObject {
   start: number;
   length: number;
