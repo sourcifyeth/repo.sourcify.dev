@@ -154,3 +154,17 @@
 .page-section {
   scroll-margin-top: calc(var(--sticky-banner-height) + var(--section-nav-height) + 8px);
 }
+
+/* Header links: a pink underline grows on hover, as on sourcify.dev (sourcify-ui index.css) */
+.link-underline {
+  background-image: linear-gradient(transparent calc(100% - 3px), var(--color-light-coral) 3px);
+  background-repeat: no-repeat;
+  background-size: 0% 100%;
+  transition: background-size 0.3s;
+}
+.link-underline:hover {
+  background-size: 100% 100%;
+}
+.hover-to-fill:hover > svg {
+  fill: var(--color-cerulean-blue-500);
+}

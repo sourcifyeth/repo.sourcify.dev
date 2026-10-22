@@ -5,9 +5,7 @@ import "./globals.css";
 import Footer from "@/components/Footer";
 import AppTooltip from "@/components/AppTooltip";
 import StagingBanner from "@/components/StagingBanner";
-import Image from "next/image";
-import Link from "next/link";
-import { FiExternalLink } from "react-icons/fi";
+import Header from "@/components/Header";
 
 const ibmPlexSans = IBM_Plex_Sans({
   weight: ["400", "500", "600", "700"],
@@ -80,33 +78,7 @@ export default function RootLayout({
             strategy="afterInteractive"
           />
         )}
-        <header className="shadow-sm">
-          <div className="mx-auto py-4 flex items-center justify-between w-full max-w-[100rem] px-6 md:px-12 lg:px-12 xl:px-24">
-            <Link href="/" className="flex items-center">
-              <Image src="/sourcify.png" alt="Sourcify Logo" className="h-10 w-auto mr-3" width={32} height={32} />
-              <span className="hidden sm:inline text-gray-700 font-vt323 text-2xl">sourcify.eth</span>
-            </Link>
-            <nav className="flex items-center font-vt323 text-2xl text-gray-700">
-              <a
-                href="https://verify.sourcify.dev"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mx-2 sm:mx-6 hover:text-cerulean-blue-500 transition-colors"
-              >
-                Verify
-              </a>
-              <a
-                href="https://sourcify.dev"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 mx-2 sm:mx-6 hover:text-cerulean-blue-500 transition-colors"
-              >
-                sourcify.dev
-                <FiExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </nav>
-          </div>
-        </header>
+        <Header />
         <main className="w-full max-w-[100rem] mx-auto px-6 md:px-12 lg:px-12 xl:px-24 py-6 flex-grow">{children}</main>
         <Footer />
         <AppTooltip />
