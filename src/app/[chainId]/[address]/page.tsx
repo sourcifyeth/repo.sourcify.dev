@@ -665,7 +665,10 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
         </div>
         {contractWithPlaceholders.storageLayout &&
         Object.keys(contractWithPlaceholders.storageLayout).length > 0 ? (
-          <StorageLayout storageLayout={contractWithPlaceholders.storageLayout} />
+          <StorageLayout
+            storageLayout={contractWithPlaceholders.storageLayout}
+            sourcePath={contract.compilation.fullyQualifiedName.slice(0, contract.compilation.fullyQualifiedName.lastIndexOf(":"))}
+          />
         ) : (
           <div className="flex flex-col items-center justify-center h-full bg-white rounded-lg p-4">
             <div className="text-gray-700 text-sm">
@@ -716,7 +719,10 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           <h2 className="text-xl font-semibold text-gray-800">Transient Storage Layout</h2>
         </div>
         {contractWithPlaceholders.transientStorageLayout?.types ? (
-          <StorageLayout storageLayout={contractWithPlaceholders.transientStorageLayout} />
+          <StorageLayout
+            storageLayout={contractWithPlaceholders.transientStorageLayout}
+            sourcePath={contract.compilation.fullyQualifiedName.slice(0, contract.compilation.fullyQualifiedName.lastIndexOf(":"))}
+          />
         ) : (
           <div className="flex flex-col items-center justify-center h-full bg-white rounded-lg p-4">
             <div className="text-gray-700 text-sm">

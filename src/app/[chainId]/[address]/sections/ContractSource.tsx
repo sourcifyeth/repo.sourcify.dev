@@ -20,6 +20,13 @@ import { useSourceSymbols } from "@/hooks/useSourceSymbols";
 import { parseRemappings, resolveImportPath } from "@/utils/importResolution";
 import { registerSourceProviders, SourceProviderContext, toMonacoRange } from "@/utils/monacoProviders";
 import { SourceSymbol, SymbolRange } from "@/utils/sourceSymbols";
+import {
+  findSymbolByPath,
+  inheritanceChain,
+  rankCandidates,
+  symbolEntries,
+  userTypeResolver,
+} from "@/utils/sourceIntelligence";
 import { useCodeEditor } from "@/hooks/useCodeEditor";
 import { useIsMobile } from "@/hooks/useResponsive";
 import { useSourceHash } from "@/hooks/useSourceHash";
@@ -152,6 +159,8 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
   // Lines to scroll to once the editor shows the right file. Set only by links
   // from outside the editor, so a click on a line number does not scroll.
   const pendingRevealRef = useRef<LineRange | null>(null);
+  // A symbol from a link (`sym=Contract.name`), shown once the file's symbols are known
+  const pendingSymbolRef = useRef<{ path: string; symbol: string } | null>(null);
   // The file that a link asked for, until its tab is active. While it is set,
   // the hash must not follow the old active tab.
   const pendingFileRef = useRef<string | null>(null);
@@ -175,6 +184,7 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
     if (!source) return;
     pendingFileRef.current = location.file;
     pendingRevealRef.current = location.lines ?? null;
+    pendingSymbolRef.current = location.symbol && !location.lines ? { path: location.file, symbol: location.symbol } : null;
     anchorLineRef.current = location.lines?.start ?? null;
     openTab(location.file, source.content);
     scrollToSourceSection();
@@ -459,17 +469,98 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
   // The Monaco providers are registered once; they read the current data through this ref
   const modelPathsRef = useRef(new Map<string, string>());
   const providerContextRef = useRef<SourceProviderContext | null>(null);
+  // The compiled files (the files of `sourceIds`), main file first. Without that list: all files.
+  const compiledPathList = useMemo(() => {
+    const paths = compiledPaths && compiledPaths.size > 0 ? [...compiledPaths] : Object.keys(contract.sources);
+    return [...paths.filter((path) => path === targetPath), ...paths.filter((path) => path !== targetPath)];
+  }, [compiledPaths, contract.sources, targetPath]);
+  const targetContractName = contract.compilation.fullyQualifiedName.split(":").pop() ?? "";
+
+  // The symbols of all compiled files, read once (in the worker) and kept
+  const compiledSymbolsRef = useRef<ReturnType<SourceProviderContext["compiledSymbols"]> | null>(null);
+  const compiledSymbols = () => {
+    if (!compiledSymbolsRef.current) {
+      compiledSymbolsRef.current = Promise.all(compiledPathList.map((path) => symbolIndex.request(path))).then(
+        (results) => {
+          const entries = symbolEntries(new Map(compiledPathList.map((path, i) => [path, results[i]])));
+          return { entries, resolve: userTypeResolver(entries), chain: inheritanceChain(entries, targetContractName) };
+        }
+      );
+    }
+    return compiledSymbolsRef.current;
+  };
+
   useEffect(() => {
     providerContextRef.current = {
       pathOfModel: (model) => modelPathsRef.current.get(model.uri.toString()),
+      pathOfUri: (uri) => modelPathsRef.current.get(uri.toString()),
       requestSymbols: symbolIndex.request,
       importTarget: (fromPath, importPath) => resolveImportPath(importPath, fromPath, sourcePaths, parsedRemappings),
       openFile: (path) => {
         handleFileSelect(path);
         editorRef.current?.focus();
       },
+      openFileAtRange: (path, range) => {
+        openFileAtRange(path, range);
+        editorRef.current?.focus();
+      },
+      compiledSymbols,
+      compiledPaths: () => compiledPathList,
+      compiler: () => ({
+        targetContract: targetContractName,
+        signatures: contract.signatures,
+        userdoc: contract.userdoc,
+        devdoc: contract.devdoc,
+      }),
+      readContent: (path) => contract.sources[path]?.content ?? "",
+      uriFor: (path) => {
+        const monaco = monacoRef.current!;
+        const uri = monaco.Uri.parse(path);
+        if (!monaco.editor.getModel(uri)) {
+          monaco.editor.createModel(contract.sources[path]?.content ?? "", monacoLanguageOfPath(path), uri);
+        }
+        return uri;
+      },
+      copyText: (text) => {
+        navigator.clipboard.writeText(text).catch((error) => console.error("Failed to copy:", error));
+      },
     };
   });
+
+  // A link with `sym=` waits for the file's symbols, then highlights and shows the declaration
+  const showDeclaration = useCallback(
+    (path: string, symbolPath: string, symbol: SourceSymbol) => {
+      const lines = { start: symbol.range.startLine, end: symbol.range.endLine };
+      if (path !== activePath && contract.sources[path]) {
+        pendingFileRef.current = path;
+        openTab(path, contract.sources[path].content);
+      }
+      pendingRevealRef.current = lines;
+      setLocation({ file: path, symbol: symbolPath, lines });
+    },
+    [activePath, contract.sources, openTab, setLocation]
+  );
+  useEffect(() => {
+    const pending = pendingSymbolRef.current;
+    if (!pending || pending.path !== activePath || !activeFileSymbols) return;
+    pendingSymbolRef.current = null;
+    const symbol = findSymbolByPath(activeFileSymbols, pending.symbol);
+    if (symbol) {
+      showDeclaration(pending.path, pending.symbol, symbol);
+      return;
+    }
+    // A storage layout names the compiled contract even for variables that a base
+    // contract declares (for example `locked` from ReentrancyGuard). Look in the bases.
+    const name = pending.symbol.split(".").pop()!;
+    compiledSymbols().then(({ entries, chain }) => {
+      const variables = entries.filter((e) => e.symbol.kind === "stateVariable" || e.symbol.kind === "constant");
+      const found = rankCandidates(variables, name, pending.path, chain)[0];
+      if (found) showDeclaration(found.path, found.container ? `${found.container.name}.${name}` : name, found.symbol);
+    });
+    // `external`: a new link to the file that is already open must run this too.
+    // compiledSymbols reads refs only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activePath, activeFileSymbols, showDeclaration, external]);
   const providersRef = useRef<{ dispose: () => void } | null>(null);
   useEffect(() => () => providersRef.current?.dispose(), []);
 

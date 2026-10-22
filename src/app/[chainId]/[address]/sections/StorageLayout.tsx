@@ -3,19 +3,46 @@ import {
   VyperStorageLayout,
   isSolidityStorageLayout,
 } from "@/types/contract";
+import { formatSourceHash } from "@/utils/sourceHash";
+import { VscFileCode } from "react-icons/vsc";
 
 interface StorageLayoutProps {
   storageLayout: StorageLayoutData | VyperStorageLayout;
+  // The main source file. Vyper layouts do not name the declaring file, so their links use this one.
+  sourcePath?: string;
 }
 
-export default function StorageLayout({ storageLayout }: StorageLayoutProps) {
+/**
+ * A variable name with a file icon that links to its declaration in the
+ * Source Code section (`#file=…&sym=Contract.variable`). The source view
+ * opens the file and highlights the declaration.
+ */
+function VariableLink({ name, file, symbol }: { name: string; file?: string; symbol: string }) {
+  if (!file) return <>{name}</>;
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      {name}
+      <a
+        href={formatSourceHash({ file, symbol })}
+        className="inline-flex items-center rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-cerulean-blue-600"
+        aria-label={`Show the declaration of ${name} in the source code`}
+        data-tooltip-id="global-tooltip"
+        data-tooltip-content="Show the declaration in the source code"
+      >
+        <VscFileCode className="w-3.5 h-3.5" />
+      </a>
+    </span>
+  );
+}
+
+export default function StorageLayout({ storageLayout, sourcePath }: StorageLayoutProps) {
   if (!storageLayout) return null;
 
   if (isSolidityStorageLayout(storageLayout)) {
     return <SolidityStorageLayout storageLayout={storageLayout} />;
   }
 
-  return <VyperStorageLayoutTable storageLayout={storageLayout} />;
+  return <VyperStorageLayoutTable storageLayout={storageLayout} sourcePath={sourcePath} />;
 }
 
 function SolidityStorageLayout({ storageLayout }: { storageLayout: StorageLayoutData }) {
@@ -95,7 +122,14 @@ function SolidityStorageLayout({ storageLayout }: { storageLayout: StorageLayout
                 <td className="px-2 py-2 text-center whitespace-nowrap text-sm text-gray-500">
                   {typeInfo?.numberOfBytes || "N/A"}
                 </td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900">{item.label}</td>
+                <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
+                  {/* "contract" is a fully qualified name: "path/to/File.sol:ContractName" */}
+                  <VariableLink
+                    name={item.label}
+                    file={item.contract.includes(":") ? item.contract.slice(0, item.contract.lastIndexOf(":")) : undefined}
+                    symbol={`${item.contract.split(":").pop()}.${item.label}`}
+                  />
+                </td>
                 <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500 font-mono">
                   {resolveTypeName(item.type)}
                 </td>
@@ -109,7 +143,7 @@ function SolidityStorageLayout({ storageLayout }: { storageLayout: StorageLayout
   );
 }
 
-function VyperStorageLayoutTable({ storageLayout }: { storageLayout: VyperStorageLayout }) {
+function VyperStorageLayoutTable({ storageLayout, sourcePath }: { storageLayout: VyperStorageLayout; sourcePath?: string }) {
   const entries = Object.entries(storageLayout).sort(([, a], [, b]) => a.slot - b.slot);
 
   if (entries.length === 0) return null;
@@ -159,7 +193,9 @@ function VyperStorageLayoutTable({ storageLayout }: { storageLayout: VyperStorag
               <tr key={name} className={bgColor}>
                 <td className="px-2 py-2 text-center whitespace-nowrap text-sm text-gray-500">{entry.slot}</td>
                 <td className="px-2 py-2 text-center whitespace-nowrap text-sm text-gray-500">{entry.n_slots}</td>
-                <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900">{name}</td>
+                <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
+                  <VariableLink name={name} file={sourcePath} symbol={name} />
+                </td>
                 <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500 font-mono">{entry.type}</td>
               </tr>
             );

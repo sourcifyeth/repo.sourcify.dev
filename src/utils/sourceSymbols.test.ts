@@ -69,7 +69,17 @@ describe("extractSymbols with the parser", () => {
       "receive:receive",
     ]);
     const transfer = token.children!.find((s) => s.name === "transfer")!;
-    expect(transfer).toMatchObject({ detail: "(address, uint256)", visibility: "external", mutability: "payable" });
+    expect(transfer).toMatchObject({
+      detail: "(address, uint256)",
+      parameters: ["address", "uint256"],
+      visibility: "external",
+      mutability: "payable",
+    });
+    expect(token.bases).toEqual(["Base", "IERC20"]);
+    expect(token.children!.find((s) => s.name === "Transfer")).toMatchObject({
+      parameters: ["address", "address", "uint256"],
+      anonymous: false,
+    });
     expect(token.children!.find((s) => s.name === "owner")).toMatchObject({
       detail: "address",
       visibility: "public",
@@ -159,7 +169,12 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
 
   it("reads decorators, parameter types and variable types", () => {
     const getDy = symbols.find((s) => s.name === "get_dy")!;
-    expect(getDy).toMatchObject({ visibility: "external", mutability: "view", detail: "(int128, int128, uint256)" });
+    expect(getDy).toMatchObject({
+      visibility: "external",
+      mutability: "view",
+      detail: "(int128, int128, uint256)",
+      parameters: ["int128", "int128", "uint256"],
+    });
     expect(symbols.find((s) => s.name === "owner")).toMatchObject({ visibility: "public", detail: "address" });
     expect(symbols.find((s) => s.name === "N_COINS")).toMatchObject({ mutability: "constant", detail: "uint256" });
   });

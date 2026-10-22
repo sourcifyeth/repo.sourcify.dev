@@ -42,6 +42,14 @@ export interface SourceSymbol {
   name: string;
   // Parameter types of functions, events and errors, or the type of a variable
   detail?: string;
+  // The parameter types one by one, as written in the source (for selectors)
+  parameters?: string[];
+  // The parameter names, in the same order (empty for unnamed parameters)
+  parameterNames?: string[];
+  // Base contracts, as written after "is"
+  bases?: string[];
+  // An anonymous event has no topic
+  anonymous?: boolean;
   visibility?: string;
   // payable, view, pure, constant, immutable, transient
   mutability?: string;
@@ -138,8 +146,11 @@ export function symbolsFromSolidityAst(ast: AstNode, content: string): SourceSym
 
   const typeText = (typeName: AstNode) =>
     typeName?.range ? collapse(content.slice(typeName.range[0], typeName.range[1] + 1)) : "";
-  const parameterTypes = (parameters: AstNode[] | null | undefined) =>
-    `(${(parameters ?? []).map((parameter) => typeText(parameter.typeName)).join(", ")})`;
+  const typeList = (parameters: AstNode[] | null | undefined): string[] =>
+    (parameters ?? []).map((parameter) => typeText(parameter.typeName));
+  const parameterTypes = (parameters: AstNode[] | null | undefined) => `(${typeList(parameters).join(", ")})`;
+  const nameList = (parameters: AstNode[] | null | undefined): string[] =>
+    (parameters ?? []).map((parameter) => parameter.name ?? "");
   const visibilityOf = (value: string | undefined | null) => (value && value !== "default" ? value : undefined);
 
   const fromFunction = (node: AstNode): SourceSymbol => {
@@ -155,6 +166,8 @@ export function symbolsFromSolidityAst(ast: AstNode, content: string): SourceSym
       kind,
       name,
       detail: parameterTypes(node.parameters),
+      parameters: typeList(node.parameters),
+      parameterNames: nameList(node.parameters),
       visibility: visibilityOf(node.visibility),
       mutability: node.stateMutability ?? undefined,
       range: declarationRange(node),
@@ -172,6 +185,7 @@ export function symbolsFromSolidityAst(ast: AstNode, content: string): SourceSym
             kind: "modifier",
             name: node.name,
             detail: node.parameters ? parameterTypes(node.parameters) : undefined,
+            parameters: node.parameters ? typeList(node.parameters) : undefined,
             range: declarationRange(node),
             nameRange: nameRangeOf(node, node.name),
           },
@@ -182,6 +196,9 @@ export function symbolsFromSolidityAst(ast: AstNode, content: string): SourceSym
             kind: "event",
             name: node.name,
             detail: parameterTypes(node.parameters),
+            parameters: typeList(node.parameters),
+            parameterNames: nameList(node.parameters),
+            anonymous: !!node.isAnonymous,
             range: declarationRange(node),
             nameRange: nameRangeOf(node, node.name),
           },
@@ -192,6 +209,8 @@ export function symbolsFromSolidityAst(ast: AstNode, content: string): SourceSym
             kind: "error",
             name: node.name,
             detail: parameterTypes(node.parameters),
+            parameters: typeList(node.parameters),
+            parameterNames: nameList(node.parameters),
             range: declarationRange(node),
             nameRange: nameRangeOf(node, node.name),
           },
@@ -260,6 +279,7 @@ export function symbolsFromSolidityAst(ast: AstNode, content: string): SourceSym
         kind,
         name: node.name,
         detail: bases.length ? `is ${bases.join(", ")}` : undefined,
+        bases,
         range: declarationRange(node),
         nameRange: nameRangeOf(node, node.name),
         children: (node.subNodes ?? []).flatMap(fromMember),
@@ -433,16 +453,17 @@ export function regexVyperSymbols(content: string): SourceSymbol[] {
       const nameStart = offset + line.indexOf(name, 3);
       const kind: SymbolKind = name === "__init__" ? "constructor" : name === "__default__" ? "fallback" : "function";
       const signature = /\(([^)]*)\)/.exec(masked.slice(offset, blockEnd(index)));
+      const parameters = signature
+        ? signature[1]
+            .split(",")
+            .map((parameter) => collapse(parameter.split(":")[1]?.split("=")[0] ?? ""))
+            .filter(Boolean)
+        : undefined;
       symbols.push({
         kind,
         name,
-        detail: signature
-          ? `(${signature[1]
-              .split(",")
-              .map((parameter) => collapse(parameter.split(":")[1]?.split("=")[0] ?? ""))
-              .filter(Boolean)
-              .join(", ")})`
-          : undefined,
+        detail: parameters ? `(${parameters.join(", ")})` : undefined,
+        parameters,
         visibility: decorators.find((d) => VYPER_DECORATOR_VISIBILITY.has(d)),
         mutability: decorators.find((d) => VYPER_DECORATOR_MUTABILITY.has(d)),
         range: positions.range(offset, blockEnd(index)),
@@ -507,12 +528,14 @@ export function extractSymbols(
   return { symbols: regexSoliditySymbols(content), method: "regex" };
 }
 
-/** All symbols, depth first, each with the name of its container (if any). */
-export function flattenSymbols(symbols: SourceSymbol[]): Array<{ symbol: SourceSymbol; container?: string }> {
-  const out: Array<{ symbol: SourceSymbol; container?: string }> = [];
+/** All symbols, depth first, each with its container (if any). */
+export function flattenSymbols(
+  symbols: SourceSymbol[]
+): Array<{ symbol: SourceSymbol; container?: string; containerSymbol?: SourceSymbol }> {
+  const out: Array<{ symbol: SourceSymbol; container?: string; containerSymbol?: SourceSymbol }> = [];
   for (const symbol of symbols) {
     out.push({ symbol });
-    for (const child of symbol.children ?? []) out.push({ symbol: child, container: symbol.name });
+    for (const child of symbol.children ?? []) out.push({ symbol: child, container: symbol.name, containerSymbol: symbol });
   }
   return out;
 }

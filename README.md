@@ -22,6 +22,7 @@ https://repo.sourcify.dev/1/0x00005EA00Ac477B1030CE78506496e8C2dE24bf5#file=lib/
 | ------ | ------------------------------------------------------------- | -------------------------- |
 | `file` | The source path, as it appears in the contract's source files | `file=src/SeaDrop.sol`     |
 | `L`    | One line, or a range of lines. Line numbers start at 1.       | `L=40` or `L=60-72`        |
+| `sym`  | A declaration in the file: `Contract.member`, or a name       | `sym=SeaDrop._publicDrops` |
 
 - `file` is necessary. Without `L`, the link opens the file and selects no lines.
 - If the range is in the wrong order (`L=72-60`), the page sorts it.
@@ -51,7 +52,7 @@ A hash change on an open page (for example a click on a `#file=…` link elsewhe
 - You can also select code, right-click it, and choose **Copy Link to Selected Lines**.
 - The **?** button in the editor toolbar shows the same help.
 
-The code that reads and writes these links is in `src/utils/sourceHash.ts`. The keys `R` (a byte range) and `sym` (a function signature) are reserved for later features. The page reads them, but does not use them yet.
+The code that reads and writes these links is in `src/utils/sourceHash.ts`. The key `sym` names a declaration, as `Contract.member` or `name`; the Storage Layout links use it (see "Storage layout links" below). The key `R` (a byte range) is reserved for a later feature. The page reads it, but does not use it yet.
 
 ## Searching the source code
 
@@ -101,11 +102,23 @@ Press **Cmd+P** (macOS) or **Ctrl+P** (Windows, Linux) while the focus is in the
 ### Outline and symbols
 
 - The Explorer tab has two sections: **Files** (the tree) and **Outline**. Click a section title to close or open it. On small screens the outline starts closed.
-- The outline lists the symbols of the open file: contracts, interfaces and libraries, with their functions, modifiers, events, errors, structs, enums and state variables. Each row shows the parameter types, and badges for visibility (`ext`, `pub`, `int`, `priv`) and mutability (`view`, `pure`, `payable`, `constant`, `immutable`). Click a row to go to the declaration.
+- The outline lists the symbols of the open file: contracts, interfaces and libraries, with their functions, modifiers, events, errors, structs, enums and state variables. Each row has an icon for its kind: VS Code's symbol icons (codicons), except an "fn" glyph for functions. Hover an icon to see the kind. Each row shows the parameter types, and badges for visibility (`ext`, `pub`, `int`, `priv`) and mutability (`view`, `pure`, `payable`, `constant`, `immutable`). Click a row to go to the declaration.
 - The outline follows the cursor: it marks the symbol that holds the cursor and keeps it in view.
 - **Cmd+Shift+O** (macOS) or **Ctrl+Shift+O** lists the symbols of the open file. Type to filter, and press Enter to go to a symbol.
 - In Go to file (**Cmd/Ctrl+P**), type **@** first to find a symbol in the open file, or **#** first to find a symbol in all files (for example `#transfer`). With `#`, the files are read in the background, the project's own files first. The box shows the progress, and results show while it runs. For Uniswap V3 Factory (390 files), this takes a few seconds.
 - How the symbols are found: Solidity files are read by [@solidity-parser/parser](https://github.com/solidity-parser/parser) in a Web Worker (a background thread), only when needed. If the parser cannot read a file (very old or very new syntax), a simple scan is used, and the outline says so. Vyper files always use a simple scan of the top-level declarations. The code is in `src/utils/sourceSymbols.ts` and `src/workers/sourceSymbols.worker.ts`. These symbols come from the syntax only. They do not resolve names, so "go to definition" is not in this feature.
+
+### Selectors, hover docs and go to definition
+
+- **Selectors (CodeLens):** a small gray line above each external or public function, each public state variable (its getter), each error and each event shows its 4-byte selector, or its 32-byte topic for events. A copy icon starts the line; a click copies the value, and the line shows "copied" for a moment. The values for the main contract and the contracts it inherits from come from the compiler's signatures (the `signatures` field of the Sourcify API). Other values are computed here with keccak256 of the canonical signature, but only when every parameter type is known without full type resolution: built-in types, contracts and interfaces (`address`) and enums (`uint8`). Declarations with struct parameters outside the inheritance chain, internal and private functions, library functions and anonymous events get no line.
+- **Hover:** hovering a name shows its declaration, its selector or topic, and its NatSpec under a "NatSpec" heading that says where it comes from. For the main contract, NatSpec comes from the compiler's `userdoc` and `devdoc`. For other code, it comes from the doc comment above the declaration (Solidity) or the docstring (Vyper), and one `@inheritdoc` is followed.
+- **Go to definition (best guess):** **Cmd/Ctrl+click** a name to jump to its declaration, also in another file. The match is by name only: the source view does not resolve scopes, so a local variable with the same name as a state variable can go to the wrong place. If several declarations have the name, a list shows all of them: implementations before interface declarations, then the main contract and its bases, then the same file. The hover says "Best guess by name" in that case.
+- **Find references:** **Shift+F12** (or "Go to References" in the right-click menu) lists every place where the name occurs as a whole word, case-sensitive, in the compiled files. It is a text search, not a semantic one.
+- The code is in `src/utils/sourceIntelligence.ts`, `src/utils/selectors.ts`, `src/utils/natspec.ts` and `src/utils/monacoProviders.ts`.
+
+### Storage layout links
+
+In the Storage Layout table, a file icon (a page with `</>` on it) next to each variable name links to its declaration, as `#file=<file>&sym=<Contract>.<variable>`. Its tooltip says "Show the declaration in the source code". The source view opens the file, highlights the declaration and adds its lines to the URL. Solidity's storage layout names the compiled contract even for variables that a base contract declares (for example `locked` from solmate's `ReentrancyGuard`). If the variable is not in the named contract, the source view looks for it in the base contracts, nearest first.
 
 ### Import links
 
