@@ -47,7 +47,7 @@ export default function StagingBanner() {
   }
 
   return (
-    <div className="sticky top-0 z-50 w-full bg-cerulean-blue-500 text-white text-center font-medium py-3 pl-4 pr-12">
+    <div data-sticky-top className="sticky top-0 z-50 w-full bg-cerulean-blue-500 text-white text-center font-medium py-3 pl-4 pr-12">
       🚧 You are on the <span className="font-bold">staging/dev</span> environment{" "}
       <span className="mx-1 text-xl align-middle">—</span>{" "}
       <span className="font-mono font-normal">{url}</span>

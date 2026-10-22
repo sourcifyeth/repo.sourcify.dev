@@ -94,3 +94,32 @@
 .animate-feed-edge {
   animation: feed-edge 2.5s ease-out forwards;
 }
+
+/* Lines selected in the source view (line-number click or a #file=…&L=… link) */
+.monaco-editor .source-line-highlight {
+  background: rgba(250, 204, 21, 0.14);
+}
+.monaco-editor .source-line-highlight-gutter {
+  background: rgba(250, 204, 21, 0.8);
+  width: 3px !important;
+  margin-left: 3px;
+}
+/* Line numbers are clickable: they select a line for a link. The extra
+   .margin-view-overlays class beats Monaco's own "cursor: default" rule. */
+.source-editor .monaco-editor .margin-view-overlays .line-numbers {
+  cursor: pointer;
+}
+.source-editor .monaco-editor .margin-view-overlays .line-numbers:hover {
+  color: var(--vscode-editorLineNumber-activeForeground);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+/* Hover on a line number: a faint row highlight and a link icon in the glyph margin */
+.monaco-editor .source-line-hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.monaco-editor .source-line-link-icon {
+  cursor: pointer;
+  background: center / 12px 12px no-repeat
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d1d5db' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'/%3E%3Cpath d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'/%3E%3C/svg%3E");
+}

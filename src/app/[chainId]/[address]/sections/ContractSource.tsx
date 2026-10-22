@@ -2,15 +2,46 @@
 
 import { FileNode } from "@/types/codeEditor";
 import { ContractData } from "@/types/contract";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import type { EditorProps, Monaco } from "@monaco-editor/react";
 import type { editor } from "monaco-editor";
 import MonacoEditor from "@monaco-editor/react";
 import CodeEditorTabs from "@/components/CodeEditorTabs";
 import FileExplorerTree from "@/components/FileExplorerTree";
+import SourceToolbar from "@/components/SourceToolbar";
 import { useCodeEditor } from "@/hooks/useCodeEditor";
 import { useIsMobile } from "@/hooks/useResponsive";
+import { useSourceHash } from "@/hooks/useSourceHash";
 import { buildFileTreeWithIds } from "@/utils/fileExplorer";
+import { formatSourceHash, LineRange, SourceLocation } from "@/utils/sourceHash";
+
+const WORD_WRAP_STORAGE_KEY = "sourceView.wordWrap";
+
+// The lines that a selection covers. A selection that ends at column 1 of a
+// later line (a full-line drag) does not include that last line.
+function selectionToLines(selection: { startLineNumber: number; endLineNumber: number; endColumn: number }): LineRange {
+  const end =
+    selection.endLineNumber > selection.startLineNumber && selection.endColumn === 1
+      ? selection.endLineNumber - 1
+      : selection.endLineNumber;
+  return { start: selection.startLineNumber, end };
+}
+
+// Scroll the page to the source section, below any bar that sticks to the top
+// of the window (marked with `data-sticky-top`, for example the staging banner).
+function scrollToSourceSection() {
+  const section = document.getElementById("source-code");
+  if (!section) return;
+  const stickyHeight = Array.from(document.querySelectorAll<HTMLElement>("[data-sticky-top]")).reduce(
+    (total, element) => total + element.getBoundingClientRect().height,
+    0
+  );
+  window.scrollTo({ top: section.getBoundingClientRect().top + window.scrollY - stickyHeight });
+}
+
+function linkFor(location: SourceLocation): string {
+  return window.location.origin + window.location.pathname + window.location.search + formatSourceHash(location);
+}
 
 // Define Solidity language configuration
 const configureSolidityLanguage = () => {
@@ -292,12 +323,12 @@ const configureSolidityLanguage = () => {
   };
 };
 
-const EDITOR_OPTIONS = (isMobile: boolean): EditorProps["options"] => ({
+const EDITOR_OPTIONS = (isMobile: boolean, wordWrap: boolean): EditorProps["options"] => ({
   readOnly: true,
   minimap: { enabled: isMobile ? false : true },
   scrollBeyondLastLine: false,
   fontSize: isMobile ? 10 : 12,
-  wordWrap: "on",
+  wordWrap: wordWrap ? "on" : "off",
   automaticLayout: true,
   scrollbar: {
     useShadows: false,
@@ -368,10 +399,202 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
     }
   }, [activeTab]);
 
+  // ---- Reader position in the URL hash (#file=…&L=…) ----
+  const { location, external, setLocation } = useSourceHash();
+  const [editorReady, setEditorReady] = useState(false);
+  const decorationsRef = useRef<editor.IEditorDecorationsCollection | null>(null);
+  // Lines to scroll to once the editor shows the right file. Set only by links
+  // from outside the editor, so a click on a line number does not scroll.
+  const pendingRevealRef = useRef<LineRange | null>(null);
+  // The file that a link asked for, until its tab is active. While it is set,
+  // the hash must not follow the old active tab.
+  const pendingFileRef = useRef<string | null>(null);
+  const handledExternalRef = useRef(0);
+  // Current values for the editor event handlers, which are registered once.
+  const activePathRef = useRef<string | undefined>(undefined);
+  const locationRef = useRef<SourceLocation | null>(null);
+  const anchorLineRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    activePathRef.current = activeTab?.path;
+    locationRef.current = location;
+  });
+
+  // A link (page load, or a hash change from elsewhere) opens the file and asks for the lines
+  useEffect(() => {
+    if (external === handledExternalRef.current) return;
+    handledExternalRef.current = external;
+    if (!location?.file) return;
+    const source = contract.sources[location.file];
+    if (!source) return;
+    pendingFileRef.current = location.file;
+    pendingRevealRef.current = location.lines ?? null;
+    anchorLineRef.current = location.lines?.start ?? null;
+    openTab(location.file, source.content);
+    scrollToSourceSection();
+  }, [external, location, contract.sources, openTab]);
+
+  // The hash follows the open tab. The target file without a hash keeps a clean URL.
+  useEffect(() => {
+    if (!activeTab) return;
+    if (pendingFileRef.current) {
+      if (pendingFileRef.current !== activeTab.path) return;
+      pendingFileRef.current = null;
+    }
+    if (location && !location.file) return; // a location without a file (a symbol link) is not ours to replace
+    if (location?.file === activeTab.path) return;
+    if (!location && activeTab.isTargetContract) return;
+    setLocation({ file: activeTab.path });
+  }, [activeTab, location, setLocation]);
+
+  // Highlight the selected lines, and scroll to them if a link asked for it
+  useEffect(() => {
+    const editorInstance = editorRef.current;
+    const monaco = monacoRef.current;
+    if (!editorReady || !editorInstance || !monaco || !activeTab) return;
+    const model = editorInstance.getModel();
+    if (!decorationsRef.current) decorationsRef.current = editorInstance.createDecorationsCollection();
+    const lines = location?.file === activeTab.path ? location.lines : undefined;
+    if (!lines || !model) {
+      decorationsRef.current.clear();
+      return;
+    }
+    const lineCount = model.getLineCount();
+    const start = Math.min(lines.start, lineCount);
+    const end = Math.min(lines.end, lineCount);
+    decorationsRef.current.set([
+      {
+        range: new monaco.Range(start, 1, end, 1),
+        options: {
+          isWholeLine: true,
+          className: "source-line-highlight",
+          linesDecorationsClassName: "source-line-highlight-gutter",
+        },
+      },
+    ]);
+    if (pendingRevealRef.current) {
+      pendingRevealRef.current = null;
+      editorInstance.revealLinesInCenter(start, end);
+      editorInstance.setPosition({ lineNumber: start, column: 1 });
+    }
+  }, [editorReady, activeTab, location]);
+
+  // The link to copy: the selected lines if any, else the editor selection, else the file
+  const getLink = useCallback((): string => {
+    const path = activeTab?.path;
+    if (!path) return linkFor({});
+    let next: SourceLocation = { file: path };
+    if (location?.file === path && location.lines) {
+      next = { file: path, lines: location.lines };
+    } else {
+      const selection = editorRef.current?.getSelection();
+      if (selection && !selection.isEmpty()) next = { file: path, lines: selectionToLines(selection) };
+    }
+    setLocation(next);
+    return linkFor(next);
+  }, [activeTab?.path, location, setLocation]);
+
+  // ---- Word wrap (remembered per browser) ----
+  const [wordWrap, setWordWrap] = useState(true);
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(WORD_WRAP_STORAGE_KEY);
+      if (stored !== null) setWordWrap(stored === "on");
+    } catch {
+      // Storage can be blocked; the default stays.
+    }
+  }, []);
+  const toggleWordWrap = () => {
+    setWordWrap((previous) => {
+      try {
+        window.localStorage.setItem(WORD_WRAP_STORAGE_KEY, previous ? "off" : "on");
+      } catch {
+        // Storage can be blocked; the toggle still works for this page view.
+      }
+      return !previous;
+    });
+  };
+
+  const editorOptions = useMemo(() => EDITOR_OPTIONS(isMobile, wordWrap), [isMobile, wordWrap]);
+
   // Handle editor mounting
   const handleEditorDidMount = (editorInstance: editor.IStandaloneCodeEditor, monaco: Monaco) => {
     editorRef.current = editorInstance;
     monacoRef.current = monaco;
+
+    // The line-number column and the glyph margin left of it (where the link icon shows) are both clickable
+    const isLineGutter = (type: editor.MouseTargetType) =>
+      type === monaco.editor.MouseTargetType.GUTTER_LINE_NUMBERS ||
+      type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN;
+
+    // While the pointer is over a line number: a link icon in the margin and a faint row highlight,
+    // so that the user sees that a click selects the line
+    const hoverDecorations = editorInstance.createDecorationsCollection();
+    let hoveredLine: number | null = null;
+    const clearHover = () => {
+      if (hoveredLine === null) return;
+      hoveredLine = null;
+      hoverDecorations.clear();
+    };
+    editorInstance.onMouseMove((event) => {
+      const line = isLineGutter(event.target.type) ? event.target.position?.lineNumber ?? null : null;
+      if (line === hoveredLine) return;
+      if (line === null) {
+        clearHover();
+        return;
+      }
+      hoveredLine = line;
+      hoverDecorations.set([
+        {
+          range: new monaco.Range(line, 1, line, 1),
+          options: { isWholeLine: true, className: "source-line-hover", glyphMarginClassName: "source-line-link-icon" },
+        },
+      ]);
+    });
+    editorInstance.onMouseLeave(clearHover);
+    // A model change removes the decorations, so forget the hovered line too
+    editorInstance.onDidChangeModel(() => {
+      hoveredLine = null;
+    });
+
+    // A click on a line number selects that line; Shift+click extends the selection to a range
+    editorInstance.onMouseDown((event) => {
+      if (!isLineGutter(event.target.type)) return;
+      const line = event.target.position?.lineNumber;
+      const path = activePathRef.current;
+      if (!line || !path) return;
+      const anchor = anchorLineRef.current;
+      const sameFile = locationRef.current?.file === path;
+      if (event.event.shiftKey && anchor !== null && sameFile) {
+        setLocation({ file: path, lines: { start: Math.min(anchor, line), end: Math.max(anchor, line) } });
+      } else {
+        anchorLineRef.current = line;
+        setLocation({ file: path, lines: { start: line, end: line } });
+      }
+    });
+
+    editorInstance.addAction({
+      id: "sourcify.copyLinkToSelection",
+      label: "Copy Link to Selected Lines",
+      contextMenuGroupId: "9_cutcopypaste",
+      contextMenuOrder: 10,
+      run: async (ed) => {
+        const path = activePathRef.current;
+        const selection = ed.getSelection();
+        if (!path || !selection) return;
+        const lines = selectionToLines(selection);
+        anchorLineRef.current = lines.start;
+        const next = { file: path, lines };
+        setLocation(next);
+        try {
+          await navigator.clipboard.writeText(linkFor(next));
+        } catch (error) {
+          console.error("Failed to copy:", error);
+        }
+      },
+    });
+
+    setEditorReady(true);
   };
 
   // Configure Solidity language
@@ -395,8 +618,17 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
               onTabClose={closeTab}
               onTabCloseAll={closeAllTabs}
             />
+            {activeTab && (
+              <SourceToolbar
+                path={activeTab.path}
+                getLink={getLink}
+                fileContent={activeTab.content}
+                wordWrap={wordWrap}
+                onToggleWordWrap={toggleWordWrap}
+              />
+            )}
             {/* Monaco Editor */}
-            <div className="md:flex-1 relative h-[500px] md:h-auto">
+            <div className="source-editor md:flex-1 relative h-[500px] md:h-auto">
               {activeTab ? (
                 <MonacoEditor
                   className="editor-container"
@@ -404,7 +636,7 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
                   language={language}
                   path={activeTab.path}
                   defaultValue={activeTab.content}
-                  options={EDITOR_OPTIONS(isMobile)}
+                  options={editorOptions}
                   beforeMount={solidityConfig.beforeMount}
                   onMount={handleEditorDidMount}
                   loading={

@@ -380,8 +380,8 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
         </section>
       )}
 
-      {/* Contract Source Code Section */}
-      <section className="mb-8">
+      {/* Contract Source Code Section. The id is the scroll target for #file=… links. */}
+      <section id="source-code" className="mb-8">
         <div className="sticky top-0 z-10 bg-gray-100 pt-4 pb-2">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <h2 className="text-xl font-semibold text-gray-800">Source Code</h2>

@@ -2,6 +2,57 @@
 
 A Next.js application for viewing verified smart contract details from the Sourcify API.
 
+## Linking to source code
+
+A contract page can link to a source file and to lines in that file. The link puts the position in the URL hash, after the `#`:
+
+```
+https://repo.sourcify.dev/<chainId>/<address>#file=<path>&L=<start>-<end>
+```
+
+For example, this link opens `ECDSA.sol` in the SeaDrop contract and highlights lines 60 to 72:
+
+```
+https://repo.sourcify.dev/1/0x00005EA00Ac477B1030CE78506496e8C2dE24bf5#file=lib/openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol&L=60-72
+```
+
+### Parameters
+
+| Key    | Value                                                         | Example                    |
+| ------ | ------------------------------------------------------------- | -------------------------- |
+| `file` | The source path, as it appears in the contract's source files | `file=src/SeaDrop.sol`     |
+| `L`    | One line, or a range of lines. Line numbers start at 1.       | `L=40` or `L=60-72`        |
+
+- `file` is necessary. Without `L`, the link opens the file and selects no lines.
+- If the range is in the wrong order (`L=72-60`), the page sorts it.
+- If the range goes past the end of the file, the page stops the highlight at the last line.
+- If no source file has that path, the page ignores the link and shows the main contract file.
+
+### Encoding the path
+
+Encode the path with `encodeURIComponent`. The page also accepts `/`, `@` and `:` without encoding, and writes them that way to keep links readable. You must encode `&`, `#`, `=`, `%`, `+` and spaces.
+
+```js
+const hash = `#file=${encodeURIComponent(path)}&L=${start}-${end}`;
+```
+
+### What the page does with a link
+
+1. It opens the file in a tab.
+2. It highlights the lines and scrolls them to the middle of the editor.
+3. It scrolls the page to the Source Code section.
+
+A hash change on an open page (for example a click on a `#file=…` link elsewhere on the page) does the same, without a reload. The browser does not send the hash to the server, so a link to lines costs no extra server work.
+
+### Selecting lines in the page
+
+- Click a line number to select that line. Shift+click a second line number to select a range.
+- The address bar updates while you select. **Copy link** in the editor toolbar copies the link.
+- You can also select code, right-click it, and choose **Copy Link to Selected Lines**.
+- The **?** button in the editor toolbar shows the same help.
+
+The code that reads and writes these links is in `src/utils/sourceHash.ts`. The keys `R` (a byte range) and `sym` (a function signature) are reserved for later features. The page reads them, but does not use them yet.
+
 ## Getting Started
 
 ### Prerequisites
@@ -49,6 +100,12 @@ SOURCIFY_SERVER_INTERNAL_URL=https://sourcify.dev/server
    ```
 
 4. Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
+
+5. Run the unit tests (Vitest):
+
+   ```bash
+   npm test
+   ```
 
 ### Building for Production
 

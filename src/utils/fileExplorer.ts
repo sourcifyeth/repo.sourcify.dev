@@ -21,15 +21,19 @@ export function buildFileTreeWithIds(sources: Record<string, SourceData>, fullyQ
       const isLast = index === parts.length - 1;
       currentPath = currentPath ? `${currentPath}/${part}` : part;
       
+      // A file node keeps the exact source key as its path. Thus lookups in
+      // `sources` and the target check also work for keys that start with "/"
+      // (the split above drops the empty first part of such keys).
+      const nodePath = isLast ? filePath : currentPath;
       if (!current[part]) {
         current[part] = {
-          id: currentPath, // Use path as ID
+          id: nodePath, // Use path as ID
           name: part,
           type: isLast ? 'file' : 'folder',
-          path: currentPath,
+          path: nodePath,
           isOpen: false,
           children: isLast ? undefined : {},
-          isTarget: currentPath === targetPath
+          isTarget: nodePath === targetPath
         };
       }
       
