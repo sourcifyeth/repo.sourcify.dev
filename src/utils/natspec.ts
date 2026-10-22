@@ -5,6 +5,8 @@
  * declaration is parsed here.
  */
 
+import { escapeMarkdown, inlineCode } from "./markdown";
+
 export interface NatSpec {
   title?: string;
   author?: string;
@@ -135,16 +137,20 @@ export function natSpecFromCompiler(
   return isEmpty(spec) ? undefined : spec;
 }
 
-/** Markdown for a hover. */
+/**
+ * Markdown for a hover. All NatSpec text comes from the contract, so it is
+ * escaped (or put in inline code): it shows as plain text, never as links or images.
+ */
 export function natSpecToMarkdown(spec: NatSpec): string {
+  const text = escapeMarkdown;
   const parts: string[] = [];
-  if (spec.title) parts.push(`**${spec.title}**`);
-  if (spec.notice) parts.push(spec.notice);
-  if (spec.dev) parts.push(`*Dev:* ${spec.dev}`);
-  if (spec.params.length) parts.push(spec.params.map((p) => `- \`${p.name}\` ${p.description}`).join("\n"));
-  if (spec.returns.length) parts.push(spec.returns.map((r) => `- *Returns:* ${r}`).join("\n"));
-  for (const custom of spec.custom) parts.push(`*${custom.tag}:* ${custom.description}`);
-  if (spec.author) parts.push(`*Author:* ${spec.author}`);
-  if (spec.inheritdoc && parts.length === 0) parts.push(`*Documented in* \`${spec.inheritdoc}\``);
+  if (spec.title) parts.push(`**${text(spec.title)}**`);
+  if (spec.notice) parts.push(text(spec.notice));
+  if (spec.dev) parts.push(`*Dev:* ${text(spec.dev)}`);
+  if (spec.params.length) parts.push(spec.params.map((p) => `- ${inlineCode(p.name)} ${text(p.description)}`).join("\n"));
+  if (spec.returns.length) parts.push(spec.returns.map((r) => `- *Returns:* ${text(r)}`).join("\n"));
+  for (const custom of spec.custom) parts.push(`*${text(custom.tag)}:* ${text(custom.description)}`);
+  if (spec.author) parts.push(`*Author:* ${text(spec.author)}`);
+  if (spec.inheritdoc && parts.length === 0) parts.push(`*Documented in* ${inlineCode(spec.inheritdoc)}`);
   return parts.join("\n\n");
 }

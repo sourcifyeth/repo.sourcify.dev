@@ -2,6 +2,7 @@ import type { Monaco } from "@monaco-editor/react";
 import type { editor, IDisposable, IPosition, IRange, languages, Position, Uri } from "monaco-editor";
 import { findImportPaths } from "./importResolution";
 import { natSpecToMarkdown } from "./natspec";
+import { codeBlock, escapeMarkdown, inlineCode } from "./markdown";
 import { UserTypeResolver } from "./selectors";
 import {
   CompilerData,
@@ -227,11 +228,10 @@ export function registerSourceProviders(monaco: Monaco, getContext: () => Source
         const info = selectorInfo(entry, compiler, resolve, chain);
         const docs = natSpecInfo(entry, context.readContent(entry.path), compiler, info, candidates, context.readContent);
         const language = entry.path.endsWith(".vy") ? "vyper" : "solidity";
-        const where = entry.container ? `${entry.container.name} · ${entry.path}` : entry.path;
-        const contents: { value: string }[] = [
-          { value: "```" + language + "\n" + declarationLine(entry.symbol) + "\n```" },
-        ];
-        if (info) contents.push({ value: `${info.kind} \`${info.value}\` · \`${info.signature}\`` });
+        // Names, paths and the declaration come from the contract: code spans or escaped text only
+        const where = escapeMarkdown(entry.container ? `${entry.container.name} · ${entry.path}` : entry.path);
+        const contents: { value: string }[] = [{ value: codeBlock(language, declarationLine(entry.symbol)) }];
+        if (info) contents.push({ value: `${info.kind} ${inlineCode(info.value)} · ${inlineCode(info.signature)}` });
         const markdown = docs ? natSpecToMarkdown(docs) : "";
         if (markdown) {
           const from =
@@ -245,7 +245,7 @@ export function registerSourceProviders(monaco: Monaco, getContext: () => Source
         const notes: string[] = [];
         if (!isDeclaration || entry.path !== path) notes.push(`Declared in ${where}`);
         if (!isDeclaration && candidates.length > 1) {
-          notes.push(`Best guess by name: ${candidates.length} declarations are named \`${word}\`. Cmd/Ctrl+click lists them all.`);
+          notes.push(`Best guess by name: ${candidates.length} declarations are named ${inlineCode(word)}. Cmd/Ctrl+click lists them all.`);
         }
         if (notes.length) contents.push({ value: notes.map((note) => `*${note}*`).join("  \n") });
         return { range, contents };

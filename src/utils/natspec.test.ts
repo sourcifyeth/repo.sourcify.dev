@@ -79,6 +79,22 @@ describe("natSpecToMarkdown", () => {
       returns: ["Amount"],
       custom: [],
     });
-    expect(markdown).toBe("Mints.\n\n*Dev:* Owner only.\n\n- `to` Receiver\n\n- *Returns:* Amount");
+    expect(markdown).toBe("Mints\\.\n\n*Dev:* Owner only\\.\n\n- `to` Receiver\n\n- *Returns:* Amount");
+  });
+
+  it("escapes contract text, so images and links show as plain text", () => {
+    const markdown = natSpecToMarkdown({
+      notice: "![img](https://evil.example/x.png) [Claim](https://example.com/claim) <https://a.b> https://c.d",
+      params: [{ name: "a`b", description: "**bold**" }],
+      returns: [],
+      custom: [],
+    });
+    // No unescaped Markdown syntax is left for links, images, autolinks or emphasis
+    expect(markdown).not.toMatch(/(^|[^\\])!\[/);
+    expect(markdown).not.toMatch(/(^|[^\\])\]\(/);
+    expect(markdown).not.toMatch(/(^|[^\\])</);
+    expect(markdown).not.toMatch(/https:\/\//);
+    expect(markdown).toContain("``a`b``");
+    expect(markdown).toContain("\\*\\*bold\\*\\*");
   });
 });
