@@ -5,6 +5,7 @@ import { FaCheck, FaLink, FaRegCopy, FaRegQuestionCircle } from "react-icons/fa"
 import { MdWrapText } from "react-icons/md";
 import { VscGoToFile, VscScreenFull, VscScreenNormal } from "react-icons/vsc";
 import { formatSourceHash } from "@/utils/sourceHash";
+import type { SourceShortcuts } from "@/utils/shortcuts";
 
 interface SourceToolbarProps {
   path: string;
@@ -14,9 +15,12 @@ interface SourceToolbarProps {
   wordWrap: boolean;
   onToggleWordWrap: () => void;
   onOpenFinder: () => void;
-  finderShortcut: string;
+  shortcuts: SourceShortcuts;
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
+  // The help sheet: the parent owns its state, so that the status bar can open it too
+  helpOpen: boolean;
+  onHelpOpenChange: (open: boolean) => void;
 }
 
 type Copied = "link" | "file" | null;
@@ -31,12 +35,13 @@ export default function SourceToolbar({
   wordWrap,
   onToggleWordWrap,
   onOpenFinder,
-  finderShortcut,
+  shortcuts,
   isFullscreen,
   onToggleFullscreen,
+  helpOpen,
+  onHelpOpenChange,
 }: SourceToolbarProps) {
   const [copied, setCopied] = useState<Copied>(null);
-  const [helpOpen, setHelpOpen] = useState(false);
   const resetTimerRef = useRef<NodeJS.Timeout | null>(null);
   const helpRef = useRef<HTMLDivElement | null>(null);
 
@@ -53,10 +58,10 @@ export default function SourceToolbar({
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       event.preventDefault();
-      setHelpOpen(false);
+      onHelpOpenChange(false);
     };
     const onPointerDown = (event: PointerEvent) => {
-      if (helpRef.current && !helpRef.current.contains(event.target as Node)) setHelpOpen(false);
+      if (helpRef.current && !helpRef.current.contains(event.target as Node)) onHelpOpenChange(false);
     };
     document.addEventListener("keydown", onKeyDown, true);
     document.addEventListener("pointerdown", onPointerDown);
@@ -64,7 +69,7 @@ export default function SourceToolbar({
       document.removeEventListener("keydown", onKeyDown, true);
       document.removeEventListener("pointerdown", onPointerDown);
     };
-  }, [helpOpen]);
+  }, [helpOpen, onHelpOpenChange]);
 
   const copy = async (what: Exclude<Copied, null>, text: string) => {
     try {
@@ -87,7 +92,7 @@ export default function SourceToolbar({
         className={buttonClass}
         onClick={onOpenFinder}
         data-tooltip-id="global-tooltip"
-        data-tooltip-content={`Go to a file by name (${finderShortcut})`}
+        data-tooltip-content={`Go to a file by name (${shortcuts.goToFile})`}
       >
         <VscGoToFile className="w-3.5 h-3.5" />
         <span className="hidden lg:inline">Go to file</span>
@@ -139,10 +144,12 @@ export default function SourceToolbar({
         <button
           type="button"
           className={`${buttonClass} ${helpOpen ? "bg-gray-700 text-white" : ""}`}
-          onClick={() => setHelpOpen((open) => !open)}
+          onClick={() => onHelpOpenChange(!helpOpen)}
           aria-expanded={helpOpen}
           aria-controls="source-link-help"
-          aria-label="How to link to lines"
+          aria-label="Shortcuts and links"
+          data-tooltip-id="global-tooltip"
+          data-tooltip-content="Shortcuts and links"
         >
           <FaRegQuestionCircle className="w-3.5 h-3.5" />
         </button>
@@ -150,9 +157,38 @@ export default function SourceToolbar({
           <div
             id="source-link-help"
             role="dialog"
-            aria-label="How to link to lines"
-            className="absolute right-0 top-full mt-1 z-20 w-80 max-w-[calc(100vw-2rem)] rounded-md border border-gray-600 bg-gray-900 p-3 text-xs text-gray-200 shadow-lg"
+            aria-label="Shortcuts and links"
+            className="absolute right-0 top-full mt-1 z-20 w-96 max-w-[calc(100vw-2rem)] max-h-[min(70vh,34rem)] overflow-y-auto rounded-md border border-gray-600 bg-gray-900 p-3 text-xs text-gray-200 shadow-lg"
           >
+            <p className="font-semibold text-white mb-1">Keyboard shortcuts</p>
+            <p className="mb-2 text-gray-400">They work while the focus is in the Source Code section.</p>
+            <table className="w-full mb-3">
+              <tbody>
+                {(
+                  [
+                    ["Go to a file by name", shortcuts.goToFile],
+                    ["Go to a symbol in this file", `${shortcuts.goToSymbol}, or ${shortcuts.goToFile} then @`],
+                    ["Go to a symbol in all files", `${shortcuts.goToFile} then #`],
+                    ["Search in all files", shortcuts.searchAll],
+                    [
+                      "Match case, whole word, regex",
+                      `${shortcuts.matchCase}, ${shortcuts.wholeWord}, ${shortcuts.regex} in the search box`,
+                    ],
+                    ["Find in this file", shortcuts.findInFile],
+                    ["Open an imported file", `${shortcuts.openImport} on the import path`],
+                    ["Leave fullscreen", "Esc"],
+                  ] as const
+                ).map(([action, keys]) => (
+                  <tr key={action} className="align-top">
+                    <td className="py-0.5 pr-3 text-gray-300">{action}</td>
+                    <td className="py-0.5 text-right">
+                      <kbd className="font-sans text-white">{keys}</kbd>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
             <p className="font-semibold text-white mb-2">Link to lines</p>
             <ul className="list-disc pl-4 space-y-1 mb-3">
               <li>Click a line number to select that line.</li>

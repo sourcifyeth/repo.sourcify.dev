@@ -13,6 +13,8 @@ import SourceSidebar, { SidebarView } from "@/components/SourceSidebar";
 import SourceSearchPanel, { ActiveSearchMatch } from "@/components/SourceSearchPanel";
 import SourceFileFinder, { FinderFile } from "@/components/SourceFileFinder";
 import SourceOutline from "@/components/SourceOutline";
+import SourceStatusBar from "@/components/SourceStatusBar";
+import { sourceShortcuts } from "@/utils/shortcuts";
 import ExplorerSections from "@/components/ExplorerSections";
 import { useSourceSymbols } from "@/hooks/useSourceSymbols";
 import { parseRemappings, resolveImportPath } from "@/utils/importResolution";
@@ -431,8 +433,9 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
   }, [activePath, requestSymbols]);
   const activeFileSymbols = activePath ? symbolIndex.get(activePath) : undefined;
 
-  // The line of the cursor, so that the outline can mark the symbol that holds it
-  const [cursorLine, setCursorLine] = useState<number | null>(null);
+  // The cursor position: the outline marks the symbol that holds it, and the status bar shows it
+  const [cursorPosition, setCursorPosition] = useState<{ line: number; column: number } | null>(null);
+  const cursorLine = cursorPosition?.line ?? null;
 
   // A click in the outline selects the name of the symbol and shows it, but keeps the focus in the outline
   const revealSymbol = (symbol: SourceSymbol) => {
@@ -480,10 +483,8 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
       event.preventDefault();
       openSearch();
     } else if (event.shiftKey && event.code === "KeyO" && editorRef.current) {
-      // Monaco's "Go to symbol" list for the open file
       event.preventDefault();
-      editorRef.current.focus();
-      editorRef.current.trigger("keyboard", "editor.action.quickOutline", null);
+      goToSymbol();
     } else if (!event.shiftKey && event.code === "KeyP") {
       event.preventDefault();
       openFinder();
@@ -492,6 +493,18 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
 
   const [isMac, setIsMac] = useState(false);
   useEffect(() => setIsMac(/Mac|iPhone|iPad/.test(navigator.platform)), []);
+  const shortcuts = useMemo(() => sourceShortcuts(isMac), [isMac]);
+
+  // The "?" sheet with all shortcuts; the toolbar button and the status bar open it
+  const [helpOpen, setHelpOpen] = useState(false);
+
+  // Monaco's "Go to symbol" list for the open file
+  const goToSymbol = () => {
+    const editorInstance = editorRef.current;
+    if (!editorInstance) return;
+    editorInstance.focus();
+    editorInstance.trigger("keyboard", "editor.action.quickOutline", null);
+  };
 
   // Handle editor mounting
   const handleEditorDidMount = (editorInstance: editor.IStandaloneCodeEditor, monaco: Monaco) => {
@@ -571,14 +584,22 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
     });
 
     // Cmd/Ctrl+Shift+F opens the search across all files. Ctrl/Cmd+F stays the find in this file.
-    editorInstance.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyF, () => {
-      const selection = editorInstance.getSelection();
-      const model = editorInstance.getModel();
-      const selectedText =
-        selection && model && !selection.isEmpty() && selection.startLineNumber === selection.endLineNumber
-          ? model.getValueInRange(selection)
-          : "";
-      openSearchRef.current(selectedText);
+    // Actions (not only commands) also show in the right-click menu, with their shortcut.
+    editorInstance.addAction({
+      id: "sourcify.searchAllFiles",
+      label: "Search in All Files",
+      keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyF],
+      contextMenuGroupId: "navigation",
+      contextMenuOrder: 2,
+      run: (ed) => {
+        const selection = ed.getSelection();
+        const model = ed.getModel();
+        const selectedText =
+          selection && model && !selection.isEmpty() && selection.startLineNumber === selection.endLineNumber
+            ? model.getValueInRange(selection)
+            : "";
+        openSearchRef.current(selectedText);
+      },
     });
 
     // In fullscreen, Esc in the editor leaves fullscreen, but only when Monaco does not need Esc
@@ -591,10 +612,19 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
     );
 
     // Cmd/Ctrl+P opens Go to file (instead of the browser's Print while the editor has the focus)
-    editorInstance.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyP, () => openFinderRef.current());
+    editorInstance.addAction({
+      id: "sourcify.goToFile",
+      label: "Go to File…",
+      keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyP],
+      contextMenuGroupId: "navigation",
+      contextMenuOrder: 1,
+      run: () => openFinderRef.current(),
+    });
 
     // The outline follows the cursor
-    editorInstance.onDidChangeCursorPosition((event) => setCursorLine(event.position.lineNumber));
+    editorInstance.onDidChangeCursorPosition((event) =>
+      setCursorPosition({ line: event.position.lineNumber, column: event.position.column })
+    );
 
     // Symbols for "Go to symbol" and links on import paths. The models of the
     // source files are named by their path (the `path` prop of the editor).
@@ -629,7 +659,7 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
           <SourceSidebar
             view={sidebarView}
             onViewChange={changeSidebarView}
-            searchShortcut={isMac ? "⌘⇧F" : "Ctrl+Shift+F"}
+            searchShortcut={shortcuts.searchAll}
             explorer={
               <ExplorerSections
                 outlineOpenByDefault={!isMobile}
@@ -684,7 +714,9 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
               wordWrap={wordWrap}
               onToggleWordWrap={toggleWordWrap}
               onOpenFinder={openFinder}
-              finderShortcut={isMac ? "⌘P" : "Ctrl+P"}
+              shortcuts={shortcuts}
+              helpOpen={helpOpen}
+              onHelpOpenChange={setHelpOpen}
               isFullscreen={isFullscreen}
               onToggleFullscreen={() => setIsFullscreen((value) => !value)}
             />
@@ -714,11 +746,23 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
               </div>
             )}
           </div>
+          {activeTab && (
+            <SourceStatusBar
+              line={cursorPosition?.line ?? null}
+              column={cursorPosition?.column ?? null}
+              language={language}
+              shortcuts={shortcuts}
+              onGoToFile={openFinder}
+              onSearchAll={() => openSearch()}
+              onGoToSymbol={goToSymbol}
+              onOpenHelp={() => setHelpOpen(true)}
+            />
+          )}
         </div>
         {finderOpen && (
           <SourceFileFinder
             files={finderFiles}
-            shortcut={isMac ? "⌘P" : "Ctrl+P"}
+            shortcut={shortcuts.goToFile}
             onOpen={openFileFromFinder}
             activePath={activePath}
             getSymbols={symbolIndex.get}

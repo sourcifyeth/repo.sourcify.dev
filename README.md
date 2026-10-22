@@ -117,6 +117,13 @@ In a Solidity file, the path of each `import` is a link. **Cmd+click** (macOS) o
 - Vyper: Vyper files have their own grammar (decorators, `def`, `event`, `struct`, `interface`, types, `#` comments, docstrings with NatSpec tags). Before, they used Elixir colors.
 - The grammars are in `src/utils/monacoLanguages.ts`.
 
+### Shortcut hints
+
+- A status bar under the code shows the cursor position and the language on the left, and the main shortcuts on the right: Go to file, Search in all files, Go to symbol, and "? all shortcuts". Each hint is also a button. On small screens, only the position shows.
+- The **?** button in the editor toolbar (or "? all shortcuts" in the status bar) opens a sheet with all shortcuts and the link help.
+- The editor's right-click menu starts with **Go to File…**, **Search in All Files** and **Go to Symbol…**, each with its shortcut.
+- On macOS the labels use the standard symbols (⇧⌘F); on other platforms they are spelled out (Ctrl+Shift+F). The labels come from `src/utils/shortcuts.ts`.
+
 ### Size and fullscreen
 
 On a desktop screen, the source view is about 75% of the window height (at least 540 px). The fullscreen button in the editor toolbar makes the source view fill the window. To leave fullscreen, click the button again or press **Esc**. In the editor, Esc first closes the find box or clears a selection, and the next Esc leaves fullscreen.
