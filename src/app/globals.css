@@ -133,3 +133,14 @@
   outline: 1px solid rgba(251, 191, 36, 0.95);
   border-radius: 2px;
 }
+/* A byte range from the bytecode's source map (#file=…&R=…) */
+.monaco-editor .source-range-highlight {
+  background: rgba(56, 189, 248, 0.22);
+  outline: 1px solid rgba(56, 189, 248, 0.7);
+  border-radius: 2px;
+}
+.monaco-editor .source-range-highlight-gutter {
+  background: rgba(56, 189, 248, 0.8);
+  width: 3px !important;
+  margin-left: 3px;
+}

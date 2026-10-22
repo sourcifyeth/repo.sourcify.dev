@@ -15,6 +15,8 @@ import SourceFileFinder, { FinderFile } from "@/components/SourceFileFinder";
 import SourceOutline from "@/components/SourceOutline";
 import SourceStatusBar from "@/components/SourceStatusBar";
 import { sourceShortcuts } from "@/utils/shortcuts";
+import { createUtf8Mapper, decodeSourceMap, instructionsInRange } from "@/utils/sourceMap";
+import { registerSources, SHOW_IN_BYTECODE_EVENT, ShowInBytecodeDetail } from "@/utils/sourceRegistry";
 import ExplorerSections from "@/components/ExplorerSections";
 import { useSourceSymbols } from "@/hooks/useSourceSymbols";
 import { parseRemappings, resolveImportPath } from "@/utils/importResolution";
@@ -37,6 +39,7 @@ import { formatSourceHash, LineRange, SourceLocation } from "@/utils/sourceHash"
 import {
   buildSearchRegExp,
   escapeRegExp,
+  lineStarts,
   findMatchesInText,
   searchSources,
   SearchMatch,
@@ -184,6 +187,16 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
     if (!source) return;
     pendingFileRef.current = location.file;
     pendingRevealRef.current = location.lines ?? null;
+    // A byte range (from the bytecode's source map) without lines: reveal the lines it covers
+    if (!location.lines && location.range) {
+      const mapper = createUtf8Mapper(source.content);
+      const starts = lineStarts(source.content);
+      const lineAt = (index: number) => starts.filter((start) => start <= index).length;
+      pendingRevealRef.current = {
+        start: lineAt(mapper.byteToIndex(location.range.start)),
+        end: lineAt(Math.max(mapper.byteToIndex(location.range.end) - 1, 0)),
+      };
+    }
     pendingSymbolRef.current = location.symbol && !location.lines ? { path: location.file, symbol: location.symbol } : null;
     anchorLineRef.current = location.lines?.start ?? null;
     openTab(location.file, source.content);
@@ -210,30 +223,54 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
     if (!editorReady || !editorInstance || !monaco || !activeTab) return;
     const model = editorInstance.getModel();
     if (!decorationsRef.current) decorationsRef.current = editorInstance.createDecorationsCollection();
-    const lines = location?.file === activeTab.path ? location.lines : undefined;
-    if (!lines || !model) {
+    const here = location?.file === activeTab.path ? location : null;
+    const lines = here?.lines;
+    // A byte range from a source map (UTF-8 offsets) becomes an exact editor range
+    let exactRange: InstanceType<Monaco["Range"]> | null = null;
+    if (here?.range && model) {
+      const mapper = createUtf8Mapper(activeTab.content);
+      const from = model.getPositionAt(mapper.byteToIndex(here.range.start));
+      const to = model.getPositionAt(mapper.byteToIndex(here.range.end));
+      exactRange = new monaco.Range(from.lineNumber, from.column, to.lineNumber, to.column);
+    }
+    if ((!lines && !exactRange) || !model) {
       decorationsRef.current.clear();
       return;
     }
-    const lineCount = model.getLineCount();
-    const start = Math.min(lines.start, lineCount);
-    const end = Math.min(lines.end, lineCount);
-    decorationsRef.current.set([
-      {
-        range: new monaco.Range(start, 1, end, 1),
+    const decorations: editor.IModelDeltaDecoration[] = [];
+    if (lines) {
+      const lineCount = model.getLineCount();
+      decorations.push({
+        range: new monaco.Range(Math.min(lines.start, lineCount), 1, Math.min(lines.end, lineCount), 1),
         options: {
           isWholeLine: true,
           className: "source-line-highlight",
           linesDecorationsClassName: "source-line-highlight-gutter",
         },
-      },
-    ]);
+      });
+    }
+    if (exactRange) {
+      decorations.push({
+        range: exactRange,
+        options: { className: "source-range-highlight", linesDecorationsClassName: "source-range-highlight-gutter" },
+      });
+    }
+    decorationsRef.current.set(decorations);
     if (pendingRevealRef.current) {
+      const pending = pendingRevealRef.current;
       pendingRevealRef.current = null;
-      editorInstance.revealLinesInCenter(start, end);
-      editorInstance.setPosition({ lineNumber: start, column: 1 });
+      if (exactRange) {
+        editorInstance.revealRangeInCenter(exactRange);
+        editorInstance.setPosition({ lineNumber: exactRange.startLineNumber, column: exactRange.startColumn });
+      } else {
+        editorInstance.revealLinesInCenter(pending.start, pending.end);
+        editorInstance.setPosition({ lineNumber: pending.start, column: 1 });
+      }
     }
   }, [editorReady, activeTab, location]);
+
+  // The bytecode sections read the sources from this shared store (see sourceRegistry.ts)
+  useEffect(() => registerSources(contract.sources), [contract.sources]);
 
   // The link to copy: the selected lines if any, else the editor selection, else the file
   const getLink = useCallback((): string => {
@@ -589,6 +626,53 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
   // The "?" sheet with all shortcuts; the toolbar button and the status bar open it
   const [helpOpen, setHelpOpen] = useState(false);
 
+  // A short message in the status bar, for example when "Show in Bytecode" finds nothing
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flashStatus = (message: string) => {
+    setStatusMessage(message);
+    if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
+    statusTimerRef.current = setTimeout(() => setStatusMessage(null), 4000);
+  };
+  useEffect(() => () => {
+    if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
+  }, []);
+
+  // "Show in Bytecode": the instructions whose source range lies inside the selected lines
+  const showInBytecode = (selection: { startLineNumber: number; endLineNumber: number; endColumn: number } | null) => {
+    const path = activePathRef.current;
+    if (!path || !selection) return;
+    const fileIndex = contract.sourceIds?.[path]?.id;
+    if (fileIndex === undefined) {
+      flashStatus("This file is not part of the compilation, so no bytecode comes from it.");
+      return;
+    }
+    const content = contract.sources[path]?.content ?? "";
+    const lines = selectionToLines(selection);
+    const starts = lineStarts(content);
+    const mapper = createUtf8Mapper(content);
+    const startByte = mapper.indexToByte(starts[lines.start - 1] ?? content.length);
+    const endByte = mapper.indexToByte(lines.end < starts.length ? starts[lines.end] : content.length);
+    const count = (sourceMap?: string) =>
+      sourceMap ? instructionsInRange(decodeSourceMap(sourceMap), fileIndex, startByte, endByte).length : 0;
+    const runtime = count(contract.runtimeBytecode?.sourceMap);
+    const creation = count(contract.creationBytecode?.sourceMap);
+    const name = path.split("/").pop();
+    const label = lines.start === lines.end ? `${name} line ${lines.start}` : `${name} lines ${lines.start}–${lines.end}`;
+    if (runtime === 0 && creation === 0) {
+      flashStatus(`No bytecode instruction comes only from ${label}.`);
+      return;
+    }
+    // Leave fullscreen, so that the page can scroll to the bytecode
+    setIsFullscreen(false);
+    const detail: ShowInBytecodeDetail = { path, startByte, endByte, label, target: runtime > 0 ? "runtime" : "creation" };
+    window.dispatchEvent(new CustomEvent(SHOW_IN_BYTECODE_EVENT, { detail }));
+  };
+  const showInBytecodeRef = useRef(showInBytecode);
+  useEffect(() => {
+    showInBytecodeRef.current = showInBytecode;
+  });
+
   // Monaco's "Go to symbol" list for the open file
   const goToSymbol = () => {
     const editorInstance = editorRef.current;
@@ -701,6 +785,14 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
       () => setIsFullscreen(false),
       "sourceFullscreen && !findWidgetVisible && !suggestWidgetVisible && !editorHasSelection && !editorHasMultipleSelections"
     );
+
+    editorInstance.addAction({
+      id: "sourcify.showInBytecode",
+      label: "Show in Bytecode",
+      contextMenuGroupId: "navigation",
+      contextMenuOrder: 3,
+      run: (ed) => showInBytecodeRef.current(ed.getSelection()),
+    });
 
     // Cmd/Ctrl+P opens Go to file (instead of the browser's Print while the editor has the focus)
     editorInstance.addAction({
@@ -847,6 +939,7 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
               onSearchAll={() => openSearch()}
               onGoToSymbol={goToSymbol}
               onOpenHelp={() => setHelpOpen(true)}
+              message={statusMessage}
             />
           )}
         </div>

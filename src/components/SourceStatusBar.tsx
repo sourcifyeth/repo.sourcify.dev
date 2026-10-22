@@ -12,6 +12,8 @@ interface SourceStatusBarProps {
   onSearchAll: () => void;
   onGoToSymbol: () => void;
   onOpenHelp: () => void;
+  // A short message, shown for a few seconds (for example "No bytecode instruction comes from …")
+  message?: string | null;
 }
 
 const LANGUAGE_NAMES: Record<string, string> = {
@@ -49,6 +51,7 @@ export default function SourceStatusBar({
   onSearchAll,
   onGoToSymbol,
   onOpenHelp,
+  message,
 }: SourceStatusBarProps) {
   return (
     <div className="flex h-6 shrink-0 items-center justify-between gap-3 border-t border-gray-700 bg-gray-900 px-2 text-[11px] text-gray-400">
@@ -56,6 +59,11 @@ export default function SourceStatusBar({
         {line !== null && column !== null ? `Ln ${line}, Col ${column}` : ""}
         <span className="mx-1.5 text-gray-600">·</span>
         {LANGUAGE_NAMES[language] ?? language}
+        {message && (
+          <span role="status" className="ml-3 text-amber-300">
+            {message}
+          </span>
+        )}
       </span>
       <span className="hidden md:flex min-w-0 items-center gap-1 overflow-hidden whitespace-nowrap">
         <Hint keys={shortcuts.goToFile} label="files" onClick={onGoToFile} />

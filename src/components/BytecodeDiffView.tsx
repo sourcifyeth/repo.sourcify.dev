@@ -4,6 +4,9 @@ import { useEffect, useLayoutEffect, useState, useRef, useCallback } from "react
 import InfoTooltip from "./InfoTooltip";
 import { BytecodeData, Transformations, TransformationValues, SignatureData } from "@/types/contract";
 import { useIsMobile } from "@/hooks/useResponsive";
+import BytecodeOpcodes from "./BytecodeOpcodes";
+import { SHOW_IN_BYTECODE_EVENT, ShowInBytecodeDetail } from "@/utils/sourceRegistry";
+import { decodeSourceMap, instructionsInRange } from "@/utils/sourceMap";
 
 interface BytecodeDiffViewProps {
   onchainBytecode: string;
@@ -13,6 +16,9 @@ interface BytecodeDiffViewProps {
   transformationValues?: TransformationValues;
   recompiledBytecodeCborAuxdata?: BytecodeData["cborAuxdata"];
   signatures?: SignatureData;
+  // For the Opcodes view: the compiler's source map, and the file ids it refers to
+  sourceMap?: string;
+  sourceIds?: Record<string, { id: number }>;
 }
 
 interface AnnotationInfo {
@@ -59,9 +65,13 @@ export default function BytecodeDiffView({
   transformationValues,
   recompiledBytecodeCborAuxdata,
   signatures,
+  sourceMap,
+  sourceIds,
 }: BytecodeDiffViewProps) {
   // annotations view is hidden if no onchain code is available
-  const [viewMode, setViewMode] = useState<"annotations" | "onchain" | "recompiled">(onchainBytecode ? "annotations" : "onchain");
+  const [viewMode, setViewMode] = useState<"annotations" | "onchain" | "recompiled" | "opcodes">(
+    onchainBytecode ? "annotations" : "onchain"
+  );
   const [currentView, setCurrentView] = useState<string>(recompiledBytecode);
   const [activeAnnotation, setActiveAnnotation] = useState<AnnotationInfo | null>(null);
   const [isTooltipHovered, setIsTooltipHovered] = useState(false);
@@ -79,6 +89,35 @@ export default function BytecodeDiffView({
   const isMobile = useIsMobile();
 
   const isOnchainRecompiledSame = onchainBytecode === recompiledBytecode;
+
+  // ---- Opcodes view ----
+  // The instructions come from the on-chain bytecode when it is there (real immutables and
+  // library addresses); else from the recompiled bytecode. The instruction layout is the same.
+  const opcodeBytecode =
+    onchainBytecode && onchainBytecode.length >= recompiledBytecode.length ? onchainBytecode : recompiledBytecode;
+  const sectionRef = useRef<HTMLDivElement | null>(null);
+  const [opcodeHighlight, setOpcodeHighlight] = useState<{ indexes: number[]; label: string } | null>(null);
+
+  // "Show in Bytecode" from the source view: mark the instructions of the selected lines
+  useEffect(() => {
+    const onShow = (event: Event) => {
+      const detail = (event as CustomEvent<ShowInBytecodeDetail>).detail;
+      const fileIndex = sourceIds?.[detail.path]?.id;
+      const indexes =
+        fileIndex === undefined || !sourceMap
+          ? []
+          : instructionsInRange(decodeSourceMap(sourceMap), fileIndex, detail.startByte, detail.endByte);
+      if (indexes.length === 0) {
+        setOpcodeHighlight(null);
+        return;
+      }
+      setOpcodeHighlight({ indexes, label: detail.label });
+      setViewMode("opcodes");
+      if (detail.target === id) sectionRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+    };
+    window.addEventListener(SHOW_IN_BYTECODE_EVENT, onShow);
+    return () => window.removeEventListener(SHOW_IN_BYTECODE_EVENT, onShow);
+  }, [sourceMap, sourceIds, id]);
 
   // Check if there are library references in the transformations
   const hasLibraryTransformations = transformations?.some((t) => t.reason === "library");
@@ -485,7 +524,7 @@ export default function BytecodeDiffView({
   `;
 
   return (
-    <div className="relative">
+    <div className="relative" ref={sectionRef}>
       {/* Fixed tooltip area as an overlay */}
       {viewMode === "annotations" && (
         <div
@@ -568,8 +607,35 @@ export default function BytecodeDiffView({
             </label>
           </div>
         )}
+        <div className="flex items-center gap-1">
+          <input
+            type="radio"
+            id={`opcodes-${id}`}
+            name={`bytecode-view-${id}`}
+            value="opcodes"
+            checked={viewMode === "opcodes"}
+            onChange={() => setViewMode("opcodes")}
+            className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300"
+          />
+          <label htmlFor={`opcodes-${id}`} className="text-sm font-medium text-gray-700 cursor-pointer">
+            Opcodes
+          </label>
+          <InfoTooltip
+            content="The bytecode as a list of instructions, with the source location of each instruction from the compiler's source map. Click a row to see its code in the Source Code section. In the source, right-click lines and choose Show in Bytecode for the other direction."
+            html={false}
+          />
+        </div>
       </div>
 
+      {viewMode === "opcodes" ? (
+        <BytecodeOpcodes
+          bytecode={opcodeBytecode}
+          sourceMap={sourceMap}
+          sourceIds={sourceIds}
+          highlight={opcodeHighlight}
+          onClearHighlight={() => setOpcodeHighlight(null)}
+        />
+      ) : (
       <div className="flex gap-1">
         <div
           ref={bytecodeBoxRef}
@@ -602,6 +668,7 @@ export default function BytecodeDiffView({
           </div>
         )}
       </div>
+      )}
 
       {viewMode === "annotations" && (hasTransformations || hasSignatures) && (
         <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-gray-700">

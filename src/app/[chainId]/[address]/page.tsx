@@ -505,6 +505,8 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
               transformationValues={contractWithPlaceholders.creationBytecode.transformationValues}
               recompiledBytecodeCborAuxdata={contractWithPlaceholders.creationBytecode.cborAuxdata}
               signatures={contractWithPlaceholders.signatures}
+              sourceMap={contractWithPlaceholders.creationBytecode.sourceMap}
+              sourceIds={contractWithPlaceholders.sourceIds}
             />
           </Suspense>
 
@@ -580,6 +582,8 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
               transformationValues={contractWithPlaceholders.runtimeBytecode.transformationValues}
               recompiledBytecodeCborAuxdata={contractWithPlaceholders.runtimeBytecode.cborAuxdata}
               signatures={contractWithPlaceholders.signatures}
+              sourceMap={contractWithPlaceholders.runtimeBytecode.sourceMap}
+              sourceIds={contractWithPlaceholders.sourceIds}
             />
           </Suspense>
 

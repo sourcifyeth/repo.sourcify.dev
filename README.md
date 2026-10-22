@@ -23,6 +23,7 @@ https://repo.sourcify.dev/1/0x00005EA00Ac477B1030CE78506496e8C2dE24bf5#file=lib/
 | `file` | The source path, as it appears in the contract's source files | `file=src/SeaDrop.sol`     |
 | `L`    | One line, or a range of lines. Line numbers start at 1.       | `L=40` or `L=60-72`        |
 | `sym`  | A declaration in the file: `Contract.member`, or a name       | `sym=SeaDrop._publicDrops` |
+| `R`    | A byte range in the file (UTF-8 offsets, from a source map)   | `R=6520-6548`              |
 
 - `file` is necessary. Without `L`, the link opens the file and selects no lines.
 - If the range is in the wrong order (`L=72-60`), the page sorts it.
@@ -52,7 +53,7 @@ A hash change on an open page (for example a click on a `#file=…` link elsewhe
 - You can also select code, right-click it, and choose **Copy Link to Selected Lines**.
 - The **?** button in the editor toolbar shows the same help.
 
-The code that reads and writes these links is in `src/utils/sourceHash.ts`. The key `sym` names a declaration, as `Contract.member` or `name`; the Storage Layout links use it (see "Storage layout links" below). The key `R` (a byte range) is reserved for a later feature. The page reads it, but does not use it yet.
+The code that reads and writes these links is in `src/utils/sourceHash.ts`. The key `sym` names a declaration, as `Contract.member` or `name`; the Storage Layout links use it (see "Storage layout links" below). The key `R` is a byte range from the bytecode's source map (see "Bytecode and source" below).
 
 ## Searching the source code
 
@@ -119,6 +120,15 @@ Press **Cmd+P** (macOS) or **Ctrl+P** (Windows, Linux) while the focus is in the
 ### Storage layout links
 
 In the Storage Layout table, a file icon (a page with `</>` on it) next to each variable name links to its declaration, as `#file=<file>&sym=<Contract>.<variable>`. Its tooltip says "Show the declaration in the source code". The source view opens the file, highlights the declaration and adds its lines to the URL. Solidity's storage layout names the compiled contract even for variables that a base contract declares (for example `locked` from solmate's `ReentrancyGuard`). If the variable is not in the named contract, the source view looks for it in the base contracts, nearest first.
+
+### Bytecode and source
+
+The compiler's source map ties each bytecode instruction to a range of source code. The page uses it in both directions, for the creation and the runtime bytecode.
+
+- **Opcodes view:** in the Creation Bytecode and Runtime Bytecode sections, choose **Opcodes**. The list has one row per instruction: the byte offset, the opcode and its pushed value, a jump arrow (→ into a function, ← out of a function), and the source file and line with a snippet of the code. Click a row to open the Source Code section with that exact range highlighted. Rows can also say "compiler-generated" (code without a source, such as Yul helper functions) or "no source map entry" (after the end of the map: the metadata, or in the creation bytecode the runtime code that the constructor deploys). The instructions come from the on-chain bytecode; if it is missing, from the recompiled bytecode, with library placeholders as zero bytes.
+- **Show in Bytecode:** in the editor, select lines (or put the cursor on a line), right-click, and choose **Show in Bytecode**. The bytecode sections switch to Opcodes and highlight the instructions whose source range lies inside those lines, with a count. Ranges that cover more (a whole function or contract) are left out. The page scrolls to the runtime section, or to the creation section for constructor code. If no instruction comes only from those lines, the status bar says so.
+- **Range links:** a click on an instruction writes `#file=<path>&R=<start>-<end>` to the URL. `R` is a byte range from the source map (UTF-8 offsets); the source view converts it to editor positions. These links can be shared.
+- The code is in `src/utils/sourceMap.ts` (source map decoder, disassembler, UTF-8 offsets), `src/components/BytecodeOpcodes.tsx`, and `src/utils/sourceRegistry.ts` (the source view shares the source files with the bytecode sections in the browser, so the page does not send them twice).
 
 ### Import links
 
