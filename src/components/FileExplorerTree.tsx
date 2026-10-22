@@ -133,14 +133,9 @@ const FileExplorerTree: React.FC<FileExplorerTreeProps> = ({ files, activeFile, 
   );
 
   return (
-    <div className={`bg-gray-800 text-gray-300 px-2`}>
-      <div className="p-2 border-b border-gray-700">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-gray-200">EXPLORER</span>
-        </div>
-      </div>
-
-      <div className="h-[200px] md:h-full overflow-y-auto">
+    // The sidebar around it shows the "Explorer" title and sets the height
+    <div className="bg-gray-800 text-gray-300 px-2 h-full">
+      <div className="h-full overflow-y-auto">
         <Tree
           ref={treeRef}
           data={files}

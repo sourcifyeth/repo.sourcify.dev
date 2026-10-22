@@ -53,6 +53,38 @@ A hash change on an open page (for example a click on a `#file=…` link elsewhe
 
 The code that reads and writes these links is in `src/utils/sourceHash.ts`. The keys `R` (a byte range) and `sym` (a function signature) are reserved for later features. The page reads them, but does not use them yet.
 
+## Searching the source code
+
+The Source Code section can search all source files of a contract at the same time, including library files such as OpenZeppelin.
+
+### Opening the search
+
+- Click the search icon at the top of the left panel. The folder icon goes back to the file tree.
+- Or press **Cmd+Shift+F** (macOS) or **Ctrl+Shift+F** (Windows, Linux) while the focus is in the Source Code section. If text on one line is selected in the editor, the search starts with that text.
+- **Ctrl+F** or **Cmd+F** in the editor still searches only the open file.
+
+### Search options
+
+The search runs while you type. Three buttons in the search box change how it matches:
+
+| Button | Shortcut | Effect |
+| ------ | -------- | ------ |
+| **Aa** Match Case | Alt+C | Matches upper and lower case exactly. Without it, `owner` also finds `Owner`. |
+| **ab** Match Whole Word | Alt+W | Matches only full names. Letters, digits, `_` and `$` count as parts of a name, so `owner` does not find `_owner` or `setOwner`. |
+| **.\*** Use Regular Expression | Alt+R | Reads the query as a JavaScript regular expression. `^` and `$` match at the start and end of each line. |
+
+If the regular expression is not valid, the panel shows the error and no results.
+
+### Results
+
+- The results are grouped by file. The main contract file comes first, then the other files in path order.
+- The panel shows the number of results and files. A screen reader announces this number.
+- Click a result to open the file. The editor selects the match and highlights all other matches in the file, also in the minimap and in the scrollbar.
+- With the keyboard: **Enter** in the search box opens the first result. **Down arrow** moves into the results, and the arrow keys move between them. **Esc** goes back to the search box, and a second **Esc** goes to the editor.
+- The search stops at 2,000 results. Then the count shows `2,000+` and asks you to narrow the search.
+
+The search code is in `src/utils/sourceSearch.ts`. It runs in the browser on the source files that the page already has, so it sends no requests to the server.
+
 ## Getting Started
 
 ### Prerequisites

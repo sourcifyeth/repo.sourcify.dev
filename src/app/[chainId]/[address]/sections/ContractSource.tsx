@@ -9,11 +9,26 @@ import MonacoEditor from "@monaco-editor/react";
 import CodeEditorTabs from "@/components/CodeEditorTabs";
 import FileExplorerTree from "@/components/FileExplorerTree";
 import SourceToolbar from "@/components/SourceToolbar";
+import SourceSidebar, { SidebarView } from "@/components/SourceSidebar";
+import SourceSearchPanel, { ActiveSearchMatch } from "@/components/SourceSearchPanel";
 import { useCodeEditor } from "@/hooks/useCodeEditor";
 import { useIsMobile } from "@/hooks/useResponsive";
 import { useSourceHash } from "@/hooks/useSourceHash";
 import { buildFileTreeWithIds } from "@/utils/fileExplorer";
 import { formatSourceHash, LineRange, SourceLocation } from "@/utils/sourceHash";
+import {
+  buildSearchRegExp,
+  escapeRegExp,
+  findMatchesInText,
+  searchSources,
+  SearchMatch,
+  SearchOptions,
+} from "@/utils/sourceSearch";
+
+// The search runs this long after the last change to the query or the toggles
+const SEARCH_DELAY_MS = 200;
+// Upper limit for the match highlights in the open file
+const MAX_EDITOR_MATCHES = 10000;
 
 const WORD_WRAP_STORAGE_KEY = "sourceView.wordWrap";
 
@@ -517,6 +532,130 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
 
   const editorOptions = useMemo(() => EDITOR_OPTIONS(isMobile, wordWrap), [isMobile, wordWrap]);
 
+  // ---- Search across all files ----
+  const [sidebarView, setSidebarView] = useState<SidebarView>("explorer");
+  const [searchOptions, setSearchOptions] = useState<SearchOptions>({
+    query: "",
+    matchCase: false,
+    wholeWord: false,
+    regex: false,
+  });
+  // The options that the search uses: they follow `searchOptions` after a short pause in typing
+  const [appliedSearch, setAppliedSearch] = useState<SearchOptions>(searchOptions);
+  useEffect(() => {
+    const timer = setTimeout(() => setAppliedSearch(searchOptions), SEARCH_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [searchOptions]);
+
+  const targetPath = contract.compilation.fullyQualifiedName.substring(
+    0,
+    contract.compilation.fullyQualifiedName.lastIndexOf(":")
+  );
+  const searchRegExp = useMemo(() => buildSearchRegExp(appliedSearch), [appliedSearch]);
+  const searchError = searchRegExp && !(searchRegExp instanceof RegExp) ? searchRegExp.error : null;
+  const searchResult = useMemo(
+    () => (searchRegExp instanceof RegExp ? searchSources(contract.sources, searchRegExp, { firstPath: targetPath }) : null),
+    [searchRegExp, contract.sources, targetPath]
+  );
+
+  const [activeMatch, setActiveMatch] = useState<ActiveSearchMatch | null>(null);
+  useEffect(() => setActiveMatch(null), [searchRegExp]);
+
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const [searchFocusRequest, setSearchFocusRequest] = useState(0);
+  useEffect(() => {
+    if (searchFocusRequest === 0) return;
+    searchInputRef.current?.focus();
+    searchInputRef.current?.select();
+  }, [searchFocusRequest]);
+
+  // Show the search view and focus its box. A selected text becomes the query
+  // (escaped if Regex is on, so that it still finds the literal text).
+  const openSearch = useCallback((query?: string) => {
+    setSidebarView("search");
+    if (query) {
+      setSearchOptions((previous) => ({ ...previous, query: previous.regex ? escapeRegExp(query) : query }));
+    }
+    setSearchFocusRequest((count) => count + 1);
+  }, []);
+  // The Monaco command is registered once, so it calls the current function through a ref
+  const openSearchRef = useRef(openSearch);
+  useEffect(() => {
+    openSearchRef.current = openSearch;
+  }, [openSearch]);
+
+  const changeSidebarView = (view: SidebarView) => {
+    if (view === "search") openSearch();
+    else setSidebarView(view);
+  };
+
+  // A click on a result opens the file and selects the match
+  const [revealRequest, setRevealRequest] = useState<{ path: string; match: SearchMatch; id: number } | null>(null);
+  const handledRevealRef = useRef(0);
+  const openSearchMatch = (path: string, match: SearchMatch) => {
+    const source = contract.sources[path];
+    if (!source) return;
+    setActiveMatch({ path, match });
+    openTab(path, source.content);
+    setRevealRequest((previous) => ({ path, match, id: (previous?.id ?? 0) + 1 }));
+  };
+
+  useEffect(() => {
+    const editorInstance = editorRef.current;
+    const monaco = monacoRef.current;
+    if (!editorReady || !editorInstance || !monaco || !activeTab || !revealRequest) return;
+    if (revealRequest.id === handledRevealRef.current || revealRequest.path !== activeTab.path) return;
+    handledRevealRef.current = revealRequest.id;
+    const { match } = revealRequest;
+    const range = new monaco.Range(match.startLine, match.startColumn, match.endLine, match.endColumn);
+    editorInstance.setSelection(range);
+    editorInstance.revealRangeInCenter(range);
+  }, [editorReady, activeTab, revealRequest]);
+
+  // While the search view shows, highlight every match in the open file,
+  // also in the minimap and in the scrollbar
+  const searchDecorationsRef = useRef<editor.IEditorDecorationsCollection | null>(null);
+  useEffect(() => {
+    const editorInstance = editorRef.current;
+    const monaco = monacoRef.current;
+    if (!editorReady || !editorInstance || !monaco) return;
+    if (!searchDecorationsRef.current) searchDecorationsRef.current = editorInstance.createDecorationsCollection();
+    if (sidebarView !== "search" || !(searchRegExp instanceof RegExp) || !activeTab) {
+      searchDecorationsRef.current.clear();
+      return;
+    }
+    const matchColor = "rgba(245, 158, 11, 0.85)";
+    const matches = findMatchesInText(activeTab.content, searchRegExp, MAX_EDITOR_MATCHES);
+    searchDecorationsRef.current.set(
+      matches.map((match) => {
+        const isActive =
+          activeMatch?.path === activeTab.path &&
+          activeMatch.match.startLine === match.startLine &&
+          activeMatch.match.startColumn === match.startColumn;
+        return {
+          range: new monaco.Range(match.startLine, match.startColumn, match.endLine, match.endColumn),
+          options: {
+            className: isActive ? "source-search-match-active" : "source-search-match",
+            overviewRuler: { color: matchColor, position: monaco.editor.OverviewRulerLane.Center },
+            minimap: { color: matchColor, position: monaco.editor.MinimapPosition.Inline },
+          },
+        };
+      })
+    );
+  }, [editorReady, activeTab, searchRegExp, sidebarView, activeMatch]);
+
+  // Cmd/Ctrl+Shift+F while the focus is in the source section but outside the
+  // editor (the editor has its own command, registered on mount)
+  const onSourceKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!(event.metaKey || event.ctrlKey) || !event.shiftKey || event.code !== "KeyF") return;
+    if (editorRef.current?.hasTextFocus()) return;
+    event.preventDefault();
+    openSearch();
+  };
+
+  const [isMac, setIsMac] = useState(false);
+  useEffect(() => setIsMac(/Mac|iPhone|iPad/.test(navigator.platform)), []);
+
   // Handle editor mounting
   const handleEditorDidMount = (editorInstance: editor.IStandaloneCodeEditor, monaco: Monaco) => {
     editorRef.current = editorInstance;
@@ -594,6 +733,17 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
       },
     });
 
+    // Cmd/Ctrl+Shift+F opens the search across all files. Ctrl/Cmd+F stays the find in this file.
+    editorInstance.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyF, () => {
+      const selection = editorInstance.getSelection();
+      const model = editorInstance.getModel();
+      const selectedText =
+        selection && model && !selection.isEmpty() && selection.startLineNumber === selection.endLineNumber
+          ? model.getValueInRange(selection)
+          : "";
+      openSearchRef.current(selectedText);
+    });
+
     setEditorReady(true);
   };
 
@@ -601,12 +751,32 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
   const solidityConfig = configureSolidityLanguage();
 
   return (
-    <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div className="bg-white shadow overflow-hidden sm:rounded-lg" onKeyDown={onSourceKeyDown}>
       <div className="border-t border-gray-200">
         <div className="flex flex-col md:flex-row">
           {/* File Explorer */}
           <div className="w-full md:w-1/4 border-b md:border-b-0 md:border-r border-gray-700">
-            <FileExplorerTree files={fileTreeWithIds} activeFile={activeTab?.path} onFileSelect={handleFileSelect} />
+            <SourceSidebar
+              view={sidebarView}
+              onViewChange={changeSidebarView}
+              searchShortcut={isMac ? "⌘⇧F" : "Ctrl+Shift+F"}
+              explorer={
+                <FileExplorerTree files={fileTreeWithIds} activeFile={activeTab?.path} onFileSelect={handleFileSelect} />
+              }
+              search={
+                <SourceSearchPanel
+                  options={searchOptions}
+                  onOptionsChange={setSearchOptions}
+                  result={searchResult}
+                  error={searchError}
+                  fileCount={Object.keys(contract.sources).length}
+                  activeMatch={activeMatch}
+                  onOpenMatch={openSearchMatch}
+                  onEscape={() => editorRef.current?.focus()}
+                  inputRef={searchInputRef}
+                />
+              }
+            />
           </div>
           {/* Source code editor */}
           <div className="w-full md:w-3/4 flex flex-col">
