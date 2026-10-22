@@ -76,17 +76,23 @@ export function resolveImportPath(
 
 /**
  * The import paths in a Solidity file, with the offsets of the path text
- * (inside the quotes). `masked` is the same text with comments blanked out,
- * so that imports in comments are skipped.
+ * (inside the quotes). `masked` is the same text with comments and string
+ * contents blanked out (maskCommentsAndStrings), with the same offsets.
+ *
+ * The pattern runs on the masked text, so imports in comments are skipped and
+ * no contract text can make it slow; the path is then read from the original
+ * text. The pattern itself is linear: nothing can match the same characters in
+ * two ways, so a long run of spaces after "import" does not cause backtracking.
  */
 export function findImportPaths(text: string, masked: string): Array<{ path: string; start: number; end: number }> {
   const found: Array<{ path: string; start: number; end: number }> = [];
-  const pattern = /\bimport\s+(?:[^;"']*?\s+from\s+)?(["'])([^"'\n]+)\1/g;
-  for (const match of text.matchAll(pattern)) {
-    const index = match.index ?? 0;
-    if (masked.slice(index, index + 6) !== "import") continue;
-    const start = index + match[0].lastIndexOf(match[2]);
-    found.push({ path: match[2], start, end: start + match[2].length });
+  // "import", anything up to the first quote (not past a ";"), then the quoted path
+  const pattern = /\bimport\b[^;"']*(["'])([^"'\n]*)\1/g;
+  for (const match of masked.matchAll(pattern)) {
+    const end = (match.index ?? 0) + match[0].length - 1; // the closing quote
+    const start = end - match[2].length;
+    if (start === end) continue;
+    found.push({ path: text.slice(start, end), start, end });
   }
   return found;
 }

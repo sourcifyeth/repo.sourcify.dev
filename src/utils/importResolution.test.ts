@@ -67,4 +67,25 @@ import "./E.sol" as E;`;
     expect(found.map((f) => f.path)).toEqual(["./A.sol", "./B.sol", "lib/D.sol", "./E.sol"]);
     expect(text.slice(found[1].start, found[1].end)).toBe("./B.sol");
   });
+
+  it("finds multi-line imports and skips the word import inside strings", () => {
+    const text = `import {
+  A,
+  B
+} from "./AB.sol";
+string constant S = "import './Fake.sol'";`;
+    const found = findImportPaths(text, maskCommentsAndStrings(text, "solidity"));
+    expect(found.map((f) => f.path)).toEqual(["./AB.sol"]);
+  });
+
+  it("stays fast when a long run of spaces follows import (regression)", () => {
+    const spaces = " ".repeat(500_000);
+    const cases = [`// import${spaces}\nimport "./A.sol";`, `import${spaces};\nimport "./A.sol";`, `import${spaces}`];
+    for (const text of cases) {
+      const startedAt = performance.now();
+      const found = findImportPaths(text, maskCommentsAndStrings(text, "solidity"));
+      expect(performance.now() - startedAt).toBeLessThan(500);
+      expect(found.map((f) => f.path)).toEqual(text.includes("./A.sol") ? ["./A.sol"] : []);
+    }
+  });
 });
