@@ -453,7 +453,17 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       <section className="mb-8">
         <div className="sticky top-0 z-10 bg-gray-100 py-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-            <h2 className="text-xl font-semibold text-gray-800">Contract Metadata</h2>
+            <div className="flex items-baseline gap-3">
+              <h2 className="text-xl font-semibold text-gray-800">Metadata.json</h2>
+              <a
+                href="https://playground.sourcify.dev"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-gray-400 hover:text-gray-600 hover:underline"
+              >
+                What&apos;s metadata?
+              </a>
+            </div>
             {contractWithPlaceholders.metadata && (
               <div className="flex items-center gap-2">
                 <CopyToClipboardButton data={contractWithPlaceholders.metadata} />
