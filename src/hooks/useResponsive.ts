@@ -8,11 +8,10 @@ const MD_BREAKPOINT = 768;
  * @returns Object with width, height, and isMobile
  */
 export function useScreenSize() {
-  const [screenSize, setScreenSize] = useState({
-    width: typeof window !== "undefined" ? window.innerWidth : 0,
-    height: typeof window !== "undefined" ? window.innerHeight : 0,
-    isMobile: typeof window !== "undefined" ? window.innerWidth < MD_BREAKPOINT : false,
-  });
+  // The first render must match the server's HTML, which knows no window size:
+  // start with the server's values, and read the window in the effect below.
+  // (Reading the window here made React reject the server HTML on narrow screens.)
+  const [screenSize, setScreenSize] = useState({ width: 0, height: 0, isMobile: false });
 
   useEffect(() => {
     const handleResize = () => {

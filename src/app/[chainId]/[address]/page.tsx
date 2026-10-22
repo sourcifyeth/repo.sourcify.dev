@@ -1,4 +1,10 @@
-import { fetchContractData, fetchChains, getChainName, checkVerification, getSourcifyServerUrl } from "@/utils/api";
+import {
+  fetchContractData,
+  fetchChains,
+  getChainName,
+  checkVerification,
+  getSourcifyServerUrl,
+} from "@/utils/api";
 import SimilarityVerification from "./SimilarityVerification";
 import ErrorState from "@/components/ErrorState";
 import { Suspense } from "react";
@@ -8,10 +14,14 @@ import { getAddress } from "@ethersproject/address";
 import LoadingState from "@/components/LoadingState";
 import { IoCheckmarkDoneCircle, IoCheckmarkCircle, IoWarning, IoCloseCircle } from "react-icons/io5";
 import CopyToClipboard from "@/components/CopyToClipboard";
+import SectionNav, { PageSection } from "@/components/SectionNav";
+import LazyJsonSection from "@/components/LazyJsonSection";
 import ContractDetails from "@/app/[chainId]/[address]/sections/ContractDetails";
 import ProxyResolution from "./sections/ProxyResolution";
 import ContractAbi from "./sections/ABI";
 import ContractSource from "./sections/ContractSource";
+import { ChainExplorerLinks } from "@/components/ExplorerLinks";
+import { SourceViewData } from "@/types/contract";
 import JsonViewOnlyEditor from "@/components/JsonViewOnlyEditor";
 import BytecodeDiffView from "@/components/BytecodeDiffView";
 import LibraryTransformations from "./sections/LibraryTransformations";
@@ -244,14 +254,52 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
     ? "Exact match: The onchain and compiled bytecode match exactly, including the metadata hashes."
     : "Match: The onchain and compiled bytecode match, but metadata hashes differ or don't exist.";
 
+  // Only the fields that the source view reads: React writes long strings (bytecodes, source maps)
+  // into the page again for every client component that gets them. Objects are sent once.
+  const sourceViewData: SourceViewData = {
+    sources: contractWithPlaceholders.sources,
+    sourceIds: contractWithPlaceholders.sourceIds,
+    signatures: contractWithPlaceholders.signatures,
+    userdoc: contractWithPlaceholders.userdoc,
+    devdoc: contractWithPlaceholders.devdoc,
+    compilation: {
+      fullyQualifiedName: contractWithPlaceholders.compilation.fullyQualifiedName,
+      compilerSettings: contractWithPlaceholders.compilation.compilerSettings,
+    },
+  };
+  // A bytecode viewer gets the recompiled text only if it differs from the on-chain text
+  const differentOrUndefined = (onchain: string, recompiled: string) =>
+    onchain && onchain === recompiled ? undefined : recompiled;
+
+  // The sections in the section bar, in page order (only those that the page shows)
+  const pageSections: PageSection[] = [
+    { id: "contract-details", label: "Details" },
+    ...(contractWithPlaceholders.proxyResolution?.isProxy ? [{ id: "proxy", label: "Proxy" }] : []),
+    ...((contractWithPlaceholders.abi?.length ?? 0) > 0 ? [{ id: "abi", label: "ABI" }] : []),
+    { id: "source-code", label: "Source Code" },
+    { id: "compiler-settings", label: "Compiler" },
+    { id: "metadata", label: "Metadata" },
+    { id: "creation-bytecode", label: "Creation Bytecode" },
+    { id: "runtime-bytecode", label: "Runtime Bytecode" },
+    { id: "storage-layout", label: "Storage" },
+    { id: "transient-storage-layout", label: "Transient Storage" },
+    { id: "standard-json-input", label: "JSON Input" },
+    { id: "standard-json-output", label: "JSON Output" },
+  ];
+
   return (
     <div>
       <div className="mt-3 mb-2">
-        <div className="flex items-center">
-          <h1 className="text-base break-all md:text-2xl font-bold font-mono text-gray-900">{contract.address}</h1>
-          <CopyToClipboard text={contract.address} className="ml-2 md:p-0 p-2" />
+        {/* The contract name is the title; the address and the chain follow */}
+        <h1 className="text-xl md:text-3xl font-bold text-gray-900 break-words">{contract.compilation.name}</h1>
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="flex items-center">
+            <span className="text-sm break-all md:text-base font-mono text-gray-700">{contract.address}</span>
+            <CopyToClipboard text={contract.address} className="ml-2 md:p-0 p-2" />
+          </span>
+          <ChainExplorerLinks chainId={chainId} path={`address/${contract.address}`} />
         </div>
-        <p className="text-sm md:text-base text-gray-700 mt-1">
+        <p className="text-sm md:text-base text-gray-700 mt-0.5">
           on {chainName}
           {chains.find((c) => c.chainId.toString() === chainId)?.supported === false && (
             <span className="text-gray-500 text-sm ml-2"> (verification on this chain is deprecated)</span>
@@ -311,6 +359,24 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
             </div>
           </div>
 
+          {/* Proxy badge: jumps to the Proxy section */}
+          {contract.proxyResolution?.isProxy && (
+            <a
+              href="#proxy"
+              className="inline-flex items-center gap-1 rounded-md border border-purple-200 bg-purple-50 px-2 py-0.5 text-xs md:text-sm font-medium text-purple-800 hover:bg-purple-100"
+              data-tooltip-id="global-tooltip"
+              data-tooltip-content={`This contract is a proxy${
+                contract.proxyResolution.implementations?.length
+                  ? ` for ${contract.proxyResolution.implementations
+                      .map((implementation) => implementation.name || implementation.address)
+                      .join(", ")}`
+                  : ""
+              }`}
+            >
+              Proxy
+            </a>
+          )}
+
           {/* Unverified libraries warning */}
           {hasUnverifiedLibraries && (
             <span
@@ -338,15 +404,17 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
         )}
       </div>
 
+      <SectionNav sections={pageSections} />
+
       {/* Contract Details Section */}
-      <section className="my-6">
-        <ContractDetails contract={contractWithPlaceholders} chainName={chainName} />
+      <section id="contract-details" className="my-6 page-section">
+        <ContractDetails contract={contractWithPlaceholders} chainId={chainId} />
       </section>
 
       {/* Proxy Resolution Section */}
       {contractWithPlaceholders.proxyResolution && contractWithPlaceholders.proxyResolution.isProxy && (
-        <section className="mt-6 mb-4">
-          <div className="sticky top-0 z-10 bg-gray-100">
+        <section id="proxy" className="mt-6 mb-4 page-section">
+          <div className="bg-gray-100">
             <ProxyResolution proxyResolution={contractWithPlaceholders.proxyResolution} chainId={chainId} />
           </div>
         </section>
@@ -355,7 +423,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       {/* Read/Write Contract Section */}
       {(contractWithPlaceholders.abi?.length ?? 0) > 0 && (
         <section className="my-4 flex flex-row flex-wrap items-center gap-2">
-          <div className="sticky top-0 z-10 bg-gray-100 py-4">
+          <div className="bg-gray-100 py-4">
             <h2 className="text-lg font-semibold text-gray-800">Read/Write Contract on:</h2>
           </div>
           <div className="flex items-center gap-2">
@@ -373,16 +441,16 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
 
       {/* Contract ABI Section */}
       {(contractWithPlaceholders.abi?.length ?? 0) > 0 && (
-        <section className="mb-8">
+        <section id="abi" className="mb-8 page-section">
           <Suspense fallback={<LoadingState />}>
             <ContractAbi abi={contractWithPlaceholders.abi!} />
           </Suspense>
         </section>
       )}
 
-      {/* Contract Source Code Section */}
-      <section className="mb-8">
-        <div className="sticky top-0 z-10 bg-gray-100 pt-4 pb-2">
+      {/* Contract Source Code Section. The id is the scroll target for #file=… links. */}
+      <section id="source-code" className="mb-8 page-section">
+        <div className="bg-gray-100 pt-4 pb-2">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <h2 className="text-xl font-semibold text-gray-800">Source Code</h2>
             <div className="flex items-center gap-2 text-xs md:text-sm">
@@ -411,13 +479,13 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
         </div>
 
         <Suspense fallback={<LoadingState />}>
-          <ContractSource contract={contractWithPlaceholders} />
+          <ContractSource contract={sourceViewData} />
         </Suspense>
       </section>
 
       {/* Compiler Settings Section */}
-      <section className="mb-8">
-        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+      <section id="compiler-settings" className="mb-8 page-section">
+        <div className="bg-gray-100 py-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <h2 className="text-xl font-semibold text-gray-800">Compiler Settings</h2>
             <div className="flex items-center gap-2 text-xs md:text-sm">
@@ -449,43 +517,40 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
         </Suspense>
       </section>
 
-      {/* Contract Metadata Section */}
-      <section className="mb-8">
-        <div className="sticky top-0 z-10 bg-gray-100 py-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-            <h2 className="text-xl font-semibold text-gray-800">Contract Metadata</h2>
-            {contractWithPlaceholders.metadata && (
-              <div className="flex items-center gap-2">
-                <CopyToClipboardButton data={contractWithPlaceholders.metadata} />
-                <DownloadFileButton
-                  data={contractWithPlaceholders.metadata}
-                  fileName="metadata"
-                  chainId={contractWithPlaceholders.chainId}
-                  address={contractWithPlaceholders.address}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-        {contractWithPlaceholders.metadata ? (
-          <Suspense fallback={<LoadingState />}>
-            <JsonViewOnlyEditor data={contractWithPlaceholders.metadata} />
-          </Suspense>
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full bg-white rounded-lg p-4">
-            <div className="text-gray-700 text-sm">
-              {!isSolidity
-                ? "Contract metadata is not available for non-Solidity contracts."
-                : !hasMetadataSupport
-                  ? "Contract metadata is only available for Solidity contracts compiled with version ≥ 0.4.7."
-                  : "No contract metadata found in the compiler output."}
+      {/* Contract Metadata Section. The browser loads the metadata when the section comes into view. */}
+      <section id="metadata" className="mb-8 page-section">
+        <LazyJsonSection
+          field="metadata"
+          chainId={chainId}
+          address={contractWithPlaceholders.address}
+          serverUrl={getSourcifyServerUrl()}
+          fileName="metadata"
+          header={
+            <div className="flex items-baseline gap-3">
+              <h2 className="text-xl font-semibold text-gray-800">Metadata.json</h2>
+              <a
+                href="https://playground.sourcify.dev"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-gray-400 hover:text-gray-600 hover:underline"
+              >
+                What&apos;s metadata?
+              </a>
             </div>
-          </div>
-        )}
+          }
+          unavailableMessage={
+            !isSolidity
+              ? "Contract metadata is not available for non-Solidity contracts."
+              : !hasMetadataSupport
+                ? "Contract metadata is only available for Solidity contracts compiled with version ≥ 0.4.7."
+                : undefined
+          }
+          emptyMessage="No contract metadata found in the compiler output."
+        />
       </section>
 
       {/* Creation Bytecode Section */}
-      <section className="mb-8 border border-gray-200 rounded-lg p-3 md:p-6">
+      <section id="creation-bytecode" className="mb-8 border border-gray-200 rounded-lg p-3 md:p-6 page-section">
         {!contractWithPlaceholders.creationMatch && (
           <div className="mb-4 text-sm text-gray-700 bg-yellow-50 border border-yellow-200 p-3 rounded">
             Contract couldn&apos;t be verified with the creation bytecode but with the runtime bytecode. Below is what
@@ -493,18 +558,23 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           </div>
         )}
         <div className={`${!contractWithPlaceholders.creationMatch ? "opacity-60" : ""}`}>
-          <div className="sticky top-0 z-10 bg-gray-100">
+          <div className="bg-gray-100">
             <h2 className="text-xl font-semibold text-gray-800">Creation Bytecode</h2>
           </div>
           <Suspense fallback={<LoadingState />}>
             <BytecodeDiffView
               onchainBytecode={contractWithPlaceholders.creationBytecode.onchainBytecode}
-              recompiledBytecode={contractWithPlaceholders.creationBytecode.recompiledBytecode}
+              recompiledBytecode={differentOrUndefined(
+                contractWithPlaceholders.creationBytecode.onchainBytecode,
+                contractWithPlaceholders.creationBytecode.recompiledBytecode
+              )}
               id="creation"
               transformations={contractWithPlaceholders.creationBytecode.transformations}
               transformationValues={contractWithPlaceholders.creationBytecode.transformationValues}
               recompiledBytecodeCborAuxdata={contractWithPlaceholders.creationBytecode.cborAuxdata}
               signatures={contractWithPlaceholders.signatures}
+              sourceMap={contractWithPlaceholders.creationBytecode.sourceMap}
+              sourceIds={contractWithPlaceholders.sourceIds}
             />
           </Suspense>
 
@@ -560,7 +630,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </section>
 
       {/* Runtime Bytecode Section */}
-      <section className="mb-8 border border-gray-200 rounded-lg p-3 md:p-6">
+      <section id="runtime-bytecode" className="mb-8 border border-gray-200 rounded-lg p-3 md:p-6 page-section">
         {!contractWithPlaceholders.runtimeMatch && (
           <div className="mb-4 text-xs md:text-sm text-gray-700 bg-yellow-50 border border-yellow-200 p-3 rounded">
             Contract couldn&apos;t be verified with the runtime bytecode but with the creation bytecode. Below is what
@@ -568,18 +638,23 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           </div>
         )}
         <div className={`${!contractWithPlaceholders.runtimeMatch ? "opacity-60" : ""}`}>
-          <div className="sticky top-0 z-10 bg-gray-100">
+          <div className="bg-gray-100">
             <h2 className="text-xl font-semibold text-gray-800">Runtime Bytecode</h2>
           </div>
           <Suspense fallback={<LoadingState />}>
             <BytecodeDiffView
               onchainBytecode={contractWithPlaceholders.runtimeBytecode.onchainBytecode}
-              recompiledBytecode={contractWithPlaceholders.runtimeBytecode.recompiledBytecode}
+              recompiledBytecode={differentOrUndefined(
+                contractWithPlaceholders.runtimeBytecode.onchainBytecode,
+                contractWithPlaceholders.runtimeBytecode.recompiledBytecode
+              )}
               id="runtime"
               transformations={contractWithPlaceholders.runtimeBytecode.transformations}
               transformationValues={contractWithPlaceholders.runtimeBytecode.transformationValues}
               recompiledBytecodeCborAuxdata={contractWithPlaceholders.runtimeBytecode.cborAuxdata}
               signatures={contractWithPlaceholders.signatures}
+              sourceMap={contractWithPlaceholders.runtimeBytecode.sourceMap}
+              sourceIds={contractWithPlaceholders.sourceIds}
             />
           </Suspense>
 
@@ -638,8 +713,8 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       </section>
 
       {/* Storage Layout Section */}
-      <section className="mb-8">
-        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+      <section id="storage-layout" className="mb-8 page-section">
+        <div className="bg-gray-100 py-4">
           <h2 className="text-xl font-semibold text-gray-800">Storage Layout</h2>
           <div className="text-gray-700 text-sm">
             For non-default storage allocations (e.g.{" "}
@@ -665,7 +740,10 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
         </div>
         {contractWithPlaceholders.storageLayout &&
         Object.keys(contractWithPlaceholders.storageLayout).length > 0 ? (
-          <StorageLayout storageLayout={contractWithPlaceholders.storageLayout} />
+          <StorageLayout
+            storageLayout={contractWithPlaceholders.storageLayout}
+            sourcePath={contract.compilation.fullyQualifiedName.slice(0, contract.compilation.fullyQualifiedName.lastIndexOf(":"))}
+          />
         ) : (
           <div className="flex flex-col items-center justify-center h-full bg-white rounded-lg p-4">
             <div className="text-gray-700 text-sm">
@@ -683,7 +761,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
       {contractWithPlaceholders.additionalInput?.storage_layout_overrides &&
         Object.keys(contractWithPlaceholders.additionalInput.storage_layout_overrides).length > 0 && (
           <section className="mb-8">
-            <div className="sticky top-0 z-10 bg-gray-100 py-4">
+            <div className="bg-gray-100 py-4">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                 <h2 className="text-xl font-semibold text-gray-800">Storage Layout Overrides</h2>
                 <div className="flex items-center gap-2 text-xs md:text-sm">
@@ -711,12 +789,15 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
         )}
 
       {/* Transient Storage Layout Section */}
-      <section className="mb-8">
-        <div className="sticky top-0 z-10 bg-gray-100 py-4">
+      <section id="transient-storage-layout" className="mb-8 page-section">
+        <div className="bg-gray-100 py-4">
           <h2 className="text-xl font-semibold text-gray-800">Transient Storage Layout</h2>
         </div>
         {contractWithPlaceholders.transientStorageLayout?.types ? (
-          <StorageLayout storageLayout={contractWithPlaceholders.transientStorageLayout} />
+          <StorageLayout
+            storageLayout={contractWithPlaceholders.transientStorageLayout}
+            sourcePath={contract.compilation.fullyQualifiedName.slice(0, contract.compilation.fullyQualifiedName.lastIndexOf(":"))}
+          />
         ) : (
           <div className="flex flex-col items-center justify-center h-full bg-white rounded-lg p-4">
             <div className="text-gray-700 text-sm">
@@ -728,56 +809,41 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
         )}
       </section>
 
-      {/* Standard JSON Input Section */}
-      <section className="mb-8">
-        <div className="sticky top-0 z-10 bg-gray-100 py-4">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between">
-            <div>
+      {/* Standard JSON Input and Output. The browser loads each one when its section comes into view. */}
+      <section id="standard-json-input" className="mb-8 page-section">
+        <LazyJsonSection
+          field="stdJsonInput"
+          chainId={chainId}
+          address={contractWithPlaceholders.address}
+          serverUrl={getSourcifyServerUrl()}
+          fileName="standard-json-input"
+          header={
+            <>
               <h2 className="text-xl font-semibold text-gray-800">Standard JSON Input</h2>
               <p className="text-gray-700 text-sm">
                 This isn&apos;t the original compiler JSON data. Generated for compatibility.
               </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <CopyToClipboardButton data={contractWithPlaceholders.stdJsonInput} />
-              <DownloadFileButton
-                data={contractWithPlaceholders.stdJsonInput}
-                fileName="standard-json-input"
-                chainId={contractWithPlaceholders.chainId}
-                address={contractWithPlaceholders.address}
-              />
-            </div>
-          </div>
-        </div>
-        <Suspense fallback={<LoadingState />}>
-          <JsonViewOnlyEditor data={contractWithPlaceholders.stdJsonInput} />
-        </Suspense>
+            </>
+          }
+        />
       </section>
 
-      {/* Standard JSON Output Section */}
-      <section className="mb-8">
-        <div className="sticky top-0 z-10 bg-gray-100 py-4">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between">
-            <div>
+      <section id="standard-json-output" className="mb-8 page-section">
+        <LazyJsonSection
+          field="stdJsonOutput"
+          chainId={chainId}
+          address={contractWithPlaceholders.address}
+          serverUrl={getSourcifyServerUrl()}
+          fileName="standard-json-output"
+          header={
+            <>
               <h2 className="text-xl font-semibold text-gray-800">Standard JSON Output</h2>
               <p className="text-gray-700 text-sm">
                 This isn&apos;t the original compiler JSON data. Generated for compatibility.
               </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <CopyToClipboardButton data={contractWithPlaceholders.stdJsonOutput} />
-              <DownloadFileButton
-                data={contractWithPlaceholders.stdJsonOutput}
-                fileName="standard-json-output"
-                chainId={contractWithPlaceholders.chainId}
-                address={contractWithPlaceholders.address}
-              />
-            </div>
-          </div>
-        </div>
-        <Suspense fallback={<LoadingState />}>
-          <JsonViewOnlyEditor data={contractWithPlaceholders.stdJsonOutput} />
-        </Suspense>
+            </>
+          }
+        />
       </section>
     </div>
   );

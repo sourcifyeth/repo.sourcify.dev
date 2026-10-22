@@ -3,10 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/copy-monaco.mjs",
     "dev": "next dev --turbopack",
+    "prebuild": "node scripts/copy-monaco.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest run"
   },
   "dependencies": {
     "@ethereum-sourcify/bytecode-utils": "1.6.2",
@@ -14,6 +17,7 @@
     "@ethersproject/address": "5.8.0",
     "@ethersproject/keccak256": "5.8.0",
     "@monaco-editor/react": "4.7.0",
+    "@solidity-parser/parser": "0.20.2",
     "fuse.js": "7.5.0",
     "jszip": "3.10.2",
     "monaco-editor": "0.57.0",
@@ -37,6 +41,7 @@
     "eslint": "9.39.5",
     "eslint-config-next": "15.5.27",
     "tailwindcss": "4.3.3",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "4.1.12"
   }
 }
