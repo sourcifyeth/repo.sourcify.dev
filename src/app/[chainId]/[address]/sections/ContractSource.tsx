@@ -12,11 +12,18 @@ import SourceToolbar from "@/components/SourceToolbar";
 import SourceSidebar, { SidebarView } from "@/components/SourceSidebar";
 import SourceSearchPanel, { ActiveSearchMatch } from "@/components/SourceSearchPanel";
 import SourceFileFinder, { FinderFile } from "@/components/SourceFileFinder";
+import SourceOutline from "@/components/SourceOutline";
+import ExplorerSections from "@/components/ExplorerSections";
+import { useSourceSymbols } from "@/hooks/useSourceSymbols";
+import { parseRemappings, resolveImportPath } from "@/utils/importResolution";
+import { registerSourceProviders, SourceProviderContext, toMonacoRange } from "@/utils/monacoProviders";
+import { SourceSymbol, SymbolRange } from "@/utils/sourceSymbols";
 import { useCodeEditor } from "@/hooks/useCodeEditor";
 import { useIsMobile } from "@/hooks/useResponsive";
 import { useSourceHash } from "@/hooks/useSourceHash";
 import { buildFileTreeWithIds } from "@/utils/fileExplorer";
 import { createLibraryPathCheck } from "@/utils/libraryFiles";
+import { monacoLanguageOfPath, registerSourceLanguages } from "@/utils/monacoLanguages";
 import { formatSourceHash, LineRange, SourceLocation } from "@/utils/sourceHash";
 import {
   buildSearchRegExp,
@@ -59,286 +66,6 @@ function scrollToSourceSection() {
 function linkFor(location: SourceLocation): string {
   return window.location.origin + window.location.pathname + window.location.search + formatSourceHash(location);
 }
-
-// Define Solidity language configuration
-const configureSolidityLanguage = () => {
-  return {
-    beforeMount: (monaco: Monaco) => {
-      // Register Solidity language if it doesn't exist
-      if (!monaco.languages.getLanguages().some((lang: { id: string }) => lang.id === "solidity")) {
-        // Register the Solidity language
-        monaco.languages.register({ id: "solidity" });
-
-        // Define Solidity tokens and syntax highlighting rules
-        monaco.languages.setMonarchTokensProvider("solidity", {
-          defaultToken: "invalid",
-          tokenPostfix: ".sol",
-
-          keywords: [
-            "pragma",
-            "solidity",
-            "contract",
-            "library",
-            "interface",
-            "function",
-            "modifier",
-            "event",
-            "struct",
-            "enum",
-            "mapping",
-            "public",
-            "private",
-            "internal",
-            "external",
-            "pure",
-            "view",
-            "payable",
-            "constant",
-            "immutable",
-            "virtual",
-            "override",
-            "returns",
-            "memory",
-            "storage",
-            "calldata",
-            "if",
-            "else",
-            "for",
-            "while",
-            "do",
-            "break",
-            "continue",
-            "return",
-            "throw",
-            "emit",
-            "try",
-            "catch",
-            "revert",
-            "require",
-            "assert",
-            "using",
-            "new",
-            "delete",
-            "constructor",
-            "fallback",
-            "receive",
-            "abstract",
-            "is",
-            "indexed",
-            "import",
-            "from",
-            "as",
-            "type",
-            "assembly",
-          ],
-
-          typeKeywords: [
-            "address",
-            "bool",
-            "string",
-            "uint",
-            "uint8",
-            "uint16",
-            "uint32",
-            "uint64",
-            "uint128",
-            "uint256",
-            "int",
-            "int8",
-            "int16",
-            "int32",
-            "int64",
-            "int128",
-            "int256",
-            "bytes",
-            "bytes1",
-            "bytes2",
-            "bytes3",
-            "bytes4",
-            "bytes5",
-            "bytes6",
-            "bytes7",
-            "bytes8",
-            "bytes9",
-            "bytes10",
-            "bytes11",
-            "bytes12",
-            "bytes13",
-            "bytes14",
-            "bytes15",
-            "bytes16",
-            "bytes17",
-            "bytes18",
-            "bytes19",
-            "bytes20",
-            "bytes21",
-            "bytes22",
-            "bytes23",
-            "bytes24",
-            "bytes25",
-            "bytes26",
-            "bytes27",
-            "bytes28",
-            "bytes29",
-            "bytes30",
-            "bytes31",
-            "bytes32",
-            "fixed",
-            "ufixed",
-            "var",
-          ],
-
-          operators: [
-            "=",
-            ">",
-            "<",
-            "!",
-            "~",
-            "?",
-            ":",
-            "==",
-            "<=",
-            ">=",
-            "!=",
-            "&&",
-            "||",
-            "++",
-            "--",
-            "+",
-            "-",
-            "*",
-            "/",
-            "&",
-            "|",
-            "^",
-            "%",
-            "<<",
-            ">>",
-            ">>>",
-            "+=",
-            "-=",
-            "*=",
-            "/=",
-            "&=",
-            "|=",
-            "^=",
-            "%=",
-            "<<=",
-            ">>=",
-            ">>>=",
-          ],
-
-          symbols: /[=><!~?:&|+\-*\/\^%]+/,
-
-          tokenizer: {
-            root: [
-              // Identifiers and keywords
-              [
-                /[a-zA-Z_$][\w$]*/,
-                {
-                  cases: {
-                    "@keywords": "keyword",
-                    "@typeKeywords": "type",
-                    "@default": "identifier",
-                  },
-                },
-              ],
-
-              // Whitespace
-              { include: "@whitespace" },
-
-              // Delimiters and operators
-              [/[{}()\[\]]/, "@brackets"],
-              [/[<>](?!@symbols)/, "@brackets"],
-              [
-                /@symbols/,
-                {
-                  cases: {
-                    "@operators": "operator",
-                    "@default": "",
-                  },
-                },
-              ],
-
-              // Numbers
-              [/\d*\.\d+([eE][\-+]?\d+)?/, "number.float"],
-              [/0[xX][0-9a-fA-F]+/, "number.hex"],
-              [/\d+/, "number"],
-
-              // Delimiter
-              [/[;,.]/, "delimiter"],
-
-              // Strings
-              [/"([^"\\]|\\.)*$/, "string.invalid"],
-              [/"/, { token: "string.quote", bracket: "@open", next: "@string" }],
-              [/'([^'\\]|\\.)*$/, "string.invalid"],
-              [/'/, { token: "string.quote", bracket: "@open", next: "@stringSingle" }],
-            ],
-
-            // Solidity block comments do not nest: the first "*/" always ends the comment,
-            // even if a "/*" appears inside it (e.g. "/*////" ... "////*/" banners).
-            comment: [
-              [/[^*]+/, "comment"],
-              [/\*\//, "comment", "@pop"],
-              [/\*/, "comment"],
-            ],
-
-            string: [
-              [/[^\\"]+/, "string"],
-              [/\\./, "string.escape"],
-              [/"/, { token: "string.quote", bracket: "@close", next: "@pop" }],
-            ],
-
-            stringSingle: [
-              [/[^\\']+/, "string"],
-              [/\\./, "string.escape"],
-              [/'/, { token: "string.quote", bracket: "@close", next: "@pop" }],
-            ],
-
-            whitespace: [
-              [/[ \t\r\n]+/, "white"],
-              [/\/\*/, "comment", "@comment"],
-              [/\/\/.*$/, "comment"],
-            ],
-          },
-        });
-
-        // Define language configuration for editor features
-        monaco.languages.setLanguageConfiguration("solidity", {
-          comments: {
-            lineComment: "//",
-            blockComment: ["/*", "*/"],
-          },
-          brackets: [
-            ["{", "}"],
-            ["[", "]"],
-            ["(", ")"],
-          ],
-          autoClosingPairs: [
-            { open: "{", close: "}" },
-            { open: "[", close: "]" },
-            { open: "(", close: ")" },
-            { open: '"', close: '"' },
-            { open: "'", close: "'" },
-          ],
-          surroundingPairs: [
-            { open: "{", close: "}" },
-            { open: "[", close: "]" },
-            { open: "(", close: ")" },
-            { open: '"', close: '"' },
-            { open: "'", close: "'" },
-          ],
-          folding: {
-            markers: {
-              start: new RegExp("^\\s*//\\s*#?region\\b"),
-              end: new RegExp("^\\s*//\\s*#?endregion\\b"),
-            },
-          },
-        });
-      }
-    },
-  };
-};
 
 const EDITOR_OPTIONS = (isMobile: boolean, wordWrap: boolean): EditorProps["options"] => ({
   readOnly: true,
@@ -413,18 +140,7 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
 
   // Determine language based on file extension
   useEffect(() => {
-    if (activeTab) {
-      const extension = activeTab.path.split(".").pop()?.toLowerCase();
-      if (extension === "sol") {
-        setLanguage("solidity");
-      } else if (extension === "vy") {
-        setLanguage("elixir");
-      } else if (extension === "fe") {
-        setLanguage("rust");
-      } else {
-        setLanguage("plaintext");
-      }
-    }
+    if (activeTab) setLanguage(monacoLanguageOfPath(activeTab.path));
   }, [activeTab]);
 
   // ---- Reader position in the URL hash (#file=…&L=…) ----
@@ -602,15 +318,18 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
     else setSidebarView(view);
   };
 
-  // A click on a result opens the file and selects the match
-  const [revealRequest, setRevealRequest] = useState<{ path: string; match: SearchMatch; id: number } | null>(null);
+  // Open a file and select a range in it: a search result, or a symbol from Go to file
+  const [revealRequest, setRevealRequest] = useState<{ path: string; range: SymbolRange; id: number } | null>(null);
   const handledRevealRef = useRef(0);
-  const openSearchMatch = (path: string, match: SearchMatch) => {
+  const openFileAtRange = (path: string, range: SymbolRange) => {
     const source = contract.sources[path];
     if (!source) return;
-    setActiveMatch({ path, match });
     openTab(path, source.content);
-    setRevealRequest((previous) => ({ path, match, id: (previous?.id ?? 0) + 1 }));
+    setRevealRequest((previous) => ({ path, range, id: (previous?.id ?? 0) + 1 }));
+  };
+  const openSearchMatch = (path: string, match: SearchMatch) => {
+    setActiveMatch({ path, match });
+    openFileAtRange(path, match);
   };
 
   useEffect(() => {
@@ -619,8 +338,7 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
     if (!editorReady || !editorInstance || !monaco || !activeTab || !revealRequest) return;
     if (revealRequest.id === handledRevealRef.current || revealRequest.path !== activeTab.path) return;
     handledRevealRef.current = revealRequest.id;
-    const { match } = revealRequest;
-    const range = new monaco.Range(match.startLine, match.startColumn, match.endLine, match.endColumn);
+    const range = toMonacoRange(revealRequest.range);
     editorInstance.setSelection(range);
     editorInstance.revealRangeInCenter(range);
   }, [editorReady, activeTab, revealRequest]);
@@ -704,15 +422,68 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
     };
   }, [isFullscreen]);
 
+  // ---- Symbols: outline, "Go to symbol", "@" and "#" in Go to file ----
+  const symbolIndex = useSourceSymbols(contract.sources);
+  const activePath = activeTab?.path;
+  const requestSymbols = symbolIndex.request;
+  useEffect(() => {
+    if (activePath) requestSymbols(activePath);
+  }, [activePath, requestSymbols]);
+  const activeFileSymbols = activePath ? symbolIndex.get(activePath) : undefined;
+
+  // The line of the cursor, so that the outline can mark the symbol that holds it
+  const [cursorLine, setCursorLine] = useState<number | null>(null);
+
+  // A click in the outline selects the name of the symbol and shows it, but keeps the focus in the outline
+  const revealSymbol = (symbol: SourceSymbol) => {
+    const editorInstance = editorRef.current;
+    if (!editorInstance) return;
+    const range = toMonacoRange(symbol.nameRange);
+    editorInstance.setSelection(range);
+    editorInstance.revealRangeInCenterIfOutsideViewport(range);
+  };
+
+  const openSymbolFromFinder = (path: string, symbol: SourceSymbol) => {
+    setFinderOpen(false);
+    openFileAtRange(path, symbol.nameRange);
+    editorRef.current?.focus();
+  };
+
+  // Import paths resolve with the remappings, among the source files
+  const sourcePaths = useMemo(() => new Set(Object.keys(contract.sources)), [contract.sources]);
+  const parsedRemappings = useMemo(() => parseRemappings(remappings ?? []), [remappings]);
+
+  // The Monaco providers are registered once; they read the current data through this ref
+  const modelPathsRef = useRef(new Map<string, string>());
+  const providerContextRef = useRef<SourceProviderContext | null>(null);
+  useEffect(() => {
+    providerContextRef.current = {
+      pathOfModel: (model) => modelPathsRef.current.get(model.uri.toString()),
+      requestSymbols: symbolIndex.request,
+      importTarget: (fromPath, importPath) => resolveImportPath(importPath, fromPath, sourcePaths, parsedRemappings),
+      openFile: (path) => {
+        handleFileSelect(path);
+        editorRef.current?.focus();
+      },
+    };
+  });
+  const providersRef = useRef<{ dispose: () => void } | null>(null);
+  useEffect(() => () => providersRef.current?.dispose(), []);
+
   // Shortcuts while the focus is in the source section but outside the editor
-  // (the editor has its own commands, registered on mount):
-  // Cmd/Ctrl+Shift+F opens the search, Cmd/Ctrl+P opens Go to file.
+  // (the editor has its own commands, registered on mount): Cmd/Ctrl+Shift+F
+  // opens the search, Cmd/Ctrl+Shift+O "Go to symbol", Cmd/Ctrl+P Go to file.
   const onSourceKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
     if (editorRef.current?.hasTextFocus()) return;
     if (event.shiftKey && event.code === "KeyF") {
       event.preventDefault();
       openSearch();
+    } else if (event.shiftKey && event.code === "KeyO" && editorRef.current) {
+      // Monaco's "Go to symbol" list for the open file
+      event.preventDefault();
+      editorRef.current.focus();
+      editorRef.current.trigger("keyboard", "editor.action.quickOutline", null);
     } else if (!event.shiftKey && event.code === "KeyP") {
       event.preventDefault();
       openFinder();
@@ -822,11 +593,18 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
     // Cmd/Ctrl+P opens Go to file (instead of the browser's Print while the editor has the focus)
     editorInstance.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyP, () => openFinderRef.current());
 
+    // The outline follows the cursor
+    editorInstance.onDidChangeCursorPosition((event) => setCursorLine(event.position.lineNumber));
+
+    // Symbols for "Go to symbol" and links on import paths. The models of the
+    // source files are named by their path (the `path` prop of the editor).
+    modelPathsRef.current = new Map(Object.keys(contract.sources).map((path) => [monaco.Uri.parse(path).toString(), path]));
+    providersRef.current?.dispose();
+    providersRef.current = registerSourceProviders(monaco, () => providerContextRef.current!);
+
     setEditorReady(true);
   };
 
-  // Configure Solidity language
-  const solidityConfig = configureSolidityLanguage();
 
   return (
     <div
@@ -853,11 +631,24 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
             onViewChange={changeSidebarView}
             searchShortcut={isMac ? "⌘⇧F" : "Ctrl+Shift+F"}
             explorer={
-              <FileExplorerTree
-                files={fileTreeWithIds}
-                fileCount={Object.keys(contract.sources).length}
-                activeFile={activeTab?.path}
-                onFileSelect={handleFileSelect}
+              <ExplorerSections
+                outlineOpenByDefault={!isMobile}
+                files={
+                  <FileExplorerTree
+                    files={fileTreeWithIds}
+                    fileCount={Object.keys(contract.sources).length}
+                    activeFile={activeTab?.path}
+                    onFileSelect={handleFileSelect}
+                  />
+                }
+                outline={
+                  <SourceOutline
+                    path={activePath}
+                    fileSymbols={activeFileSymbols}
+                    cursorLine={cursorLine}
+                    onSelect={revealSymbol}
+                  />
+                }
               />
             }
             search={
@@ -908,7 +699,7 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
                 path={activeTab.path}
                 defaultValue={activeTab.content}
                 options={editorOptions}
-                beforeMount={solidityConfig.beforeMount}
+                beforeMount={registerSourceLanguages}
                 onMount={handleEditorDidMount}
                 loading={
                   <div className="bg-gray-800 text-sm text-gray-500 flex items-center justify-center w-full h-full">
@@ -929,6 +720,11 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
             files={finderFiles}
             shortcut={isMac ? "⌘P" : "Ctrl+P"}
             onOpen={openFileFromFinder}
+            activePath={activePath}
+            getSymbols={symbolIndex.get}
+            symbolsVersion={symbolIndex.version}
+            onRequestSymbols={symbolIndex.requestMany}
+            onOpenSymbol={openSymbolFromFinder}
             onClose={closeFinder}
           />
         )}

@@ -65,8 +65,10 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, style, dragHandle }) => {
     return null;
   }
 
-  const { isLibrary, isOtherGroup } = node.data;
-  // Library code is dimmed, so that the project's own code stands out
+  const { isOtherGroup, isTarget } = node.data;
+  // Library code is dimmed, so that the project's own code stands out. The main
+  // contract file is never dimmed, even if it is library code (for example an OpenZeppelin proxy).
+  const isLibrary = node.data.isLibrary && !isTarget;
   const textColor = isActive ? "text-white" : isLibrary || isOtherGroup ? "text-gray-500" : "text-gray-300";
 
   return (
@@ -218,7 +220,7 @@ const FileExplorerTree: React.FC<FileExplorerTreeProps> = ({ files, fileCount, a
                 setFilter("");
               }
             }}
-            placeholder={`Filter ${fileCount} files`}
+            placeholder={`Filter ${fileCount} ${fileCount === 1 ? "file" : "files"}`}
             aria-label="Filter files by path"
             spellCheck={false}
             className="flex-1 min-w-0 bg-transparent px-2 py-1 text-xs text-gray-100 placeholder-gray-500 outline-none"

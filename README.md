@@ -98,6 +98,25 @@ The search code is in `src/utils/sourceSearch.ts`. It runs in the browser on the
 
 Press **Cmd+P** (macOS) or **Ctrl+P** (Windows, Linux) while the focus is in the Source Code section, or click **Go to file** in the editor toolbar. Then type a part of a file name. The match is fuzzy, and a match in the file name counts more than a match in the folders. Use the arrow keys and **Enter** to open a file, or **Esc** to close the box. Without a query, the list shows the project's own files first, then library files, then other files. Outside the Source Code section, Cmd/Ctrl+P is still the browser's Print.
 
+### Outline and symbols
+
+- The Explorer tab has two sections: **Files** (the tree) and **Outline**. Click a section title to close or open it. On small screens the outline starts closed.
+- The outline lists the symbols of the open file: contracts, interfaces and libraries, with their functions, modifiers, events, errors, structs, enums and state variables. Each row shows the parameter types, and badges for visibility (`ext`, `pub`, `int`, `priv`) and mutability (`view`, `pure`, `payable`, `constant`, `immutable`). Click a row to go to the declaration.
+- The outline follows the cursor: it marks the symbol that holds the cursor and keeps it in view.
+- **Cmd+Shift+O** (macOS) or **Ctrl+Shift+O** lists the symbols of the open file. Type to filter, and press Enter to go to a symbol.
+- In Go to file (**Cmd/Ctrl+P**), type **@** first to find a symbol in the open file, or **#** first to find a symbol in all files (for example `#transfer`). With `#`, the files are read in the background, the project's own files first. The box shows the progress, and results show while it runs. For Uniswap V3 Factory (390 files), this takes a few seconds.
+- How the symbols are found: Solidity files are read by [@solidity-parser/parser](https://github.com/solidity-parser/parser) in a Web Worker (a background thread), only when needed. If the parser cannot read a file (very old or very new syntax), a simple scan is used, and the outline says so. Vyper files always use a simple scan of the top-level declarations. The code is in `src/utils/sourceSymbols.ts` and `src/workers/sourceSymbols.worker.ts`. These symbols come from the syntax only. They do not resolve names, so "go to definition" is not in this feature.
+
+### Import links
+
+In a Solidity file, the path of each `import` is a link. **Cmd+click** (macOS) or **Ctrl+click** opens the imported file in a tab. The path resolves like the compiler does: relative paths from the importing file, then the remappings of the compilation, then the path itself. If none of these is a source file, a file whose path ends with the import path is used, but only if exactly one file matches. Imports that do not resolve have no link. The code is in `src/utils/importResolution.ts`.
+
+### Syntax colors
+
+- Solidity: the keywords include `error`, `unchecked`, `transient`, `receive`, `fallback` and Yul keywords (`let`, `switch`, `leave`), all integer and `bytesN` types, and `hex"…"` and `unicode"…"` strings. NatSpec tags (`@notice`, `@param`, `@custom:…`) in comments show in the keyword color.
+- Vyper: Vyper files have their own grammar (decorators, `def`, `event`, `struct`, `interface`, types, `#` comments, docstrings with NatSpec tags). Before, they used Elixir colors.
+- The grammars are in `src/utils/monacoLanguages.ts`.
+
 ### Size and fullscreen
 
 On a desktop screen, the source view is about 75% of the window height (at least 540 px). The fullscreen button in the editor toolbar makes the source view fill the window. To leave fullscreen, click the button again or press **Esc**. In the editor, Esc first closes the find box or clears a selection, and the next Esc leaves fullscreen.
