@@ -1,4 +1,4 @@
-import { ContractData } from "@/types/contract";
+import { ContractPageData } from "@/types/contract";
 import { formatTimestamp } from "@/utils/api";
 import CopyToClipboard from "../../../../components/CopyToClipboard";
 import Image from "next/image";
@@ -7,7 +7,7 @@ import VyperIcon from "@/assets/vyper.svg";
 import FeIcon from "@/assets/fe-dark.svg";
 
 interface ContractDetailsProps {
-  contract: ContractData;
+  contract: ContractPageData;
   chainName: string;
 }
 

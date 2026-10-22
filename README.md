@@ -155,6 +155,12 @@ On a desktop screen, the source view is about 75% of the window height (at least
 
 A bar under the contract header links to each section of the page (Details, ABI, Source Code, Compiler, Metadata, the bytecode sections, Storage, and the Standard JSON sections). It sticks to the top while you scroll and marks the section you are in. A click scrolls to the section and does not change the URL hash, because the hash holds the source position. Links with a plain section anchor, such as `#abi` or `#storage-layout`, also work.
 
+The page does not include the large JSON values. The Metadata, Standard JSON Input and Standard JSON Output sections load their value from the Sourcify API when you scroll near them. If the request fails, the section shows a **Retry** button. Each JSON viewer starts its editor only when it comes near the screen.
+
+## Monaco editor files
+
+The app serves the Monaco editor itself, in the version that `package.json` installs. `scripts/copy-monaco.mjs` copies `node_modules/monaco-editor/min/vs` to `public/monaco/<version>/vs`. It runs before `npm run dev` and `npm run build`. The folder is in `.gitignore`. `src/utils/monacoLoader.ts` points the editor loader at this folder, so the browser does not load Monaco from a CDN.
+
 ## Getting Started
 
 ### Prerequisites

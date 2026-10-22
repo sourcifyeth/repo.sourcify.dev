@@ -29,6 +29,16 @@ export interface ContractData {
   signatures?: SignatureData;
 }
 
+/**
+ * The large fields that the contract page does not request. The browser
+ * loads each one when its section comes into view (see LazyJsonSection).
+ */
+export const LAZY_CONTRACT_FIELDS = ["metadata", "stdJsonInput", "stdJsonOutput"] as const;
+export type LazyContractField = (typeof LAZY_CONTRACT_FIELDS)[number];
+
+/** The contract as the page requests it: all fields except the lazy ones. */
+export type ContractPageData = Omit<ContractData, LazyContractField>;
+
 export interface LibraryReferenceObject {
   start: number;
   length: number;

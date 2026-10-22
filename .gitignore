@@ -20,6 +20,9 @@
 # production
 /build
 
+# Monaco's browser build, copied from node_modules by scripts/copy-monaco.mjs
+/public/monaco/
+
 # claude
 .claude/
 

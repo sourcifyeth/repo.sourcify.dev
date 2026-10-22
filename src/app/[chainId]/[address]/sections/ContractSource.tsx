@@ -1,11 +1,12 @@
 "use client";
 
 import { FileNode } from "@/types/codeEditor";
-import { ContractData } from "@/types/contract";
+import { ContractPageData } from "@/types/contract";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import type { EditorProps, Monaco } from "@monaco-editor/react";
 import type { editor } from "monaco-editor";
 import MonacoEditor from "@monaco-editor/react";
+import "@/utils/monacoLoader";
 import CodeEditorTabs from "@/components/CodeEditorTabs";
 import FileExplorerTree from "@/components/FileExplorerTree";
 import SourceToolbar from "@/components/SourceToolbar";
@@ -104,7 +105,7 @@ const EDITOR_OPTIONS = (isMobile: boolean, wordWrap: boolean): EditorProps["opti
 });
 
 interface ContractSourceProps {
-  contract: ContractData;
+  contract: ContractPageData;
 }
 
 export default function ContractSourceV2({ contract }: ContractSourceProps) {

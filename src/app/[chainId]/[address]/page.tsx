@@ -9,6 +9,7 @@ import LoadingState from "@/components/LoadingState";
 import { IoCheckmarkDoneCircle, IoCheckmarkCircle, IoWarning, IoCloseCircle } from "react-icons/io5";
 import CopyToClipboard from "@/components/CopyToClipboard";
 import SectionNav, { PageSection } from "@/components/SectionNav";
+import LazyJsonSection from "@/components/LazyJsonSection";
 import ContractDetails from "@/app/[chainId]/[address]/sections/ContractDetails";
 import ProxyResolution from "./sections/ProxyResolution";
 import ContractAbi from "./sections/ABI";
@@ -468,10 +469,15 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
         </Suspense>
       </section>
 
-      {/* Contract Metadata Section */}
+      {/* Contract Metadata Section. The browser loads the metadata when the section comes into view. */}
       <section id="metadata" className="mb-8 page-section">
-        <div className="bg-gray-100 py-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+        <LazyJsonSection
+          field="metadata"
+          chainId={chainId}
+          address={contractWithPlaceholders.address}
+          serverUrl={getSourcifyServerUrl()}
+          fileName="metadata"
+          header={
             <div className="flex items-baseline gap-3">
               <h2 className="text-xl font-semibold text-gray-800">Metadata.json</h2>
               <a
@@ -483,34 +489,16 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
                 What&apos;s metadata?
               </a>
             </div>
-            {contractWithPlaceholders.metadata && (
-              <div className="flex items-center gap-2">
-                <CopyToClipboardButton data={contractWithPlaceholders.metadata} />
-                <DownloadFileButton
-                  data={contractWithPlaceholders.metadata}
-                  fileName="metadata"
-                  chainId={contractWithPlaceholders.chainId}
-                  address={contractWithPlaceholders.address}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-        {contractWithPlaceholders.metadata ? (
-          <Suspense fallback={<LoadingState />}>
-            <JsonViewOnlyEditor data={contractWithPlaceholders.metadata} />
-          </Suspense>
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full bg-white rounded-lg p-4">
-            <div className="text-gray-700 text-sm">
-              {!isSolidity
-                ? "Contract metadata is not available for non-Solidity contracts."
-                : !hasMetadataSupport
-                  ? "Contract metadata is only available for Solidity contracts compiled with version ≥ 0.4.7."
-                  : "No contract metadata found in the compiler output."}
-            </div>
-          </div>
-        )}
+          }
+          unavailableMessage={
+            !isSolidity
+              ? "Contract metadata is not available for non-Solidity contracts."
+              : !hasMetadataSupport
+                ? "Contract metadata is only available for Solidity contracts compiled with version ≥ 0.4.7."
+                : undefined
+          }
+          emptyMessage="No contract metadata found in the compiler output."
+        />
       </section>
 
       {/* Creation Bytecode Section */}
@@ -767,56 +755,41 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
         )}
       </section>
 
-      {/* Standard JSON Input Section */}
+      {/* Standard JSON Input and Output. The browser loads each one when its section comes into view. */}
       <section id="standard-json-input" className="mb-8 page-section">
-        <div className="bg-gray-100 py-4">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between">
-            <div>
+        <LazyJsonSection
+          field="stdJsonInput"
+          chainId={chainId}
+          address={contractWithPlaceholders.address}
+          serverUrl={getSourcifyServerUrl()}
+          fileName="standard-json-input"
+          header={
+            <>
               <h2 className="text-xl font-semibold text-gray-800">Standard JSON Input</h2>
               <p className="text-gray-700 text-sm">
                 This isn&apos;t the original compiler JSON data. Generated for compatibility.
               </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <CopyToClipboardButton data={contractWithPlaceholders.stdJsonInput} />
-              <DownloadFileButton
-                data={contractWithPlaceholders.stdJsonInput}
-                fileName="standard-json-input"
-                chainId={contractWithPlaceholders.chainId}
-                address={contractWithPlaceholders.address}
-              />
-            </div>
-          </div>
-        </div>
-        <Suspense fallback={<LoadingState />}>
-          <JsonViewOnlyEditor data={contractWithPlaceholders.stdJsonInput} />
-        </Suspense>
+            </>
+          }
+        />
       </section>
 
-      {/* Standard JSON Output Section */}
       <section id="standard-json-output" className="mb-8 page-section">
-        <div className="bg-gray-100 py-4">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between">
-            <div>
+        <LazyJsonSection
+          field="stdJsonOutput"
+          chainId={chainId}
+          address={contractWithPlaceholders.address}
+          serverUrl={getSourcifyServerUrl()}
+          fileName="standard-json-output"
+          header={
+            <>
               <h2 className="text-xl font-semibold text-gray-800">Standard JSON Output</h2>
               <p className="text-gray-700 text-sm">
                 This isn&apos;t the original compiler JSON data. Generated for compatibility.
               </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <CopyToClipboardButton data={contractWithPlaceholders.stdJsonOutput} />
-              <DownloadFileButton
-                data={contractWithPlaceholders.stdJsonOutput}
-                fileName="standard-json-output"
-                chainId={contractWithPlaceholders.chainId}
-                address={contractWithPlaceholders.address}
-              />
-            </div>
-          </div>
-        </div>
-        <Suspense fallback={<LoadingState />}>
-          <JsonViewOnlyEditor data={contractWithPlaceholders.stdJsonOutput} />
-        </Suspense>
+            </>
+          }
+        />
       </section>
     </div>
   );

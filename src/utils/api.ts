@@ -1,4 +1,4 @@
-import { ContractData, VerifiedContractMinimal } from "@/types/contract";
+import { ContractPageData, LAZY_CONTRACT_FIELDS, VerifiedContractMinimal } from "@/types/contract";
 import { fetchVerifiedAllChains } from "@/utils/allChains";
 import { ChainData, ChainsResponse } from "@/types/chain";
 
@@ -33,15 +33,17 @@ const getSourcifyServerInternalUrl = () => {
 const revalidateTime = process.env.NODE_ENV === "production" ? 86400 : 3600; // 24 hours for production, 1 hour for development
 
 /**
- * Fetches contract data from the Sourcify API
+ * Fetches contract data from the Sourcify API: all fields except the large
+ * ones that the page loads in the browser when needed (LAZY_CONTRACT_FIELDS).
  * @param chainId The chain ID
  * @param address The contract address
  * @returns The contract data, or null if the contract is not verified (404)
  */
-export async function fetchContractData(chainId: string, address: string): Promise<ContractData | null> {
+export async function fetchContractData(chainId: string, address: string): Promise<ContractPageData | null> {
   const baseUrl = getSourcifyServerInternalUrl();
   const normalizedAddress = address.toLowerCase();
-  const url = `${baseUrl}/v2/contract/${chainId}/${normalizedAddress}?fields=all`;
+  // Without `fields`, `omit` returns every field except the ones listed
+  const url = `${baseUrl}/v2/contract/${chainId}/${normalizedAddress}?omit=${LAZY_CONTRACT_FIELDS.join(",")}`;
 
   try {
     const response = await fetch(url, { cache: "no-store" });
@@ -64,7 +66,7 @@ export async function fetchContractData(chainId: string, address: string): Promi
       throw new Error(`Failed to fetch contract data: ${response.status} ${response.statusText}`);
     }
 
-    return (await response.json()) as ContractData;
+    return (await response.json()) as ContractPageData;
   } catch (error) {
     console.error("Error fetching contract data:", error);
     throw error;
