@@ -215,6 +215,14 @@ SOURCIFY_SERVER_INTERNAL_URL=https://sourcify.dev/server
    npm test
    ```
 
+6. Format the code with Prettier, and check the format and lint rules (CI runs these on every pull request):
+
+   ```bash
+   npm run format
+   npm run format:check
+   npm run lint
+   ```
+
 ### Building for Production
 
 ```bash

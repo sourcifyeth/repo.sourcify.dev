@@ -9,8 +9,7 @@ const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
-const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
-];
+// "prettier" goes last: it turns off the ESLint rules that clash with Prettier's formatting
+const eslintConfig = [...compat.extends("next/core-web-vitals", "next/typescript", "prettier")];
 
 export default eslintConfig;
