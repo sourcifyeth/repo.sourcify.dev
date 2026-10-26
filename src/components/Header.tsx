@@ -63,7 +63,13 @@ export default function Header() {
         </div>
       </nav>
       <div className="ml-2 mt-6 flex items-center lg:mt-0">
-        <a className="hover-to-fill px-2" href="https://x.com/sourcifyeth" target="_blank" rel="noreferrer" aria-label="Sourcify on X">
+        <a
+          className="hover-to-fill px-2"
+          href="https://x.com/sourcifyeth"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Sourcify on X"
+        >
           <RiTwitterXFill className="h-[1.4rem] w-auto fill-gray-700" />
         </a>
         <a
@@ -114,7 +120,12 @@ export default function Header() {
             aria-modal="true"
             aria-label="Menu"
           >
-            <button type="button" className="absolute right-8 top-4" onClick={() => setMenuOpen(false)} aria-label="Close menu">
+            <button
+              type="button"
+              className="absolute right-8 top-4"
+              onClick={() => setMenuOpen(false)}
+              aria-label="Close menu"
+            >
               <HiX className="text-3xl text-gray-700 hover:text-cerulean-blue-500" />
             </button>
             {links}

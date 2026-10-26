@@ -18,7 +18,8 @@ async function loadField(url: string, field: LazyContractField): Promise<unknown
   return body[field] ?? null;
 }
 
-type LoadState = { status: "idle" | "loading" } | { status: "loaded"; data: unknown } | { status: "error"; message: string };
+type LoadState =
+  { status: "idle" | "loading" } | { status: "loaded"; data: unknown } | { status: "error"; message: string };
 
 interface LazyJsonSectionProps {
   field: LazyContractField;
@@ -71,7 +72,10 @@ export default function LazyJsonSection({
       (error: unknown) =>
         setState({
           status: "error",
-          message: error instanceof Error && error.message !== "Failed to fetch" ? error.message : "The request did not reach the Sourcify API.",
+          message:
+            error instanceof Error && error.message !== "Failed to fetch"
+              ? error.message
+              : "The request did not reach the Sourcify API.",
         })
     );
   }, [url, field]);
@@ -87,7 +91,10 @@ export default function LazyJsonSection({
     body = <Notice>{unavailableMessage}</Notice>;
   } else if (state.status === "error") {
     body = (
-      <div role="alert" className="flex flex-col items-center gap-3 rounded-lg border border-red-200 bg-white p-6 text-sm text-gray-700">
+      <div
+        role="alert"
+        className="flex flex-col items-center gap-3 rounded-lg border border-red-200 bg-white p-6 text-sm text-gray-700"
+      >
         <div className="flex items-center gap-2 text-red-700">
           <IoWarning className="h-4 w-4 flex-shrink-0" />
           <span>Could not load this section. {state.message}</span>
@@ -107,7 +114,10 @@ export default function LazyJsonSection({
     body = <JsonViewOnlyEditor data={data} />;
   } else {
     body = (
-      <div className="flex h-[400px] items-center justify-center rounded bg-[#1e1e1e] text-sm text-gray-400" aria-busy="true">
+      <div
+        className="flex h-[400px] items-center justify-center rounded bg-[#1e1e1e] text-sm text-gray-400"
+        aria-busy="true"
+      >
         {state.status === "loading" ? "Loading…" : ""}
       </div>
     );

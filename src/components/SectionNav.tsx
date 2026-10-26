@@ -82,7 +82,9 @@ export default function SectionNav({ sections }: { sections: PageSection[] }) {
               onClick={() => go(id)}
               aria-current={active === id ? "location" : undefined}
               className={`rounded px-2 py-1 cursor-pointer transition-colors ${
-                active === id ? "bg-white text-gray-900 font-medium shadow-sm" : "text-gray-600 hover:bg-gray-200 hover:text-gray-900"
+                active === id
+                  ? "bg-white text-gray-900 font-medium shadow-sm"
+                  : "text-gray-600 hover:bg-gray-200 hover:text-gray-900"
               }`}
             >
               {label}

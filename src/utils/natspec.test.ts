@@ -49,7 +49,10 @@ describe("parseNatSpec", () => {
 });
 
 describe("natSpecFromCompiler", () => {
-  const userdoc = { methods: { "mint(address)": { notice: "Mint tokens." } }, errors: { "Bad()": [{ notice: "Bad." }] } };
+  const userdoc = {
+    methods: { "mint(address)": { notice: "Mint tokens." } },
+    errors: { "Bad()": [{ notice: "Bad." }] },
+  };
   const devdoc = {
     methods: { "mint(address)": { details: "Only owner.", params: { to: "Receiver" }, returns: { _0: "Amount" } } },
   };

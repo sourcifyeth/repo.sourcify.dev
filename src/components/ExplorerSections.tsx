@@ -38,11 +38,19 @@ export default function ExplorerSections({ files, outline, outlineOpenByDefault 
   return (
     <div className="flex h-full flex-col">
       <SectionHeader title="Files" open={filesOpen} onToggle={() => setFilesOpen((open) => !open)} />
-      {filesOpen && <div className="min-h-0" style={{ flex: outlineOpen ? "3 1 0" : "1 1 0" }}>{files}</div>}
+      {filesOpen && (
+        <div className="min-h-0" style={{ flex: outlineOpen ? "3 1 0" : "1 1 0" }}>
+          {files}
+        </div>
+      )}
       <div className={filesOpen ? "border-t border-gray-700" : ""}>
         <SectionHeader title="Outline" open={outlineOpen} onToggle={() => setOutlineChoice(!outlineOpen)} />
       </div>
-      {outlineOpen && <div className="min-h-0" style={{ flex: filesOpen ? "2 1 0" : "1 1 0" }}>{outline}</div>}
+      {outlineOpen && (
+        <div className="min-h-0" style={{ flex: filesOpen ? "2 1 0" : "1 1 0" }}>
+          {outline}
+        </div>
+      )}
     </div>
   );
 }

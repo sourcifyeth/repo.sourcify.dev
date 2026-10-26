@@ -30,7 +30,15 @@ const FILTER_THRESHOLD = 8;
  * A select with the same look as the search dropdown on the home page:
  * a white button, and a floating grey panel with a white list.
  */
-export default function OptionDropdown({ id, ariaLabel, options, value, onChange, disabled, size = "md" }: OptionDropdownProps) {
+export default function OptionDropdown({
+  id,
+  ariaLabel,
+  options,
+  value,
+  onChange,
+  disabled,
+  size = "md",
+}: OptionDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [filter, setFilter] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
@@ -114,7 +122,9 @@ export default function OptionDropdown({ id, ariaLabel, options, value, onChange
             "Select…"
           )}
         </span>
-        <IoChevronDown className={`shrink-0 w-4 h-4 text-gray-500 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        <IoChevronDown
+          className={`shrink-0 w-4 h-4 text-gray-500 transition-transform ${isOpen ? "rotate-180" : ""}`}
+        />
       </button>
 
       {isOpen && (

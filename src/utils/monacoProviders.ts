@@ -48,8 +48,10 @@ const MAX_REFERENCES = 1000;
 const shortHash = (value: string) => (value.length > 18 ? `${value.slice(0, 10)}…${value.slice(-8)}` : value);
 
 const containsPosition = (range: SymbolRange, position: Position) =>
-  (position.lineNumber > range.startLine || (position.lineNumber === range.startLine && position.column >= range.startColumn)) &&
-  (position.lineNumber < range.endLine || (position.lineNumber === range.endLine && position.column <= range.endColumn));
+  (position.lineNumber > range.startLine ||
+    (position.lineNumber === range.startLine && position.column >= range.startColumn)) &&
+  (position.lineNumber < range.endLine ||
+    (position.lineNumber === range.endLine && position.column <= range.endColumn));
 
 // Links use this scheme, so that the link opener knows they are ours
 const LINK_SCHEME = "sourcify-source";
@@ -226,7 +228,14 @@ export function registerSourceProviders(monaco: Monaco, getContext: () => Source
         const entry = candidates[0];
         const compiler = context.compiler();
         const info = selectorInfo(entry, compiler, resolve, chain);
-        const docs = natSpecInfo(entry, context.readContent(entry.path), compiler, info, candidates, context.readContent);
+        const docs = natSpecInfo(
+          entry,
+          context.readContent(entry.path),
+          compiler,
+          info,
+          candidates,
+          context.readContent
+        );
         const language = entry.path.endsWith(".vy") ? "vyper" : "solidity";
         // Names, paths and the declaration come from the contract: code spans or escaped text only
         const where = escapeMarkdown(entry.container ? `${entry.container.name} · ${entry.path}` : entry.path);
@@ -245,7 +254,9 @@ export function registerSourceProviders(monaco: Monaco, getContext: () => Source
         const notes: string[] = [];
         if (!isDeclaration || entry.path !== path) notes.push(`Declared in ${where}`);
         if (!isDeclaration && candidates.length > 1) {
-          notes.push(`Best guess by name: ${candidates.length} declarations are named ${inlineCode(word)}. Cmd/Ctrl+click lists them all.`);
+          notes.push(
+            `Best guess by name: ${candidates.length} declarations are named ${inlineCode(word)}. Cmd/Ctrl+click lists them all.`
+          );
         }
         if (notes.length) contents.push({ value: notes.map((note) => `*${note}*`).join("  \n") });
         return { range, contents };

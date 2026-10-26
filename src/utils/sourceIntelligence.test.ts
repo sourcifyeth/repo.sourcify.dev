@@ -103,7 +103,9 @@ describe("selectorInfo", () => {
   });
 
   it("gives getters of public state variables their parameters", () => {
-    expect(selectorInfo(find("src/Token.sol", "balanceOf"), compiler, resolve, chain)?.signature).toBe("balanceOf(address)");
+    expect(selectorInfo(find("src/Token.sol", "balanceOf"), compiler, resolve, chain)?.signature).toBe(
+      "balanceOf(address)"
+    );
     expect(selectorInfo(find("src/Token.sol", "totalSupply"), compiler, resolve, chain)?.value).toBe("0x18160ddd");
   });
 
@@ -135,8 +137,12 @@ describe("natSpecInfo", () => {
 
 describe("declarationLine and findSymbolByPath", () => {
   it("writes a one-line declaration", () => {
-    expect(declarationLine(find("src/Token.sol", "transfer").symbol)).toBe("function transfer(address, uint256) external");
-    expect(declarationLine(find("src/Token.sol", "balanceOf").symbol)).toBe("mapping(address => uint256) public balanceOf");
+    expect(declarationLine(find("src/Token.sol", "transfer").symbol)).toBe(
+      "function transfer(address, uint256) external"
+    );
+    expect(declarationLine(find("src/Token.sol", "balanceOf").symbol)).toBe(
+      "mapping(address => uint256) public balanceOf"
+    );
     expect(declarationLine(find("src/Token.sol", "Token").symbol)).toBe("contract Token is Base, IToken");
   });
 

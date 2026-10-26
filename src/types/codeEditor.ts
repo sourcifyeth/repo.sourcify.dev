@@ -1,7 +1,7 @@
 export interface FileNode {
   id: string;
   name: string;
-  type: 'file' | 'folder';
+  type: "file" | "folder";
   path: string;
   isOpen?: boolean;
   children?: Record<string, FileNode> | FileNode[];
@@ -24,4 +24,3 @@ export interface TabData {
   isDefault?: boolean;
   isTargetContract?: boolean;
 }
-

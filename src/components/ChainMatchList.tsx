@@ -25,9 +25,7 @@ interface ChainMatchListProps {
 export function MatchBadge({ match }: { match: ChainMatch["contract"]["match"] }) {
   const isExact = match === "exact_match";
   return (
-    <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-medium bg-green-100 text-green-800 border-green-200"
-    >
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-medium bg-green-100 text-green-800 border-green-200">
       {isExact ? <IoCheckmarkDoneCircle className="w-4 h-4" /> : <IoCheckmarkCircle className="w-4 h-4" />}
       {isExact ? (
         <>

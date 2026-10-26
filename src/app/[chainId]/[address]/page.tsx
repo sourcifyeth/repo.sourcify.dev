@@ -1,10 +1,4 @@
-import {
-  fetchContractData,
-  fetchChains,
-  getChainName,
-  checkVerification,
-  getSourcifyServerUrl,
-} from "@/utils/api";
+import { fetchContractData, fetchChains, getChainName, checkVerification, getSourcifyServerUrl } from "@/utils/api";
 import SimilarityVerification from "./SimilarityVerification";
 import ErrorState from "@/components/ErrorState";
 import { Suspense } from "react";
@@ -13,12 +7,7 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { getAddress } from "@ethersproject/address";
 import LoadingState from "@/components/LoadingState";
-import {
-  IoCheckmarkDoneCircle,
-  IoCheckmarkCircle,
-  IoWarning,
-  IoCloseCircle,
-} from "react-icons/io5";
+import { IoCheckmarkDoneCircle, IoCheckmarkCircle, IoWarning, IoCloseCircle } from "react-icons/io5";
 import CopyToClipboard from "@/components/CopyToClipboard";
 import SectionNav, { PageSection } from "@/components/SectionNav";
 import LazyJsonSection from "@/components/LazyJsonSection";
@@ -199,10 +188,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
             secondaryMessage={`Chain ${chainId} is not supported on Sourcify.`}
           />
         ) : isChainDeprecated ? (
-          <ErrorState
-            message="Contract not found"
-            secondaryMessage="Verification on this chain is deprecated."
-          />
+          <ErrorState message="Contract not found" secondaryMessage="Verification on this chain is deprecated." />
         ) : (
           <SimilarityVerification chainId={chainId} address={checksummedAddress} serverUrl={getSourcifyServerUrl()} />
         )}
@@ -794,11 +780,13 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
             </a>
           </div>
         </div>
-        {contractWithPlaceholders.storageLayout &&
-        Object.keys(contractWithPlaceholders.storageLayout).length > 0 ? (
+        {contractWithPlaceholders.storageLayout && Object.keys(contractWithPlaceholders.storageLayout).length > 0 ? (
           <StorageLayout
             storageLayout={contractWithPlaceholders.storageLayout}
-            sourcePath={contract.compilation.fullyQualifiedName.slice(0, contract.compilation.fullyQualifiedName.lastIndexOf(":"))}
+            sourcePath={contract.compilation.fullyQualifiedName.slice(
+              0,
+              contract.compilation.fullyQualifiedName.lastIndexOf(":")
+            )}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full bg-white rounded-lg p-4">
@@ -821,9 +809,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
               <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                 <h2 className="text-xl font-semibold text-gray-800">Storage Layout Overrides</h2>
                 <div className="flex items-center gap-2 text-xs md:text-sm">
-                  <CopyToClipboardButton
-                    data={contractWithPlaceholders.additionalInput.storage_layout_overrides}
-                  />
+                  <CopyToClipboardButton data={contractWithPlaceholders.additionalInput.storage_layout_overrides} />
                   <DownloadFileButton
                     data={contractWithPlaceholders.additionalInput.storage_layout_overrides}
                     fileName="storage-layout-overrides"
@@ -837,9 +823,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
               </p>
             </div>
             <Suspense fallback={<LoadingState />}>
-              <JsonViewOnlyEditor
-                data={contractWithPlaceholders.additionalInput.storage_layout_overrides}
-              />
+              <JsonViewOnlyEditor data={contractWithPlaceholders.additionalInput.storage_layout_overrides} />
             </Suspense>
           </section>
         )}
@@ -852,7 +836,10 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
         {contractWithPlaceholders.transientStorageLayout?.types ? (
           <StorageLayout
             storageLayout={contractWithPlaceholders.transientStorageLayout}
-            sourcePath={contract.compilation.fullyQualifiedName.slice(0, contract.compilation.fullyQualifiedName.lastIndexOf(":"))}
+            sourcePath={contract.compilation.fullyQualifiedName.slice(
+              0,
+              contract.compilation.fullyQualifiedName.lastIndexOf(":")
+            )}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full bg-white rounded-lg p-4">

@@ -62,7 +62,8 @@ export function userTypeResolver(entries: SymbolEntry[]): UserTypeResolver {
 /** The main contract and its bases, nearest first (breadth first over `is` lists, by name). */
 export function inheritanceChain(entries: SymbolEntry[], targetContract: string): string[] {
   const byName = new Map<string, SourceSymbol>();
-  for (const { symbol } of entries) if (CONTRACT_KINDS.has(symbol.kind) && !byName.has(symbol.name)) byName.set(symbol.name, symbol);
+  for (const { symbol } of entries)
+    if (CONTRACT_KINDS.has(symbol.kind) && !byName.has(symbol.name)) byName.set(symbol.name, symbol);
   const chain: string[] = [];
   const queue = [targetContract];
   while (queue.length) {
@@ -125,7 +126,8 @@ export function selectorInfo(
   let list: CompilerSignature[] = [];
   let kind: SelectorInfo["kind"] = "selector";
   if (symbol.kind === "function") {
-    const callable = symbol.visibility === "external" || symbol.visibility === "public" || containerKind === "interface";
+    const callable =
+      symbol.visibility === "external" || symbol.visibility === "public" || containerKind === "interface";
     if (!callable) return undefined;
     types = symbol.parameters;
     list = compiler.signatures?.function ?? [];

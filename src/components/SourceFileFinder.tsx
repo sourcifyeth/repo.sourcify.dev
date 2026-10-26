@@ -77,7 +77,9 @@ function highlight(text: string, matches: readonly FuseResultMatch[] | undefined
 }
 
 const Tag = ({ children }: { children: React.ReactNode }) => (
-  <span className="rounded border border-gray-600 px-1 text-[9px] uppercase tracking-wide text-gray-500">{children}</span>
+  <span className="rounded border border-gray-600 px-1 text-[9px] uppercase tracking-wide text-gray-500">
+    {children}
+  </span>
 );
 
 /**
@@ -192,7 +194,9 @@ export default function SourceFileFinder({
           .slice(0, MAX_RESULTS)
           .map((item) => ({ type: "file" as const, item }));
       }
-      return fileFuse.search(pattern, { limit: MAX_RESULTS }).map(({ item, matches }) => ({ type: "file", item, matches }));
+      return fileFuse
+        .search(pattern, { limit: MAX_RESULTS })
+        .map(({ item, matches }) => ({ type: "file", item, matches }));
     }
     if (!pattern) {
       // "@" alone lists the open file's symbols in order; "#" alone waits for a name
@@ -240,7 +244,8 @@ export default function SourceFileFinder({
   let message: string | null = null;
   if (rows.length === 0) {
     if (mode === "files") message = "No matching files";
-    else if (mode === "fileSymbols") message = !activePath ? "No file is open" : indexedFiles ? "No matching symbols" : "Finding symbols…";
+    else if (mode === "fileSymbols")
+      message = !activePath ? "No file is open" : indexedFiles ? "No matching symbols" : "Finding symbols…";
     else if (!text) message = "Type the name of a contract, function, event, error, …";
     else message = indexedFiles < symbolPaths.length ? "Finding symbols…" : "No matching symbols";
   }
@@ -288,7 +293,9 @@ export default function SourceFileFinder({
               const { item, matches } = row;
               return (
                 <li key={`file:${item.path}`} {...common}>
-                  <span className={`shrink-0 ${item.isLibrary || !item.isCompiled ? "text-gray-400" : "text-gray-100"}`}>
+                  <span
+                    className={`shrink-0 ${item.isLibrary || !item.isCompiled ? "text-gray-400" : "text-gray-100"}`}
+                  >
                     {highlight(item.name, matches)}
                   </span>
                   <span className="truncate text-gray-500">{item.folder}</span>

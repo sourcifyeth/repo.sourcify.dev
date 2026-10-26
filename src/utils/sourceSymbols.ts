@@ -216,9 +216,13 @@ export function symbolsFromSolidityAst(ast: AstNode, content: string): SourceSym
           },
         ];
       case "StructDefinition":
-        return [{ kind: "struct", name: node.name, range: declarationRange(node), nameRange: nameRangeOf(node, node.name) }];
+        return [
+          { kind: "struct", name: node.name, range: declarationRange(node), nameRange: nameRangeOf(node, node.name) },
+        ];
       case "EnumDefinition":
-        return [{ kind: "enum", name: node.name, range: declarationRange(node), nameRange: nameRangeOf(node, node.name) }];
+        return [
+          { kind: "enum", name: node.name, range: declarationRange(node), nameRange: nameRangeOf(node, node.name) },
+        ];
       case "TypeDefinition":
         return [
           {
@@ -360,7 +364,8 @@ function declarationEnd(masked: string, start: number): number {
 }
 
 const SOLIDITY_CONTAINER = /\b(abstract\s+contract|contract|interface|library)\s+([A-Za-z_$][\w$]*)/g;
-const SOLIDITY_MEMBER = /\b(function|modifier|event|error|struct|enum)\s+([A-Za-z_$][\w$]*)|\b(constructor|fallback|receive)\s*\(/g;
+const SOLIDITY_MEMBER =
+  /\b(function|modifier|event|error|struct|enum)\s+([A-Za-z_$][\w$]*)|\b(constructor|fallback|receive)\s*\(/g;
 
 /** A best-effort scan for Solidity declarations, used when the parser fails. */
 export function regexSoliditySymbols(content: string): SourceSymbol[] {
@@ -373,7 +378,13 @@ export function regexSoliditySymbols(content: string): SourceSymbol[] {
     const start = match.index ?? 0;
     const keyword = match[1].replace(/\s+/g, " ");
     const kind: SymbolKind =
-      keyword === "interface" ? "interface" : keyword === "library" ? "library" : keyword === "contract" ? "contract" : "abstractContract";
+      keyword === "interface"
+        ? "interface"
+        : keyword === "library"
+          ? "library"
+          : keyword === "contract"
+            ? "contract"
+            : "abstractContract";
     const end = declarationEnd(masked, start);
     const nameStart = start + match[0].length - match[2].length;
     containers.push({
@@ -414,8 +425,23 @@ export function regexSoliditySymbols(content: string): SourceSymbol[] {
 const VYPER_DECORATOR_VISIBILITY = new Set(["external", "internal", "deploy"]);
 const VYPER_DECORATOR_MUTABILITY = new Set(["view", "pure", "payable", "nonpayable"]);
 const VYPER_KEYWORDS = new Set([
-  "def", "event", "struct", "interface", "enum", "flag", "from", "import", "implements", "uses", "initializes",
-  "exports", "if", "for", "return", "pass", "log",
+  "def",
+  "event",
+  "struct",
+  "interface",
+  "enum",
+  "flag",
+  "from",
+  "import",
+  "implements",
+  "uses",
+  "initializes",
+  "exports",
+  "if",
+  "for",
+  "return",
+  "pass",
+  "log",
 ]);
 
 /** Top-level Vyper declarations, found by their position at the start of a line. */
@@ -477,7 +503,13 @@ export function regexVyperSymbols(content: string): SourceSymbol[] {
     const block = /^(event|struct|interface|enum|flag)\s+([A-Za-z_]\w*)\s*:/.exec(line);
     if (block) {
       const kind: SymbolKind =
-        block[1] === "event" ? "event" : block[1] === "struct" ? "struct" : block[1] === "interface" ? "interface" : "enum";
+        block[1] === "event"
+          ? "event"
+          : block[1] === "struct"
+            ? "struct"
+            : block[1] === "interface"
+              ? "interface"
+              : "enum";
       const nameStart = offset + block[0].indexOf(block[2], block[1].length);
       symbols.push({
         kind,
@@ -498,7 +530,13 @@ export function regexVyperSymbols(content: string): SourceSymbol[] {
         name: variable[1],
         detail: collapse((wrapper ? wrapper[2] : type).split("=")[0]),
         visibility: /\bpublic\(/.test(type) ? "public" : undefined,
-        mutability: isConstant ? "constant" : /\bimmutable\(/.test(type) ? "immutable" : /\btransient\(/.test(type) ? "transient" : undefined,
+        mutability: isConstant
+          ? "constant"
+          : /\bimmutable\(/.test(type)
+            ? "immutable"
+            : /\btransient\(/.test(type)
+              ? "transient"
+              : undefined,
         range: positions.range(offset, offset + line.replace(/\r$/, "").length),
         nameRange: positions.range(offset, offset + variable[1].length),
       });
@@ -520,7 +558,10 @@ export function extractSymbols(
   if (language !== "solidity") return { symbols: [], method: "none" };
   if (parseSolidity) {
     try {
-      return { symbols: symbolsFromSolidityAst(parseSolidity(content, { loc: true, range: true }), content), method: "parser" };
+      return {
+        symbols: symbolsFromSolidityAst(parseSolidity(content, { loc: true, range: true }), content),
+        method: "parser",
+      };
     } catch {
       // Fall through to the regex scan
     }
@@ -535,7 +576,8 @@ export function flattenSymbols(
   const out: Array<{ symbol: SourceSymbol; container?: string; containerSymbol?: SourceSymbol }> = [];
   for (const symbol of symbols) {
     out.push({ symbol });
-    for (const child of symbol.children ?? []) out.push({ symbol: child, container: symbol.name, containerSymbol: symbol });
+    for (const child of symbol.children ?? [])
+      out.push({ symbol: child, container: symbol.name, containerSymbol: symbol });
   }
   return out;
 }

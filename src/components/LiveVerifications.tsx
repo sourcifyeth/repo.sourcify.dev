@@ -84,13 +84,26 @@ function LiveDot() {
   );
 }
 
-function FeedRow({ item, chainName, now, animateIn }: { item: LiveItem; chainName: string; now: number; animateIn: boolean }) {
+function FeedRow({
+  item,
+  chainName,
+  now,
+  animateIn,
+}: {
+  item: LiveItem;
+  chainName: string;
+  now: number;
+  animateIn: boolean;
+}) {
   // Only the value at mount counts, so a row that is already shown never animates again
   const [isNew] = useState(animateIn);
   return (
     <li data-match-id={item.matchId} className={`relative ${isNew ? "animate-feed-in" : ""}`}>
       {isNew && (
-        <span aria-hidden className="pointer-events-none absolute left-0 top-0 h-full w-1 bg-green-500 animate-feed-edge" />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute left-0 top-0 h-full w-1 bg-green-500 animate-feed-edge"
+        />
       )}
       <Link
         href={`/${item.chainId}/${item.address}`}

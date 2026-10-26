@@ -1,8 +1,4 @@
-import {
-  StorageLayoutData,
-  VyperStorageLayout,
-  isSolidityStorageLayout,
-} from "@/types/contract";
+import { StorageLayoutData, VyperStorageLayout, isSolidityStorageLayout } from "@/types/contract";
 import { formatSourceHash } from "@/utils/sourceHash";
 import { VscFileCode } from "react-icons/vsc";
 
@@ -126,7 +122,9 @@ function SolidityStorageLayout({ storageLayout }: { storageLayout: StorageLayout
                   {/* "contract" is a fully qualified name: "path/to/File.sol:ContractName" */}
                   <VariableLink
                     name={item.label}
-                    file={item.contract.includes(":") ? item.contract.slice(0, item.contract.lastIndexOf(":")) : undefined}
+                    file={
+                      item.contract.includes(":") ? item.contract.slice(0, item.contract.lastIndexOf(":")) : undefined
+                    }
                     symbol={`${item.contract.split(":").pop()}.${item.label}`}
                   />
                 </td>
@@ -143,7 +141,13 @@ function SolidityStorageLayout({ storageLayout }: { storageLayout: StorageLayout
   );
 }
 
-function VyperStorageLayoutTable({ storageLayout, sourcePath }: { storageLayout: VyperStorageLayout; sourcePath?: string }) {
+function VyperStorageLayoutTable({
+  storageLayout,
+  sourcePath,
+}: {
+  storageLayout: VyperStorageLayout;
+  sourcePath?: string;
+}) {
   const entries = Object.entries(storageLayout).sort(([, a], [, b]) => a.slot - b.slot);
 
   if (entries.length === 0) return null;

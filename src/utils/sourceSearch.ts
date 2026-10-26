@@ -59,7 +59,8 @@ export function buildSearchRegExp(options: SearchOptions): RegExp | { error: str
   } catch (error) {
     // Browsers put the whole pattern in the message ("Invalid regular expression: /a(/gim: Unterminated
     // group"). Keep only the reason, because the user sees the pattern in the search box.
-    const reason = error instanceof Error ? error.message.replace(/^Invalid regular expression: \/[\s\S]*\/[a-z]*: /, "") : "";
+    const reason =
+      error instanceof Error ? error.message.replace(/^Invalid regular expression: \/[\s\S]*\/[a-z]*: /, "") : "";
     return { error: reason ? `Invalid regular expression: ${reason}` : "Invalid regular expression" };
   }
 }
