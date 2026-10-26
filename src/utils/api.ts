@@ -76,7 +76,7 @@ export async function fetchContractData(chainId: string, address: string): Promi
 
 export interface ContractSummary {
   match: "match" | "exact_match" | null;
-  compilation: { name: string; language: string; compilerVersion: string };
+  compilation: { name: string; language: string; compiler: string; compilerVersion: string };
 }
 
 /**
@@ -84,7 +84,7 @@ export interface ContractSummary {
  * @returns The summary, or null if the contract is not verified
  */
 export async function fetchContractSummary(chainId: string, address: string): Promise<ContractSummary | null> {
-  const fields = ["compilation.name", "compilation.language", "compilation.compilerVersion"].join(",");
+  const fields = ["compilation.name", "compilation.language", "compilation.compiler", "compilation.compilerVersion"].join(",");
   const url = `${getSourcifyServerInternalUrl()}/v2/contract/${chainId}/${address.toLowerCase()}?fields=${fields}`;
   // One hour: a contract can get verified, or become an exact match, after the first share
   const response = await fetch(url, { next: { revalidate: 3600 } });

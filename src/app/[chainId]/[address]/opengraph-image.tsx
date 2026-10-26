@@ -26,64 +26,68 @@ function nameFontSize(name: string) {
   return 52;
 }
 
-function CheckIcon({ double }: { double: boolean }) {
-  return (
-    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="2.5" strokeLinecap="round">
-      {/* The image renderer allows only plain elements inside <svg>, so no fragment here */}
-      <path d={double ? "M2 12.5l4.5 4.5L16 7.5M11.5 16l1 1L22 7.5" : "M4.5 12.5l5 5L19.5 7"} />
-    </svg>
-  );
-}
+// The icons of the match badge in the page header (react-icons io5 IoCheckmarkDoneCircle and
+// IoCheckmarkCircle). The image renderer can't run react-icons, so the paths are copied here.
+const EXACT_MATCH_ICON =
+  "M258.9 48C141.92 46.42 46.42 141.92 48 258.9c1.56 112.19 92.91 203.54 205.1 205.1 117 1.6 212.48-93.9 210.88-210.88C462.44 140.91 371.09 49.56 258.9 48m-16.79 192.47 51.55-59a16 16 0 0 1 24.1 21.06l-51.55 59a16 16 0 1 1-24.1-21.06m-38.86 90.85a16 16 0 0 1-22.62 0l-47.95-48a16 16 0 1 1 22.64-22.62l48 48a16 16 0 0 1-.07 22.62m176.8-128.79-111.88 128a16 16 0 0 1-11.51 5.47h-.54a16 16 0 0 1-11.32-4.69l-47.94-48a16 16 0 1 1 22.64-22.62l29.8 29.83a8 8 0 0 0 11.68-.39l95-108.66a16 16 0 0 1 24.1 21.06z";
+const MATCH_ICON =
+  "M256 48C141.31 48 48 141.31 48 256s93.31 208 208 208 208-93.31 208-208S370.69 48 256 48m108.25 138.29-134.4 160a16 16 0 0 1-12 5.71h-.27a16 16 0 0 1-11.89-5.3l-57.6-64a16 16 0 1 1 23.78-21.4l45.29 50.32 122.59-145.91a16 16 0 0 1 24.5 20.58";
 
-function Badge({ summary }: { summary: ContractSummary | null | undefined }) {
+// Pills share one look; the match badge only changes the colors (the header's green-100/200/800)
+const pill = {
+  display: "flex",
+  alignItems: "center",
+  height: 60,
+  padding: "0 20px",
+  borderRadius: 11,
+  border: "2px solid #e5e7eb",
+  background: "#f3f4f6",
+  color: "#374151",
+  fontSize: 30,
+} as const;
+
+function MatchBadge({ summary }: { summary: ContractSummary | null | undefined }) {
   // undefined: the contract could not be fetched, so show no status at all
   if (summary === undefined) return null;
 
   if (summary === null || !summary.match) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          padding: "10px 22px",
-          borderRadius: 12,
-          background: "#f3f4f6",
-          border: "2px solid #e5e7eb",
-          color: "#4b5563",
-          fontSize: 30,
-        }}
-      >
-        Not verified on Sourcify
-      </div>
-    );
+    return <div style={{ ...pill, color: "#4b5563" }}>Not verified on Sourcify</div>;
   }
 
   const exact = summary.match === "exact_match";
   return (
     <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        padding: "10px 22px",
-        borderRadius: 12,
-        background: "#dcfce7",
-        border: "2px solid #bbf7d0",
-        color: "#166534",
-        fontSize: 30,
-        fontWeight: 600,
-      }}
+      style={{ ...pill, gap: 8, background: "#dcfce7", border: "2px solid #bbf7d0", color: "#166534", fontWeight: 600 }}
     >
-      <CheckIcon double={exact} />
+      <svg width="42" height="42" viewBox="0 0 512 512" fill="#166534">
+        <path d={exact ? EXACT_MATCH_ICON : MATCH_ICON} />
+      </svg>
       {exact ? "Exact Match" : "Match"}
     </div>
   );
 }
 
+// The language logos of LanguageIcon.tsx, with the same scale (the Solidity file has a wide margin)
+const LANGUAGE_LOGOS: Record<string, { file: URL; scale: number }> = {
+  solidity: { file: new URL("../../../assets/solidity.svg", import.meta.url), scale: 1.5 },
+  vyper: { file: new URL("../../../assets/vyper.svg", import.meta.url), scale: 1 },
+  fe: { file: new URL("../../../assets/fe-dark.svg", import.meta.url), scale: 1 },
+};
+
+async function loadLanguageLogo(language: string | undefined) {
+  const logo = language && LANGUAGE_LOGOS[language.toLowerCase()];
+  if (!logo) return null;
+  const svg = await fetch(logo.file).then((res) => res.text());
+  return { src: `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`, scale: logo.scale };
+}
+
 export default async function Image({ params }: { params: { chainId: string; address: string } }) {
   const { chainId, address } = params;
 
-  const [summary, chainName, logo, sans, sansSemiBold, mono, vt323] = await Promise.all([
-    fetchContractSummary(chainId, address).catch(() => undefined),
+  const summaryPromise = fetchContractSummary(chainId, address).catch(() => undefined);
+  const [summary, languageLogo, chainName, logo, sans, sansSemiBold, mono, vt323] = await Promise.all([
+    summaryPromise,
+    summaryPromise.then((summary) => loadLanguageLogo(summary?.compilation.language)).catch(() => null),
     fetchChains()
       .then((chains) => getChainName(chainId, chains))
       .catch(() => `Chain ${chainId}`),
@@ -95,7 +99,8 @@ export default async function Image({ params }: { params: { chainId: string; add
   ]);
 
   const name = summary === null ? "Unverified contract" : summary?.compilation.name || "Contract";
-  const compilerVersion = summary?.compilation.compilerVersion?.split("+")[0];
+  const compilation = summary?.compilation;
+  const compilerVersion = compilation?.compilerVersion?.split("+")[0];
 
   return new ImageResponse(
     (
@@ -140,22 +145,27 @@ export default async function Image({ params }: { params: { chainId: string; add
             <div style={{ display: "flex", marginTop: 10, fontSize: 32, color: "#6b7280" }}>on {chainName}</div>
           </div>
 
-          {/* Status */}
-          <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-            <Badge summary={summary} />
-            {summary?.compilation.language && (
-              <div
-                style={{
-                  display: "flex",
-                  padding: "10px 22px",
-                  borderRadius: 12,
-                  background: "#f3f4f6",
-                  border: "2px solid #e5e7eb",
-                  color: "#374151",
-                  fontSize: 30,
-                }}
-              >
-                {summary.compilation.language} {compilerVersion}
+          {/* Status, language and compiler, like the page header and the Compilation card */}
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <MatchBadge summary={summary} />
+            {compilation?.language && (
+              <div style={{ ...pill, gap: 12 }}>
+                {languageLogo && (
+                  <div style={{ display: "flex", width: 34, height: 34, alignItems: "center", justifyContent: "center" }}>
+                    <img
+                      alt=""
+                      src={languageLogo.src}
+                      width={Math.round(34 * languageLogo.scale)}
+                      height={Math.round(34 * languageLogo.scale)}
+                    />
+                  </div>
+                )}
+                {compilation.language}
+              </div>
+            )}
+            {compilation?.compiler && compilerVersion && (
+              <div style={pill}>
+                {compilation.compiler} {compilerVersion}
               </div>
             )}
           </div>
