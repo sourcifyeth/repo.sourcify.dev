@@ -82,7 +82,7 @@ function CborAuxdataEntries({
             {language === "Solidity" && (decodedCborAuxdata as SolidityDecodedObject)?.ipfs && (
               <div className="my-2">
                 <a
-                  href={`https://ipfs.filebase.io/ipfs/${(decodedCborAuxdata as SolidityDecodedObject).ipfs}`}
+                  href={ipfsGatewayUrl((decodedCborAuxdata as SolidityDecodedObject).ipfs as string)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs inline-flex items-center gap-2 shadow-sm rounded-md bg-white border border-gray-300 px-3 py-1 hover:bg-gray-200 transition-colors duration-200 cursor-pointer"
