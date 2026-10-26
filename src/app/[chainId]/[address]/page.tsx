@@ -512,11 +512,11 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
         {/* What the match type says about these source files */}
         <div
           className={`mb-3 flex items-start gap-2 rounded-md border px-3 py-2 text-xs md:text-sm ${
-            isExactMatch ? "border-green-200 bg-green-50 text-green-900" : "border-amber-200 bg-amber-50 text-amber-900"
+            isExactMatch ? "border-green-200 bg-green-50 text-green-900" : "border-gray-200 bg-white text-gray-700"
           }`}
         >
           <span className="mt-0.5 shrink-0 text-base">
-            {isExactMatch ? <IoCheckmarkDoneCircle className="text-green-600" /> : <IoInformationCircle className="text-amber-600" />}
+            {isExactMatch ? <IoCheckmarkDoneCircle className="text-green-600" /> : <IoInformationCircle className="text-gray-400" />}
           </span>
           <p>
             {isExactMatch ? (
