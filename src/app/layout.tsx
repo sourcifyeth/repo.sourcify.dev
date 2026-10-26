@@ -29,30 +29,24 @@ const vt323 = VT323({
 });
 
 export const metadata: Metadata = {
+  // Makes relative image URLs absolute. Contract pages set their own, from the request's host.
+  metadataBase: new URL("https://repo.sourcify.dev"),
   title: "repo.sourcify.dev",
   description: "View verified smart contract details, ABI, source code, and bytecode from Sourcify",
   keywords: ["Ethereum", "Smart Contracts", "Sourcify", "Blockchain", "Solidity", "Contract Verification"],
   authors: [{ name: "Sourcify" }],
+  // The images come from opengraph-image.tsx files (the root one, or a page's own)
   openGraph: {
     title: "repo.sourcify.dev",
     description: "View verified smart contract details, ABI, source code, and bytecode from Sourcify",
-    url: "https://repo.sourcify.dev",
+    url: "/",
     siteName: "repo.sourcify.dev",
-    images: [
-      {
-        url: "https://sourcify.dev/sourcify-logo.svg",
-        width: 1200,
-        height: 630,
-        alt: "Sourcify Contract Viewer",
-      },
-    ],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "repo.sourcify.dev",
     description: "View verified smart contract details, ABI, source code, and bytecode from Sourcify",
-    images: ["https://sourcify.dev/sourcify-logo.svg"],
   },
   robots: {
     index: true,

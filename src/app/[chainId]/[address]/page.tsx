@@ -9,6 +9,7 @@ import SimilarityVerification from "./SimilarityVerification";
 import ErrorState from "@/components/ErrorState";
 import { Suspense } from "react";
 import { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { getAddress } from "@ethersproject/address";
 import LoadingState from "@/components/LoadingState";
@@ -99,20 +100,44 @@ export async function generateMetadata({
   const displayAddress = contract?.address || checksummedAddress;
   const title = `${displayAddress} on ${chainName}`;
 
+  // The preview image (opengraph-image.tsx) needs an absolute URL. Build it from the
+  // request's host, so production, staging and preview deploys each link their own image.
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host");
+  const protocol = requestHeaders.get("x-forwarded-proto") || (host?.startsWith("localhost") ? "http" : "https");
+  const metadataBase = host ? new URL(`${protocol}://${host}`) : undefined;
+
+  // Link previews show the contract name; the tab title stays address-first
+  const previewTitle = contract ? `${contract.compilation.name} on ${chainName}` : title;
+  const description = fetchFailed
+    ? undefined
+    : contract
+      ? `Verified source code, ABI and bytecode of ${contract.compilation.name} (${displayAddress}) on ${chainName}, from Sourcify`
+      : `Contract ${displayAddress} on ${chainName} network is not verified on Sourcify`;
+  const social = {
+    metadataBase,
+    openGraph: {
+      title: previewTitle,
+      description,
+      url: `/${chainId}/${checksummedAddress}`,
+      siteName: "repo.sourcify.dev",
+      type: "website" as const,
+    },
+    twitter: { card: "summary_large_image" as const, title: previewTitle, description },
+  };
+
   if (fetchFailed) {
-    return { title };
+    return { title, ...social };
   }
 
   if (!contract) {
-    return {
-      title,
-      description: `Contract ${displayAddress} on ${chainName} network is not verified on Sourcify`,
-    };
+    return { title, description, ...social };
   }
 
   return {
     title,
-    description: `View contract ${displayAddress} on ${chainName} network`,
+    description,
+    ...social,
     icons: {
       icon: "/favicon-verified.ico",
     },

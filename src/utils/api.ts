@@ -74,6 +74,29 @@ export async function fetchContractData(chainId: string, address: string): Promi
   }
 }
 
+export interface ContractSummary {
+  match: "match" | "exact_match" | null;
+  compilation: { name: string; language: string; compilerVersion: string };
+}
+
+/**
+ * Fetches only the few fields that the social preview image shows.
+ * @returns The summary, or null if the contract is not verified
+ */
+export async function fetchContractSummary(chainId: string, address: string): Promise<ContractSummary | null> {
+  const fields = ["compilation.name", "compilation.language", "compilation.compilerVersion"].join(",");
+  const url = `${getSourcifyServerInternalUrl()}/v2/contract/${chainId}/${address.toLowerCase()}?fields=${fields}`;
+  // One hour: a contract can get verified, or become an exact match, after the first share
+  const response = await fetch(url, { next: { revalidate: 3600 } });
+  if (response.status === 404 || response.status === 400) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to fetch contract summary: ${response.status} ${response.statusText}`);
+  }
+  return (await response.json()) as ContractSummary;
+}
+
 /**
  * Formats an address for display
  * @param address The address to format
