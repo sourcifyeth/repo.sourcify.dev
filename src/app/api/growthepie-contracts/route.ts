@@ -46,14 +46,17 @@ export async function GET() {
           chainData.deployment === "PROD"
         );
       })
-      .reduce((acc, [key, value]) => {
-        // Only include name and evm_chain_id from ChainDataItem
-        acc[key] = {
-          name: (value as ChainDataItem).name,
-          evm_chain_id: (value as ChainDataItem).evm_chain_id,
-        };
-        return acc;
-      }, {} as Record<string, Pick<ChainDataItem, "name" | "evm_chain_id">>);
+      .reduce(
+        (acc, [key, value]) => {
+          // Only include name and evm_chain_id from ChainDataItem
+          acc[key] = {
+            name: (value as ChainDataItem).name,
+            evm_chain_id: (value as ChainDataItem).evm_chain_id,
+          };
+          return acc;
+        },
+        {} as Record<string, Pick<ChainDataItem, "name" | "evm_chain_id">>
+      );
 
     // Prepare results object
     const result: {

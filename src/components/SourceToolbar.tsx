@@ -207,8 +207,8 @@ export default function SourceToolbar({
               {formatSourceHash({ file: path, lines: { start: 10, end: 20 } })}
             </code>
             <p className="mt-2 text-gray-400">
-              <span className="font-mono">L=10</span> selects one line. Without <span className="font-mono">L</span>, the
-              link opens the file only.
+              <span className="font-mono">L=10</span> selects one line. Without <span className="font-mono">L</span>,
+              the link opens the file only.
             </p>
           </div>
         )}

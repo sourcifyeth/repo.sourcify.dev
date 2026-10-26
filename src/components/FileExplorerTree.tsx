@@ -119,7 +119,10 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, style, dragHandle }) => {
       </div>
 
       {/* File/Folder name */}
-      <span className={`text-xs md:text-sm truncate ${isOtherGroup ? "italic" : ""}`} title={node.data.path || node.data.name}>
+      <span
+        className={`text-xs md:text-sm truncate ${isOtherGroup ? "italic" : ""}`}
+        title={node.data.path || node.data.name}
+      >
         {node.data.name}
       </span>
 

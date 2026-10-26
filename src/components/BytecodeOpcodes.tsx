@@ -27,14 +27,22 @@ const shortHex = (value: string) => (value.length > 22 ? `${value.slice(0, 12)}â
  * the source location from the compiler's source map. A click on a row with a
  * location opens the Source Code section with that exact range highlighted.
  */
-export default function BytecodeOpcodes({ bytecode, sourceMap, sourceIds, highlight, onClearHighlight }: BytecodeOpcodesProps) {
+export default function BytecodeOpcodes({
+  bytecode,
+  sourceMap,
+  sourceIds,
+  highlight,
+  onClearHighlight,
+}: BytecodeOpcodesProps) {
   const instructions = useMemo(() => disassemble(bytecode), [bytecode]);
   const entries = useMemo(() => decodeSourceMap(sourceMap ?? ""), [sourceMap]);
   const paths = useMemo(() => pathsByFileIndex(sourceIds), [sourceIds]);
   const sources = useRegisteredSources();
 
   // Line numbers and snippets need the file text; prepare each file once, on first use
-  const fileCache = useRef(new Map<string, { mapper: ReturnType<typeof createUtf8Mapper>; starts: number[]; text: string }>());
+  const fileCache = useRef(
+    new Map<string, { mapper: ReturnType<typeof createUtf8Mapper>; starts: number[]; text: string }>()
+  );
   const fileInfo = (path: string) => {
     const text = sources?.[path]?.content;
     if (text === undefined) return undefined;
@@ -136,9 +144,13 @@ export default function BytecodeOpcodes({ bytecode, sourceMap, sourceIds, highli
                 } ${clickable ? "cursor-pointer" : ""}`}
                 style={{ top: index * ROW_HEIGHT, height: ROW_HEIGHT }}
               >
-                <span className="w-14 shrink-0 text-gray-400">0x{instruction.offset.toString(16).padStart(4, "0")}</span>
+                <span className="w-14 shrink-0 text-gray-400">
+                  0x{instruction.offset.toString(16).padStart(4, "0")}
+                </span>
                 <span className="w-56 shrink-0 truncate text-gray-800">
-                  <span className={instruction.opcode.startsWith("PUSH") ? "text-purple-700" : ""}>{instruction.opcode}</span>
+                  <span className={instruction.opcode.startsWith("PUSH") ? "text-purple-700" : ""}>
+                    {instruction.opcode}
+                  </span>
                   {instruction.pushData && (
                     <span className="ml-1.5 text-gray-500" title={instruction.pushData}>
                       {shortHex(instruction.pushData)}

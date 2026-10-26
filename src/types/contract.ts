@@ -214,9 +214,7 @@ export interface VyperStorageLayoutEntry {
 
 export type VyperStorageLayout = Record<string, VyperStorageLayoutEntry>;
 
-export function isSolidityStorageLayout(
-  layout: StorageLayoutData | VyperStorageLayout
-): layout is StorageLayoutData {
+export function isSolidityStorageLayout(layout: StorageLayoutData | VyperStorageLayout): layout is StorageLayoutData {
   return "storage" in layout && Array.isArray((layout as StorageLayoutData).storage);
 }
 

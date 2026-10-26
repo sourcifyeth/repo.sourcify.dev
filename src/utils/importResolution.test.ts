@@ -28,7 +28,9 @@ describe("parseRemappings", () => {
 
 describe("resolveImportPath", () => {
   it("resolves relative imports", () => {
-    expect(resolveImportPath("./interfaces/ISeaDrop.sol", "src/SeaDrop.sol", paths)).toBe("src/interfaces/ISeaDrop.sol");
+    expect(resolveImportPath("./interfaces/ISeaDrop.sol", "src/SeaDrop.sol", paths)).toBe(
+      "src/interfaces/ISeaDrop.sol"
+    );
     expect(resolveImportPath("../lib/SeaDropStructs.sol", "src/interfaces/ISeaDrop.sol", paths)).toBe(
       "src/lib/SeaDropStructs.sol"
     );
@@ -39,7 +41,12 @@ describe("resolveImportPath", () => {
       "lib/solmate/src/utils/SafeTransferLib.sol"
     );
     expect(
-      resolveImportPath("openzeppelin-contracts/contracts/token/ERC721/IERC721.sol", "src/SeaDrop.sol", paths, remappings)
+      resolveImportPath(
+        "openzeppelin-contracts/contracts/token/ERC721/IERC721.sol",
+        "src/SeaDrop.sol",
+        paths,
+        remappings
+      )
     ).toBe("lib/openzeppelin-contracts/contracts/token/ERC721/IERC721.sol");
     expect(resolveImportPath("seadrop/SeaDrop.sol", "src/lib/SeaDropStructs.sol", paths, remappings)).toBe(
       "src/SeaDrop.sol"

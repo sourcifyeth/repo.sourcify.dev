@@ -20,13 +20,23 @@ const OPTIONS: { value: Source; label: string }[] = [
  * Shown only when the onchain and the recompiled CBOR auxdata differ: switches between
  * the two lists of values, which the server renders.
  */
-export default function CborAuxdataSourceToggle({ onchain, recompiled }: { onchain: ReactNode; recompiled: ReactNode }) {
+export default function CborAuxdataSourceToggle({
+  onchain,
+  recompiled,
+}: {
+  onchain: ReactNode;
+  recompiled: ReactNode;
+}) {
   const [source, setSource] = useState<Source>("onchain");
 
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center gap-2 text-xs md:text-sm">
-        <div role="radiogroup" aria-label="CBOR auxdata source" className="inline-flex rounded-md border border-gray-300">
+        <div
+          role="radiogroup"
+          aria-label="CBOR auxdata source"
+          className="inline-flex rounded-md border border-gray-300"
+        >
           {OPTIONS.map(({ value, label }) => (
             <button
               key={value}

@@ -84,7 +84,12 @@ export interface ContractSummary {
  * @returns The summary, or null if the contract is not verified
  */
 export async function fetchContractSummary(chainId: string, address: string): Promise<ContractSummary | null> {
-  const fields = ["compilation.name", "compilation.language", "compilation.compiler", "compilation.compilerVersion"].join(",");
+  const fields = [
+    "compilation.name",
+    "compilation.language",
+    "compilation.compiler",
+    "compilation.compilerVersion",
+  ].join(",");
   const url = `${getSourcifyServerInternalUrl()}/v2/contract/${chainId}/${address.toLowerCase()}?fields=${fields}`;
   // One hour: a contract can get verified, or become an exact match, after the first share
   const response = await fetch(url, { next: { revalidate: 3600 } });
@@ -282,8 +287,12 @@ const etherscanExplorers = cache(async (): Promise<Map<string, string>> => {
     signal: AbortSignal.timeout(EXPLORER_LIST_TIMEOUT_MS),
   });
   if (!response.ok) throw new Error(`Etherscan chain list: ${response.status}`);
-  const body = (await response.json()) as { result?: Array<{ chainid: string; blockexplorer: string; status: number }> };
-  return new Map((body.result ?? []).filter((chain) => chain.status === 1).map((chain) => [chain.chainid, chain.blockexplorer]));
+  const body = (await response.json()) as {
+    result?: Array<{ chainid: string; blockexplorer: string; status: number }>;
+  };
+  return new Map(
+    (body.result ?? []).filter((chain) => chain.status === 1).map((chain) => [chain.chainid, chain.blockexplorer])
+  );
 });
 
 /** Blockscout's chain list (chains.blockscout.com): the explorers of each chain that runs Blockscout. Loaded once per request. */
@@ -295,7 +304,9 @@ const blockscoutExplorers = cache(async (): Promise<Map<string, string>> => {
   if (!response.ok) throw new Error(`Blockscout chain list: ${response.status}`);
   const body = (await response.json()) as Record<string, { explorers?: Array<{ url: string }> }>;
   return new Map(
-    Object.entries(body).flatMap(([chainId, chain]) => (chain.explorers?.[0] ? [[chainId, chain.explorers[0].url]] : []))
+    Object.entries(body).flatMap(([chainId, chain]) =>
+      chain.explorers?.[0] ? [[chainId, chain.explorers[0].url]] : []
+    )
   );
 });
 

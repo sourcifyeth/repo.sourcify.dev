@@ -23,7 +23,14 @@ export interface NatSpec {
 const emptySpec = (): NatSpec => ({ params: [], returns: [], custom: [] });
 
 const isEmpty = (spec: NatSpec) =>
-  !spec.title && !spec.author && !spec.notice && !spec.dev && !spec.params.length && !spec.returns.length && !spec.custom.length && !spec.inheritdoc;
+  !spec.title &&
+  !spec.author &&
+  !spec.notice &&
+  !spec.dev &&
+  !spec.params.length &&
+  !spec.returns.length &&
+  !spec.custom.length &&
+  !spec.inheritdoc;
 
 /**
  * The text of the documentation comment that ends on the line before
@@ -128,11 +135,13 @@ export function natSpecFromCompiler(
   }
   const returns = record(dev.returns);
   for (const [name, description] of Object.entries(returns)) {
-    if (typeof description === "string") spec.returns.push(/^_\d+$/.test(name) ? description : `${name}: ${description}`);
+    if (typeof description === "string")
+      spec.returns.push(/^_\d+$/.test(name) ? description : `${name}: ${description}`);
   }
   if (typeof dev.return === "string") spec.returns.push(dev.return);
   for (const [tag, value] of Object.entries(dev)) {
-    if (tag.startsWith("custom:") && typeof value === "string") spec.custom.push({ tag: tag.slice(7), description: value });
+    if (tag.startsWith("custom:") && typeof value === "string")
+      spec.custom.push({ tag: tag.slice(7), description: value });
   }
   return isEmpty(spec) ? undefined : spec;
 }
@@ -147,7 +156,8 @@ export function natSpecToMarkdown(spec: NatSpec): string {
   if (spec.title) parts.push(`**${text(spec.title)}**`);
   if (spec.notice) parts.push(text(spec.notice));
   if (spec.dev) parts.push(`*Dev:* ${text(spec.dev)}`);
-  if (spec.params.length) parts.push(spec.params.map((p) => `- ${inlineCode(p.name)} ${text(p.description)}`).join("\n"));
+  if (spec.params.length)
+    parts.push(spec.params.map((p) => `- ${inlineCode(p.name)} ${text(p.description)}`).join("\n"));
   if (spec.returns.length) parts.push(spec.returns.map((r) => `- *Returns:* ${text(r)}`).join("\n"));
   for (const custom of spec.custom) parts.push(`*${text(custom.tag)}:* ${text(custom.description)}`);
   if (spec.author) parts.push(`*Author:* ${text(spec.author)}`);

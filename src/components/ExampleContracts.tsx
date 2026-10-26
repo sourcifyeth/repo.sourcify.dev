@@ -1,6 +1,5 @@
 "use client";
 
-
 interface ExampleContract {
   name: string;
   address: string;

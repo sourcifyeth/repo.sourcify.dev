@@ -17,7 +17,12 @@ import SourceOutline from "@/components/SourceOutline";
 import SourceStatusBar from "@/components/SourceStatusBar";
 import { sourceShortcuts } from "@/utils/shortcuts";
 import { createUtf8Mapper, decodeSourceMap, instructionsInRange } from "@/utils/sourceMap";
-import { registeredSourceMap, registerSources, SHOW_IN_BYTECODE_EVENT, ShowInBytecodeDetail } from "@/utils/sourceRegistry";
+import {
+  registeredSourceMap,
+  registerSources,
+  SHOW_IN_BYTECODE_EVENT,
+  ShowInBytecodeDetail,
+} from "@/utils/sourceRegistry";
 import ExplorerSections from "@/components/ExplorerSections";
 import { useSourceSymbols } from "@/hooks/useSourceSymbols";
 import { parseRemappings, resolveImportPath } from "@/utils/importResolution";
@@ -198,7 +203,8 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
         end: lineAt(Math.max(mapper.byteToIndex(location.range.end) - 1, 0)),
       };
     }
-    pendingSymbolRef.current = location.symbol && !location.lines ? { path: location.file, symbol: location.symbol } : null;
+    pendingSymbolRef.current =
+      location.symbol && !location.lines ? { path: location.file, symbol: location.symbol } : null;
     anchorLineRef.current = location.lines?.start ?? null;
     openTab(location.file, source.content);
     scrollToSourceSection();
@@ -338,7 +344,8 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
   const searchRegExp = useMemo(() => buildSearchRegExp(appliedSearch), [appliedSearch]);
   const searchError = searchRegExp && !(searchRegExp instanceof RegExp) ? searchRegExp.error : null;
   const searchResult = useMemo(
-    () => (searchRegExp instanceof RegExp ? searchSources(contract.sources, searchRegExp, { firstPath: targetPath }) : null),
+    () =>
+      searchRegExp instanceof RegExp ? searchSources(contract.sources, searchRegExp, { firstPath: targetPath }) : null,
     [searchRegExp, contract.sources, targetPath]
   );
 
@@ -640,9 +647,12 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
     if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
     statusTimerRef.current = setTimeout(() => setStatusMessage(null), 4000);
   };
-  useEffect(() => () => {
-    if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
+    },
+    []
+  );
 
   // "Show in Bytecode": the instructions whose source range lies inside the selected lines
   const showInBytecode = (selection: { startLineNumber: number; endLineNumber: number; endColumn: number } | null) => {
@@ -665,14 +675,21 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
     const runtime = count(registeredSourceMap("runtime"));
     const creation = count(registeredSourceMap("creation"));
     const name = path.split("/").pop();
-    const label = lines.start === lines.end ? `${name} line ${lines.start}` : `${name} lines ${lines.start}–${lines.end}`;
+    const label =
+      lines.start === lines.end ? `${name} line ${lines.start}` : `${name} lines ${lines.start}–${lines.end}`;
     if (runtime === 0 && creation === 0) {
       flashStatus(`No bytecode instruction comes only from ${label}.`);
       return;
     }
     // Leave fullscreen, so that the page can scroll to the bytecode
     setIsFullscreen(false);
-    const detail: ShowInBytecodeDetail = { path, startByte, endByte, label, target: runtime > 0 ? "runtime" : "creation" };
+    const detail: ShowInBytecodeDetail = {
+      path,
+      startByte,
+      endByte,
+      label,
+      target: runtime > 0 ? "runtime" : "creation",
+    };
     window.dispatchEvent(new CustomEvent(SHOW_IN_BYTECODE_EVENT, { detail }));
   };
   const showInBytecodeRef = useRef(showInBytecode);
@@ -708,7 +725,7 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
       hoverDecorations.clear();
     };
     editorInstance.onMouseMove((event) => {
-      const line = isLineGutter(event.target.type) ? event.target.position?.lineNumber ?? null : null;
+      const line = isLineGutter(event.target.type) ? (event.target.position?.lineNumber ?? null) : null;
       if (line === hoveredLine) return;
       if (line === null) {
         clearHover();
@@ -818,13 +835,14 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
 
     // Symbols for "Go to symbol" and links on import paths. The models of the
     // source files are named by their path (the `path` prop of the editor).
-    modelPathsRef.current = new Map(Object.keys(contract.sources).map((path) => [monaco.Uri.parse(path).toString(), path]));
+    modelPathsRef.current = new Map(
+      Object.keys(contract.sources).map((path) => [monaco.Uri.parse(path).toString(), path])
+    );
     providersRef.current?.dispose();
     providersRef.current = registerSourceProviders(monaco, () => providerContextRef.current!);
 
     setEditorReady(true);
   };
-
 
   return (
     <div
@@ -912,7 +930,9 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
             />
           )}
           {/* Monaco Editor */}
-          <div className={`source-editor relative min-h-0 md:flex-1 ${isFullscreen ? "flex-1" : "h-[500px] md:h-auto"}`}>
+          <div
+            className={`source-editor relative min-h-0 md:flex-1 ${isFullscreen ? "flex-1" : "h-[500px] md:h-auto"}`}
+          >
             {activeTab ? (
               <MonacoEditor
                 className="editor-container"

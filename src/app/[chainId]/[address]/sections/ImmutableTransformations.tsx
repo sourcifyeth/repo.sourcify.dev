@@ -15,13 +15,16 @@ export default function ImmutableTransformations({
     .sort((a, b) => a.offset - b.offset);
 
   // Group transformations by id to show offsets together
-  const groupedTransformations = immutableTransformations.reduce((acc, t) => {
-    if (!acc[t.id]) {
-      acc[t.id] = [];
-    }
-    acc[t.id].push(t.offset);
-    return acc;
-  }, {} as Record<string, number[]>);
+  const groupedTransformations = immutableTransformations.reduce(
+    (acc, t) => {
+      if (!acc[t.id]) {
+        acc[t.id] = [];
+      }
+      acc[t.id].push(t.offset);
+      return acc;
+    },
+    {} as Record<string, number[]>
+  );
 
   // Sort offsets within each group
   Object.values(groupedTransformations).forEach((offsets) => offsets.sort((a, b) => a - b));

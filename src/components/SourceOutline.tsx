@@ -15,9 +15,10 @@ interface SourceOutlineProps {
 const SHORT_VISIBILITY: Record<string, string> = { external: "ext", public: "pub", internal: "int", private: "priv" };
 
 function Badges({ symbol }: { symbol: SourceSymbol }) {
-  const badges = [symbol.visibility ? SHORT_VISIBILITY[symbol.visibility] ?? symbol.visibility : null, symbol.mutability].filter(
-    Boolean
-  ) as string[];
+  const badges = [
+    symbol.visibility ? (SHORT_VISIBILITY[symbol.visibility] ?? symbol.visibility) : null,
+    symbol.mutability,
+  ].filter(Boolean) as string[];
   if (badges.length === 0) return null;
   return (
     <span className="ml-auto flex shrink-0 gap-1 pl-1">

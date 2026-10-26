@@ -103,75 +103,73 @@ export default async function Image({ params }: { params: { chainId: string; add
   const compilerVersion = compilation?.compilerVersion?.split("+")[0];
 
   return new ImageResponse(
-    (
-      <div
-        style={{
-          display: "flex",
-          width: "100%",
-          height: "100%",
-          background: "linear-gradient(135deg, #ffffff 0%, #ffffff 55%, #eef2fb 100%)",
-          fontFamily: "IBM Plex Sans",
-        }}
-      >
-        <div style={{ display: "flex", width: 18, height: "100%", background: BRAND_BLUE }} />
-        <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "60px 72px 64px 72px" }}>
-          {/* Brand */}
-          <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-            <img alt="Sourcify logo" src={logo as unknown as string} width={60} height={60} />
-            {/* The site name in VT323, like the site header */}
-            <div style={{ display: "flex", fontSize: 48, fontFamily: "VT323", color: "#374151" }}>repo.sourcify.dev</div>
-          </div>
+    <div
+      style={{
+        display: "flex",
+        width: "100%",
+        height: "100%",
+        background: "linear-gradient(135deg, #ffffff 0%, #ffffff 55%, #eef2fb 100%)",
+        fontFamily: "IBM Plex Sans",
+      }}
+    >
+      <div style={{ display: "flex", width: 18, height: "100%", background: BRAND_BLUE }} />
+      <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "60px 72px 64px 72px" }}>
+        {/* Brand */}
+        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+          <img alt="Sourcify logo" src={logo as unknown as string} width={60} height={60} />
+          {/* The site name in VT323, like the site header */}
+          <div style={{ display: "flex", fontSize: 48, fontFamily: "VT323", color: "#374151" }}>repo.sourcify.dev</div>
+        </div>
 
-          {/* Contract */}
-          <div style={{ display: "flex", flexDirection: "column", marginTop: "auto", marginBottom: "auto" }}>
-            <div
-              style={{
-                display: "block",
-                fontSize: nameFontSize(name),
-                fontWeight: 600,
-                color: "#111827",
-                lineHeight: 1.1,
-                overflow: "hidden",
-                whiteSpace: "nowrap",
-                textOverflow: "ellipsis",
-                maxWidth: 1030,
-              }}
-            >
-              {name}
-            </div>
-            <div style={{ display: "flex", marginTop: 22, fontSize: 34, fontFamily: "IBM Plex Mono", color: "#374151" }}>
-              {address}
-            </div>
-            <div style={{ display: "flex", marginTop: 10, fontSize: 32, color: "#6b7280" }}>on {chainName}</div>
+        {/* Contract */}
+        <div style={{ display: "flex", flexDirection: "column", marginTop: "auto", marginBottom: "auto" }}>
+          <div
+            style={{
+              display: "block",
+              fontSize: nameFontSize(name),
+              fontWeight: 600,
+              color: "#111827",
+              lineHeight: 1.1,
+              overflow: "hidden",
+              whiteSpace: "nowrap",
+              textOverflow: "ellipsis",
+              maxWidth: 1030,
+            }}
+          >
+            {name}
           </div>
+          <div style={{ display: "flex", marginTop: 22, fontSize: 34, fontFamily: "IBM Plex Mono", color: "#374151" }}>
+            {address}
+          </div>
+          <div style={{ display: "flex", marginTop: 10, fontSize: 32, color: "#6b7280" }}>on {chainName}</div>
+        </div>
 
-          {/* Status, language and compiler, like the page header and the Compilation card */}
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <MatchBadge summary={summary} />
-            {compilation?.language && (
-              <div style={{ ...pill, gap: 12 }}>
-                {languageLogo && (
-                  <div style={{ display: "flex", width: 34, height: 34, alignItems: "center", justifyContent: "center" }}>
-                    <img
-                      alt=""
-                      src={languageLogo.src}
-                      width={Math.round(34 * languageLogo.scale)}
-                      height={Math.round(34 * languageLogo.scale)}
-                    />
-                  </div>
-                )}
-                {compilation.language}
-              </div>
-            )}
-            {compilation?.compiler && compilerVersion && (
-              <div style={pill}>
-                {compilation.compiler} {compilerVersion}
-              </div>
-            )}
-          </div>
+        {/* Status, language and compiler, like the page header and the Compilation card */}
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <MatchBadge summary={summary} />
+          {compilation?.language && (
+            <div style={{ ...pill, gap: 12 }}>
+              {languageLogo && (
+                <div style={{ display: "flex", width: 34, height: 34, alignItems: "center", justifyContent: "center" }}>
+                  <img
+                    alt=""
+                    src={languageLogo.src}
+                    width={Math.round(34 * languageLogo.scale)}
+                    height={Math.round(34 * languageLogo.scale)}
+                  />
+                </div>
+              )}
+              {compilation.language}
+            </div>
+          )}
+          {compilation?.compiler && compilerVersion && (
+            <div style={pill}>
+              {compilation.compiler} {compilerVersion}
+            </div>
+          )}
         </div>
       </div>
-    ),
+    </div>,
     {
       ...size,
       fonts: [

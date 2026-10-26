@@ -4,15 +4,7 @@
   "extends": ["config:recommended", "schedule:daily"],
   "packageRules": [
     {
-      "matchUpdateTypes": [
-        "minor",
-        "patch",
-        "pin",
-        "digest",
-        "lockFileMaintenance",
-        "rollback",
-        "bump"
-      ],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest", "lockFileMaintenance", "rollback", "bump"],
       "groupName": "all patch and minor dependencies",
       "groupSlug": "all-patch-and-minor",
       "minimumReleaseAge": "14 days"

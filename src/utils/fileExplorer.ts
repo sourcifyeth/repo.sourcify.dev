@@ -1,8 +1,8 @@
-import { FileNode } from '@/types/codeEditor';
-import { SourceData } from '@/types/contract';
+import { FileNode } from "@/types/codeEditor";
+import { SourceData } from "@/types/contract";
 
 /** The id of the group node for files that the compiled contract does not use. */
-export const OTHER_FILES_GROUP_ID = '__other-files__';
+export const OTHER_FILES_GROUP_ID = "__other-files__";
 
 interface BuildFileTreeOptions {
   // Paths of the files that the compiled contract uses (the keys of `sourceIds`).
@@ -22,9 +22,9 @@ function buildTree(
   const root: Record<string, FileNode> = {};
 
   entries.forEach(([filePath, fileData]) => {
-    const parts = filePath.split('/').filter(part => part !== '');
+    const parts = filePath.split("/").filter((part) => part !== "");
     let current = root;
-    let currentPath = '';
+    let currentPath = "";
 
     parts.forEach((part, index) => {
       const isLast = index === parts.length - 1;
@@ -38,7 +38,7 @@ function buildTree(
           ? {
               id: filePath,
               name: part,
-              type: 'file',
+              type: "file",
               path: filePath,
               isOpen: false,
               isTarget: filePath === targetPath,
@@ -47,7 +47,7 @@ function buildTree(
           : {
               id: idPrefix + currentPath,
               name: part,
-              type: 'folder',
+              type: "folder",
               path: currentPath,
               isOpen: false,
               children: {},
@@ -64,15 +64,15 @@ function buildTree(
 
   // Convert the maps to arrays, and count the files and library files of each folder
   const convert = (nodes: Record<string, FileNode>): FileNode[] =>
-    Object.values(nodes).map(node => {
-      if (node.type === 'file') return node;
+    Object.values(nodes).map((node) => {
+      if (node.type === "file") return node;
       const children = convert(node.children as Record<string, FileNode>);
-      const files = children.reduce((total, child) => total + (child.type === 'file' ? 1 : child.fileCount ?? 0), 0);
+      const files = children.reduce((total, child) => total + (child.type === "file" ? 1 : (child.fileCount ?? 0)), 0);
       return {
         ...node,
         children,
         fileCount: files,
-        isLibrary: children.length > 0 && children.every(child => child.isLibrary),
+        isLibrary: children.length > 0 && children.every((child) => child.isLibrary),
       };
     });
 
@@ -88,23 +88,23 @@ export function buildFileTreeWithIds(
   fullyQualifiedName: string,
   { compiledPaths, isLibrary = () => false }: BuildFileTreeOptions = {}
 ): FileNode[] {
-  const targetPath = fullyQualifiedName.substring(0, fullyQualifiedName.lastIndexOf(':'));
+  const targetPath = fullyQualifiedName.substring(0, fullyQualifiedName.lastIndexOf(":"));
   const entries = Object.entries(sources);
 
   const hasCompiledList = !!compiledPaths && compiledPaths.size > 0;
   const compiled = hasCompiledList ? entries.filter(([path]) => compiledPaths.has(path)) : entries;
   const other = hasCompiledList ? entries.filter(([path]) => !compiledPaths.has(path)) : [];
 
-  const tree = buildTree(compiled, targetPath, isLibrary, '');
+  const tree = buildTree(compiled, targetPath, isLibrary, "");
   if (other.length === 0) return tree;
 
   return [
     ...tree,
     {
       id: OTHER_FILES_GROUP_ID,
-      name: 'Other files',
-      type: 'folder',
-      path: '',
+      name: "Other files",
+      type: "folder",
+      path: "",
       isOpen: false,
       isOtherGroup: true,
       fileCount: other.length,

@@ -69,11 +69,11 @@ The Source Code section can search all source files of a contract at the same ti
 
 The search runs while you type. Three buttons in the search box change how it matches:
 
-| Button | Shortcut | Effect |
-| ------ | -------- | ------ |
-| **Aa** Match Case | Alt+C | Matches upper and lower case exactly. Without it, `owner` also finds `Owner`. |
-| **ab** Match Whole Word | Alt+W | Matches only full names. Letters, digits, `_` and `$` count as parts of a name, so `owner` does not find `_owner` or `setOwner`. |
-| **.\*** Use Regular Expression | Alt+R | Reads the query as a JavaScript regular expression. `^` and `$` match at the start and end of each line. |
+| Button                         | Shortcut | Effect                                                                                                                           |
+| ------------------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| **Aa** Match Case              | Alt+C    | Matches upper and lower case exactly. Without it, `owner` also finds `Owner`.                                                    |
+| **ab** Match Whole Word        | Alt+W    | Matches only full names. Letters, digits, `_` and `$` count as parts of a name, so `owner` does not find `_owner` or `setOwner`. |
+| **.\*** Use Regular Expression | Alt+R    | Reads the query as a JavaScript regular expression. `^` and `$` match at the start and end of each line.                         |
 
 If the regular expression is not valid, the panel shows the error and no results.
 

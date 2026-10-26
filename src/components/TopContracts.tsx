@@ -133,9 +133,7 @@ export default function TopContracts() {
           {topContracts.map((contract, index) => {
             const text = (
               <>
-                <span className="w-[18px] shrink-0 text-center text-sm tabular-nums text-gray-400">
-                  {index + 1}
-                </span>
+                <span className="w-[18px] shrink-0 text-center text-sm tabular-nums text-gray-400">{index + 1}</span>
                 <div className="flex-1 min-w-0">
                   <div className="truncate text-sm font-medium text-gray-900">{contract.name || "Unknown"}</div>
                   <div className="truncate text-xs font-mono text-cerulean-blue-600">{contract.address}</div>

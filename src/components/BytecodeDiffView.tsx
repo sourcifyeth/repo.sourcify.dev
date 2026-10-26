@@ -385,11 +385,9 @@ export default function BytecodeDiffView({
   const renderAnnotations = () => {
     // Only include the annotation kinds that the user has switched on
     const signatureAnnotations = showSignatures ? detectSignatures() : [];
-    const transformationAnnotations = showTransformations && hasTransformations ? transformations ?? [] : [];
+    const transformationAnnotations = showTransformations && hasTransformations ? (transformations ?? []) : [];
 
-    const allAnnotations = [...transformationAnnotations, ...signatureAnnotations].sort(
-      (a, b) => a.offset - b.offset
-    );
+    const allAnnotations = [...transformationAnnotations, ...signatureAnnotations].sort((a, b) => a.offset - b.offset);
 
     if (allAnnotations.length === 0) return onchainBytecode;
 
@@ -485,8 +483,9 @@ export default function BytecodeDiffView({
           onMouseLeave={handleAnnotationMouseLeave}
         >
           <span
-            className={`absolute -top-2 text-[7.5px] font-bold ${colorClasses.split(" ")[1]} ${colorClasses.split(" ")[0]
-              } opacity-100 select-none pointer-events-none px-[3px] py-[1px] rounded whitespace-nowrap`}
+            className={`absolute -top-2 text-[7.5px] font-bold ${colorClasses.split(" ")[1]} ${
+              colorClasses.split(" ")[0]
+            } opacity-100 select-none pointer-events-none px-[3px] py-[1px] rounded whitespace-nowrap`}
           >
             {annotation.reason}
           </span>
@@ -532,10 +531,11 @@ export default function BytecodeDiffView({
       {/* Fixed tooltip area as an overlay */}
       {viewMode === "annotations" && (
         <div
-          className={`absolute top-0 left-1/2 transform -translate-x-1/2 z-10 p-3 rounded shadow-md text-xs max-w-[80%] transition-all duration-300 ease-in-out ${activeAnnotation
-            ? "opacity-100 translate-y-0 scale-100"
-            : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
-            } ${activeAnnotation ? getAnnotationColor(activeAnnotation.reason) : "bg-gray-100 text-gray-800"}`}
+          className={`absolute top-0 left-1/2 transform -translate-x-1/2 z-10 p-3 rounded shadow-md text-xs max-w-[80%] transition-all duration-300 ease-in-out ${
+            activeAnnotation
+              ? "opacity-100 translate-y-0 scale-100"
+              : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
+          } ${activeAnnotation ? getAnnotationColor(activeAnnotation.reason) : "bg-gray-100 text-gray-800"}`}
           onMouseEnter={handleTooltipMouseEnter}
           onMouseLeave={handleTooltipMouseLeave}
         >
@@ -545,15 +545,15 @@ export default function BytecodeDiffView({
 
       {onchainBytecode ===
         "0x2121212121212121212121202d20636861696e207761732064657072656361746564206174207468652074696d65206f6620766572696669636174696f6e" && (
-          <div className="w-full text-sm my-2">
-            <div>
-              <span>
-                Chain was deprecated at the time of verification but sources were verified on an early Sourcify version.
-                The onchain bytecode below is a placeholder in database
-              </span>
-            </div>
+        <div className="w-full text-sm my-2">
+          <div>
+            <span>
+              Chain was deprecated at the time of verification but sources were verified on an early Sourcify version.
+              The onchain bytecode below is a placeholder in database
+            </span>
           </div>
-        )}
+        </div>
+      )}
       <div className="flex flex-col md:flex-row md:items-center gap-6 md:my-2 my-2">
         {onchainBytecode && (
           <div className="flex items-center gap-1">
@@ -570,7 +570,8 @@ export default function BytecodeDiffView({
               Annotated On-chain Bytecode
             </label>
             <InfoTooltip content={annotationsTooltipContent} html={true} />
-          </div>)}
+          </div>
+        )}
         <div className="flex items-center gap-1">
           <input
             type="radio"
@@ -640,38 +641,40 @@ export default function BytecodeDiffView({
           onClearHighlight={() => setOpcodeHighlight(null)}
         />
       ) : (
-      <div className="flex gap-1">
-        <div
-          ref={bytecodeBoxRef}
-          onScroll={updateRulerViewport}
-          className={`flex-1 min-w-0 max-h-64 p-3 bg-gray-50 rounded font-mono border border-gray-200 cursor-text break-words overflow-y-auto whitespace-pre-wrap overflow-x-clip ${isMobile ? "text-[0.65rem]" : "text-xs"
-            }`}
-        >
-          {viewMode === "annotations" ? renderAnnotations() : currentView}
-        </div>
-
-        {showRuler && (
+        <div className="flex gap-1">
           <div
-            className={`relative shrink-0 ${isMobile ? "w-2" : "w-3"} bg-gray-100 border border-gray-200 rounded cursor-pointer overflow-hidden`}
-            onClick={handleRulerClick}
-            title="Overview of annotations. Click to jump."
+            ref={bytecodeBoxRef}
+            onScroll={updateRulerViewport}
+            className={`flex-1 min-w-0 max-h-64 p-3 bg-gray-50 rounded font-mono border border-gray-200 cursor-text break-words overflow-y-auto whitespace-pre-wrap overflow-x-clip ${
+              isMobile ? "text-[0.65rem]" : "text-xs"
+            }`}
           >
-            {rulerMarks.map((mark, i) => (
-              <div
-                key={i}
-                className={`absolute left-0 right-0 min-h-[2px] pointer-events-none ${RULER_MARK_COLORS[mark.reason] || "bg-gray-500"
-                  }`}
-                style={{ top: `${mark.top * 100}%`, height: `${mark.height * 100}%` }}
-              />
-            ))}
-            {/* The part of the bytecode that is in view */}
-            <div
-              className="absolute left-0 right-0 bg-gray-500/20 border-y border-gray-400 pointer-events-none"
-              style={{ top: `${rulerViewport.top * 100}%`, height: `${rulerViewport.height * 100}%` }}
-            />
+            {viewMode === "annotations" ? renderAnnotations() : currentView}
           </div>
-        )}
-      </div>
+
+          {showRuler && (
+            <div
+              className={`relative shrink-0 ${isMobile ? "w-2" : "w-3"} bg-gray-100 border border-gray-200 rounded cursor-pointer overflow-hidden`}
+              onClick={handleRulerClick}
+              title="Overview of annotations. Click to jump."
+            >
+              {rulerMarks.map((mark, i) => (
+                <div
+                  key={i}
+                  className={`absolute left-0 right-0 min-h-[2px] pointer-events-none ${
+                    RULER_MARK_COLORS[mark.reason] || "bg-gray-500"
+                  }`}
+                  style={{ top: `${mark.top * 100}%`, height: `${mark.height * 100}%` }}
+                />
+              ))}
+              {/* The part of the bytecode that is in view */}
+              <div
+                className="absolute left-0 right-0 bg-gray-500/20 border-y border-gray-400 pointer-events-none"
+                style={{ top: `${rulerViewport.top * 100}%`, height: `${rulerViewport.height * 100}%` }}
+              />
+            </div>
+          )}
+        </div>
       )}
 
       {viewMode === "annotations" && (hasTransformations || hasSignatures) && (

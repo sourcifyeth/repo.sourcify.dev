@@ -66,7 +66,9 @@ describe("findCompilerSignature", () => {
   });
 
   it("matches a struct parameter by position when the name and count are unique", () => {
-    expect(findCompilerSignature("mintSigned", ["address", "MintParams", "bytes"], signatures)?.signatureHash4).toBe("0x4");
+    expect(findCompilerSignature("mintSigned", ["address", "MintParams", "bytes"], signatures)?.signatureHash4).toBe(
+      "0x4"
+    );
     expect(findCompilerSignature("burn", [], signatures)).toBeUndefined();
   });
 });

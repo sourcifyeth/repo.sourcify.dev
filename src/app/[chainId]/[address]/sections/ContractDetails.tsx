@@ -156,9 +156,7 @@ export default function ContractDetails({ contract, chainId }: ContractDetailsPr
 
   let optimizer: ReactNode;
   if (isSolidity) {
-    optimizer = settings.optimizer?.enabled
-      ? `On, ${formatNumber(settings.optimizer.runs ?? 200)} runs`
-      : "Off";
+    optimizer = settings.optimizer?.enabled ? `On, ${formatNumber(settings.optimizer.runs ?? 200)} runs` : "Off";
   } else if (settings.optimize !== undefined) {
     optimizer = String(settings.optimize);
   } else {

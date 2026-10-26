@@ -266,13 +266,25 @@ export default function HomeForm({ chains, serverUrl }: HomeFormProps) {
               {lookup.status === "error" && (
                 <p className="text-sm text-red-600">
                   Could not look up chains.{" "}
-                  <button type="button" onClick={() => setRetryCount((n) => n + 1)} className="underline cursor-pointer">
+                  <button
+                    type="button"
+                    onClick={() => setRetryCount((n) => n + 1)}
+                    className="underline cursor-pointer"
+                  >
                     Try again
                   </button>
                 </p>
               )}
 
-              {lookup.status === "done" && <ChainMatchList key={address} address={address} matches={matches} chains={chains} onSelect={rememberSearch} />}
+              {lookup.status === "done" && (
+                <ChainMatchList
+                  key={address}
+                  address={address}
+                  matches={matches}
+                  chains={chains}
+                  onSelect={rememberSearch}
+                />
+              )}
             </div>
           )}
         </div>
