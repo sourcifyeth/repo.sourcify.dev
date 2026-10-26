@@ -59,10 +59,11 @@ export default function ImmutableTransformations({
             {Object.entries(groupedTransformations).map(([id, offsets]) => (
               <tr key={id}>
                 <td className="px-3 md:px-6 py-4 whitespace-nowrap font-mono">{id}</td>
-                <td className="px-3 md:px-6 py-4 whitespace-nowrap font-mono text-gray-500">
+                {/* Values can be hundreds of characters long: wrap them instead of widening the table */}
+                <td className="px-3 md:px-6 py-4 font-mono text-gray-500 break-all min-w-[12rem] max-w-xl">
                   {transformationValues.immutables?.[id] || "N/A"}
                 </td>
-                <td className="px-3 md:px-6 py-4 whitespace-nowrap font-mono text-gray-500">{offsets.join(", ")}</td>
+                <td className="px-3 md:px-6 py-4 font-mono text-gray-500 min-w-[6rem]">{offsets.join(", ")}</td>
               </tr>
             ))}
           </tbody>
