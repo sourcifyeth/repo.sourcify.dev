@@ -82,7 +82,7 @@ function Badge({ summary }: { summary: ContractSummary | null | undefined }) {
 export default async function Image({ params }: { params: { chainId: string; address: string } }) {
   const { chainId, address } = params;
 
-  const [summary, chainName, logo, sans, sansSemiBold, mono] = await Promise.all([
+  const [summary, chainName, logo, sans, sansSemiBold, mono, vt323] = await Promise.all([
     fetchContractSummary(chainId, address).catch(() => undefined),
     fetchChains()
       .then((chains) => getChainName(chainId, chains))
@@ -91,6 +91,7 @@ export default async function Image({ params }: { params: { chainId: string; add
     loadAsset(new URL("../../../assets/fonts/ibm-plex-sans-latin-400-normal.woff", import.meta.url)),
     loadAsset(new URL("../../../assets/fonts/ibm-plex-sans-latin-600-normal.woff", import.meta.url)),
     loadAsset(new URL("../../../assets/fonts/ibm-plex-mono-latin-400-normal.woff", import.meta.url)),
+    loadAsset(new URL("../../../assets/fonts/vt323-latin-400-normal.woff", import.meta.url)),
   ]);
 
   const name = summary === null ? "Unverified contract" : summary?.compilation.name || "Contract";
@@ -112,8 +113,8 @@ export default async function Image({ params }: { params: { chainId: string; add
           {/* Brand */}
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
             <img alt="Sourcify logo" src={logo as unknown as string} width={60} height={60} />
-            <div style={{ display: "flex", fontSize: 38, fontWeight: 600, color: "#1f2937" }}>Sourcify</div>
-            <div style={{ display: "flex", fontSize: 30, color: "#9ca3af" }}>repo.sourcify.dev</div>
+            {/* The site name in VT323, like the site header */}
+            <div style={{ display: "flex", fontSize: 48, fontFamily: "VT323", color: "#374151" }}>repo.sourcify.dev</div>
           </div>
 
           {/* Contract */}
@@ -167,6 +168,7 @@ export default async function Image({ params }: { params: { chainId: string; add
         { name: "IBM Plex Sans", data: sans, weight: 400, style: "normal" },
         { name: "IBM Plex Sans", data: sansSemiBold, weight: 600, style: "normal" },
         { name: "IBM Plex Mono", data: mono, weight: 400, style: "normal" },
+        { name: "VT323", data: vt323, weight: 400, style: "normal" },
       ],
     }
   );
