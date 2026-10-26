@@ -518,35 +518,26 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           <span className="mt-0.5 shrink-0 text-base">
             {isExactMatch ? <IoCheckmarkDoneCircle className="text-green-600" /> : <IoInformationCircle className="text-amber-600" />}
           </span>
-          {isExactMatch ? (
-            <p>
-              <span className="font-semibold">Exact match:</span> these are the original source files, byte for byte,
-              including comments and whitespace. The bytecode contains a hash of the sources and compiler settings, and
-              it matches.{" "}
-              <a
-                href="https://docs.sourcify.dev/docs/full-vs-partial-match/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                Learn more
-              </a>
-            </p>
-          ) : (
-            <p>
-              <span className="font-semibold">Match:</span> these files compile to the same bytecode as the onchain
-              contract, but they may not be the original files. Comments, variable names, whitespace and file names can
-              differ, because they don&apos;t change the bytecode.{" "}
-              <a
-                href="https://docs.sourcify.dev/docs/full-vs-partial-match/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                Learn more
-              </a>
-            </p>
-          )}
+          <p>
+            {isExactMatch ? (
+              <>
+                <span className="font-semibold">Exact match:</span> these are the original source files, byte for byte.
+              </>
+            ) : (
+              <>
+                <span className="font-semibold">Match:</span> compiles to the same bytecode, but comments, variable
+                names and whitespace may differ from the original.
+              </>
+            )}{" "}
+            <a
+              href="https://docs.sourcify.dev/docs/full-vs-partial-match/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+            >
+              Learn more
+            </a>
+          </p>
         </div>
 
         <Suspense fallback={<LoadingState />}>
