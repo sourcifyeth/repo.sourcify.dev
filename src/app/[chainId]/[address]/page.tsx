@@ -18,7 +18,6 @@ import {
   IoCheckmarkCircle,
   IoWarning,
   IoCloseCircle,
-  IoInformationCircle,
 } from "react-icons/io5";
 import CopyToClipboard from "@/components/CopyToClipboard";
 import SectionNav, { PageSection } from "@/components/SectionNav";
@@ -509,26 +508,17 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
           </div>
         </div>
 
-        {/* What the match type says about these source files */}
-        <div
-          className={`mb-3 flex items-start gap-2 rounded-md border px-3 py-2 text-xs md:text-sm ${
-            isExactMatch ? "border-green-200 bg-green-50 text-green-900" : "border-gray-200 bg-white text-gray-700"
-          }`}
-        >
-          <span className="mt-0.5 shrink-0 text-base">
-            {isExactMatch ? <IoCheckmarkDoneCircle className="text-green-600" /> : <IoInformationCircle className="text-gray-400" />}
+        {/* What the match type says about these source files, with the same badge as the page header */}
+        <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs md:text-sm text-gray-700">
+          <span
+            className={`inline-flex items-center px-1.5 py-0.5 rounded-md font-semibold border ${matchColor} flex-shrink-0`}
+          >
+            <span className="mr-1 text-base">{matchIcon}</span> {matchLabel}
           </span>
           <p>
-            {isExactMatch ? (
-              <>
-                <span className="font-semibold">Exact match:</span> these are the original source files, byte for byte.
-              </>
-            ) : (
-              <>
-                <span className="font-semibold">Match:</span> compiles to the same bytecode, but comments, variable
-                names and whitespace may differ from the original.
-              </>
-            )}{" "}
+            {isExactMatch
+              ? "These are the original source files, byte for byte."
+              : "The source files compile to the same bytecode, but comments, variable names and whitespace may differ from the original."}{" "}
             <a
               href="https://docs.sourcify.dev/docs/full-vs-partial-match/"
               target="_blank"
