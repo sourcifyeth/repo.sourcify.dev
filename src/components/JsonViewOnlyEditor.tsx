@@ -2,6 +2,8 @@
 
 import { useRef } from "react";
 import MonacoEditor from '@monaco-editor/react';
+import "@/utils/monacoLoader";
+import { useInView } from "@/hooks/useInView";
 import type { Monaco } from '@monaco-editor/react';
 import type { editor } from "monaco-editor";
 import { useIsMobile } from "@/hooks/useResponsive";
@@ -14,12 +16,15 @@ interface JsonViewOnlyEditorProps {
 export default function JsonViewOnlyEditor({ data, height = "400px" }: JsonViewOnlyEditorProps) {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
+  // Each viewer is a full editor: start it only when it comes near the visible part of the page
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const inView = useInView(containerRef);
 
   // Use isMobile hook to determine font size
   const isMobile = useIsMobile();
 
   // Format the JSON with indentation for better readability
-  const formattedJson = JSON.stringify(data, null, 2);
+  const formattedJson = inView ? JSON.stringify(data, null, 2) : "";
 
   // Handle editor mounting
   const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor, monaco: Monaco) => {
@@ -28,7 +33,8 @@ export default function JsonViewOnlyEditor({ data, height = "400px" }: JsonViewO
   };
 
   return (
-    <div className="h-[400px]" style={{ height }}>
+    <div ref={containerRef} className="h-[400px] bg-[#1e1e1e]" style={{ height }}>
+      {inView && (
       <MonacoEditor
         height="100%"
         language="json"
@@ -60,6 +66,7 @@ export default function JsonViewOnlyEditor({ data, height = "400px" }: JsonViewO
         onMount={handleEditorDidMount}
         theme="vs-dark"
       />
+      )}
     </div>
   );
 }

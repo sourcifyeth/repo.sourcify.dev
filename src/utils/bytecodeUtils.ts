@@ -1,5 +1,5 @@
 import { keccak256 } from "@ethersproject/keccak256";
-import { BytecodeData, ContractData } from "@/types/contract";
+import { BytecodeData, ContractPageData } from "@/types/contract";
 import semver from "semver";
 
 /**
@@ -90,7 +90,7 @@ function isPreVersion050(compilerVersion: string): boolean {
  * @param contract The contract object containing creationBytecode, runtimeBytecode and compilation info
  * @returns An object with processed creation and runtime bytecodes
  */
-export function processContractBytecodes(contract: ContractData): {
+export function processContractBytecodes(contract: ContractPageData): {
   processedCreationBytecode: string;
   processedRuntimeBytecode: string;
 } {
