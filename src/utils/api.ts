@@ -1,5 +1,7 @@
-import { ContractData } from "@/types/contract";
+import { ContractPageData, LAZY_CONTRACT_FIELDS, VerifiedContractMinimal } from "@/types/contract";
+import { fetchVerifiedAllChains } from "@/utils/allChains";
 import { ChainData, ChainsResponse } from "@/types/chain";
+import { cache } from "react";
 
 /**
  * Public URL of the Sourcify server. Use it for anything that runs in, or is
@@ -32,15 +34,17 @@ const getSourcifyServerInternalUrl = () => {
 const revalidateTime = process.env.NODE_ENV === "production" ? 86400 : 3600; // 24 hours for production, 1 hour for development
 
 /**
- * Fetches contract data from the Sourcify API
+ * Fetches contract data from the Sourcify API: all fields except the large
+ * ones that the page loads in the browser when needed (LAZY_CONTRACT_FIELDS).
  * @param chainId The chain ID
  * @param address The contract address
  * @returns The contract data, or null if the contract is not verified (404)
  */
-export async function fetchContractData(chainId: string, address: string): Promise<ContractData | null> {
+export async function fetchContractData(chainId: string, address: string): Promise<ContractPageData | null> {
   const baseUrl = getSourcifyServerInternalUrl();
   const normalizedAddress = address.toLowerCase();
-  const url = `${baseUrl}/v2/contract/${chainId}/${normalizedAddress}?fields=all`;
+  // Without `fields`, `omit` returns every field except the ones listed
+  const url = `${baseUrl}/v2/contract/${chainId}/${normalizedAddress}?omit=${LAZY_CONTRACT_FIELDS.join(",")}`;
 
   try {
     const response = await fetch(url, { cache: "no-store" });
@@ -63,11 +67,39 @@ export async function fetchContractData(chainId: string, address: string): Promi
       throw new Error(`Failed to fetch contract data: ${response.status} ${response.statusText}`);
     }
 
-    return (await response.json()) as ContractData;
+    return (await response.json()) as ContractPageData;
   } catch (error) {
     console.error("Error fetching contract data:", error);
     throw error;
   }
+}
+
+export interface ContractSummary {
+  match: "match" | "exact_match" | null;
+  compilation: { name: string; language: string; compiler: string; compilerVersion: string };
+}
+
+/**
+ * Fetches only the few fields that the social preview image shows.
+ * @returns The summary, or null if the contract is not verified
+ */
+export async function fetchContractSummary(chainId: string, address: string): Promise<ContractSummary | null> {
+  const fields = [
+    "compilation.name",
+    "compilation.language",
+    "compilation.compiler",
+    "compilation.compilerVersion",
+  ].join(",");
+  const url = `${getSourcifyServerInternalUrl()}/v2/contract/${chainId}/${address.toLowerCase()}?fields=${fields}`;
+  // One hour: a contract can get verified, or become an exact match, after the first share
+  const response = await fetch(url, { next: { revalidate: 3600 } });
+  if (response.status === 404 || response.status === 400) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to fetch contract summary: ${response.status} ${response.statusText}`);
+  }
+  return (await response.json()) as ContractSummary;
 }
 
 /**
@@ -153,7 +185,11 @@ interface VerificationResponse {
   address: string;
 }
 
-export async function checkVerification(chainId: string, address: string): Promise<boolean> {
+/**
+ * Returns the match status of a contract on Sourcify, or null if it is not verified
+ * (or if the lookup fails).
+ */
+export async function getMatchStatus(chainId: string, address: string): Promise<"match" | "exact_match" | null> {
   try {
     const baseUrl = getSourcifyServerInternalUrl();
     const normalizedAddress = address.toLowerCase();
@@ -163,17 +199,19 @@ export async function checkVerification(chainId: string, address: string): Promi
 
     // Accept 2xx and 3xx status codes (< 400), but fail on 4xx and 5xx
     if (response.status >= 400) {
-      return false;
+      return null;
     }
 
     const data = (await response.json()) as VerificationResponse;
-
-    // Check if the contract is verified (match field is not null)
-    return !!data.match;
+    return data.match === "match" || data.match === "exact_match" ? data.match : null;
   } catch (error) {
     console.error(`Error checking verification for ${address}:`, error);
-    return false;
+    return null;
   }
+}
+
+export async function checkVerification(chainId: string, address: string): Promise<boolean> {
+  return (await getMatchStatus(chainId, address)) !== null;
 }
 
 // GrowthPie API functions
@@ -204,4 +242,92 @@ export async function fetchTopContractsByChain(chainKey: string) {
     console.error(`Error fetching top contracts for ${chainKey}:`, error);
     return [];
   }
+}
+
+/**
+ * Total number of verified contracts from the daily stats.json, which sits next to the server.
+ * Used until the live total arrives. Returns null if the file is not available.
+ */
+export async function fetchVerifiedContractsTotal(): Promise<number | null> {
+  try {
+    const url = `${new URL(getSourcifyServerUrl()).origin}/static/stats.json`;
+    const response = await fetch(url, { next: { revalidate: 3600 } });
+    if (!response.ok) return null;
+    const stats = (await response.json()) as Record<string, { full_match: number; partial_match: number }>;
+    return Object.values(stats).reduce((sum, chain) => sum + chain.full_match + chain.partial_match, 0);
+  } catch (error) {
+    console.error("Error fetching stats.json:", error);
+    return null;
+  }
+}
+
+/**
+ * Server-side lookup of all verified deployments of an address.
+ * Uses the internal URL, like the other server-side calls.
+ */
+export async function fetchVerifiedAllChainsServer(address: string): Promise<VerifiedContractMinimal[]> {
+  return fetchVerifiedAllChains(getSourcifyServerInternalUrl(), address, { cache: "no-store" });
+}
+
+export interface BlockExplorer {
+  name: "Etherscan" | "Blockscout";
+  // Base URL without a trailing slash. Both explorers use /tx/<hash>, /address/<address> and /block/<number>
+  url: string;
+}
+
+const EXPLORER_LIST_REVALIDATE = 86400; // The lists change rarely: cache them for a day
+// A slow or hanging explorer API must not hold up the page: give up after 3 s and show no links.
+// (Without a timeout, Node's fetch can wait up to 5 minutes for the response headers.)
+const EXPLORER_LIST_TIMEOUT_MS = 3000;
+
+/** Etherscan's chain list: one explorer URL per chain that Etherscan supports. Loaded once per request (React cache). */
+const etherscanExplorers = cache(async (): Promise<Map<string, string>> => {
+  const response = await fetch("https://api.etherscan.io/v2/chainlist", {
+    next: { revalidate: EXPLORER_LIST_REVALIDATE },
+    signal: AbortSignal.timeout(EXPLORER_LIST_TIMEOUT_MS),
+  });
+  if (!response.ok) throw new Error(`Etherscan chain list: ${response.status}`);
+  const body = (await response.json()) as {
+    result?: Array<{ chainid: string; blockexplorer: string; status: number }>;
+  };
+  return new Map(
+    (body.result ?? []).filter((chain) => chain.status === 1).map((chain) => [chain.chainid, chain.blockexplorer])
+  );
+});
+
+/** Blockscout's chain list (chains.blockscout.com): the explorers of each chain that runs Blockscout. Loaded once per request. */
+const blockscoutExplorers = cache(async (): Promise<Map<string, string>> => {
+  const response = await fetch("https://chains.blockscout.com/api/chains", {
+    next: { revalidate: EXPLORER_LIST_REVALIDATE },
+    signal: AbortSignal.timeout(EXPLORER_LIST_TIMEOUT_MS),
+  });
+  if (!response.ok) throw new Error(`Blockscout chain list: ${response.status}`);
+  const body = (await response.json()) as Record<string, { explorers?: Array<{ url: string }> }>;
+  return new Map(
+    Object.entries(body).flatMap(([chainId, chain]) =>
+      chain.explorers?.[0] ? [[chainId, chain.explorers[0].url]] : []
+    )
+  );
+});
+
+/**
+ * The block explorers of a chain: Etherscan first, then Blockscout, from the
+ * chain lists that each of them publishes. Either list can fail or time out on
+ * its own; the result then has only the other explorer, or none. The page shows
+ * the links inside a Suspense boundary (ExplorerLinks.tsx), so it never waits for them.
+ */
+export async function fetchBlockExplorers(chainId: string): Promise<BlockExplorer[]> {
+  const [etherscan, blockscout] = await Promise.allSettled([etherscanExplorers(), blockscoutExplorers()]);
+  const explorers: BlockExplorer[] = [];
+  const add = (name: BlockExplorer["name"], list: PromiseSettledResult<Map<string, string>>) => {
+    if (list.status === "rejected") {
+      console.error(`Error fetching the ${name} chain list:`, list.reason);
+      return;
+    }
+    const url = list.value.get(chainId);
+    if (url) explorers.push({ name, url: url.replace(/\/+$/, "") });
+  };
+  add("Etherscan", etherscan);
+  add("Blockscout", blockscout);
+  return explorers;
 }

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { fetchGrowthPieChains, fetchTopContractsByChain, checkVerification } from "@/utils/api";
+import { fetchGrowthPieChains, fetchTopContractsByChain, getMatchStatus } from "@/utils/api";
 
 // Set cache control headers with a 1-hour cache time
 export const revalidate = 3600; // 1 hour in seconds
 export const dynamic = "force-static";
 
 // Chains with available top contracts data
-const AVAILABLE_CHAINS = ["arbitrum", "base", "ethereum", "linea", "optimism", "taiko", "unichain", "zksync_era"];
+const AVAILABLE_CHAINS = ["arbitrum", "base", "ethereum", "linea", "optimism", "robinhood", "zksync_era"];
 
 interface ChainDataItem {
   name: string;
@@ -25,6 +25,7 @@ interface TopContract {
   txcount_180d: number;
   gas_fees_usd_180d: number;
   verified?: boolean;
+  match?: "match" | "exact_match" | null;
 }
 
 export async function GET() {
@@ -45,19 +46,22 @@ export async function GET() {
           chainData.deployment === "PROD"
         );
       })
-      .reduce((acc, [key, value]) => {
-        // Only include name and evm_chain_id from ChainDataItem
-        acc[key] = {
-          name: (value as ChainDataItem).name,
-          evm_chain_id: (value as ChainDataItem).evm_chain_id,
-        };
-        return acc;
-      }, {} as Record<string, Pick<ChainDataItem, "name" | "evm_chain_id">>);
+      .reduce(
+        (acc, [key, value]) => {
+          // Only include name and evm_chain_id from ChainDataItem
+          acc[key] = {
+            name: (value as ChainDataItem).name,
+            evm_chain_id: (value as ChainDataItem).evm_chain_id,
+          };
+          return acc;
+        },
+        {} as Record<string, Pick<ChainDataItem, "name" | "evm_chain_id">>
+      );
 
     // Prepare results object
     const result: {
       chains: Record<string, Pick<ChainDataItem, "name" | "evm_chain_id">>;
-      contracts: Record<string, Pick<TopContract, "address" | "name" | "owner_project" | "verified">[]>;
+      contracts: Record<string, Pick<TopContract, "address" | "name" | "owner_project" | "verified" | "match">[]>;
     } = {
       chains: filteredChains,
       contracts: {},
@@ -76,14 +80,15 @@ export async function GET() {
               const chainId = contract.chain_id.split(":")[1];
 
               // Check verification status
-              const verified = await checkVerification(chainId, contract.address);
+              const match = await getMatchStatus(chainId, contract.address);
 
               // Only include the specified fields
               return {
                 address: contract.address,
                 name: contract.name,
                 owner_project: contract.owner_project,
-                verified,
+                verified: match !== null,
+                match,
               };
             } catch (err) {
               console.error("Error checking verification:", err);
@@ -92,6 +97,7 @@ export async function GET() {
                 name: contract.name,
                 owner_project: contract.owner_project,
                 verified: false,
+                match: null,
               };
             }
           })

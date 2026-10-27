@@ -44,3 +44,127 @@
 .animate-fade-up {
   animation: fade-up 0.5s ease-out forwards;
 }
+
+/* Always-visible scrollbar (macOS hides overlay scrollbars until the user scrolls) */
+.scrollbar-visible::-webkit-scrollbar {
+  width: 8px;
+}
+.scrollbar-visible::-webkit-scrollbar-track {
+  background: var(--color-gray-100);
+  border-radius: 4px;
+}
+.scrollbar-visible::-webkit-scrollbar-thumb {
+  background: var(--color-gray-400);
+  border-radius: 4px;
+}
+.scrollbar-visible::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gray-500);
+}
+/* Firefox only. Chrome ignores the ::-webkit-scrollbar rules above if these are set. */
+@supports (-moz-appearance: none) {
+  .scrollbar-visible {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-gray-400) var(--color-gray-100);
+  }
+}
+
+/* Live feed: a new row slides in, and a green edge marks it for a moment */
+@keyframes feed-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes feed-edge {
+  0%,
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.animate-feed-in {
+  animation: feed-in 0.35s ease-out;
+}
+.animate-feed-edge {
+  animation: feed-edge 2.5s ease-out forwards;
+}
+
+/* Lines selected in the source view (line-number click or a #file=…&L=… link) */
+.monaco-editor .source-line-highlight {
+  background: rgba(250, 204, 21, 0.14);
+}
+.monaco-editor .source-line-highlight-gutter {
+  background: rgba(250, 204, 21, 0.8);
+  width: 3px !important;
+  margin-left: 3px;
+}
+/* Line numbers are clickable: they select a line for a link. The extra
+   .margin-view-overlays class beats Monaco's own "cursor: default" rule. */
+.source-editor .monaco-editor .margin-view-overlays .line-numbers {
+  cursor: pointer;
+}
+.source-editor .monaco-editor .margin-view-overlays .line-numbers:hover {
+  color: var(--vscode-editorLineNumber-activeForeground);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+/* Hover on a line number: a faint row highlight and a link icon in the glyph margin */
+.monaco-editor .source-line-hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.monaco-editor .source-line-link-icon {
+  cursor: pointer;
+  background: center / 12px 12px no-repeat
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d1d5db' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'/%3E%3Cpath d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'/%3E%3C/svg%3E");
+}
+/* Matches of the search across all files, in the open file */
+.monaco-editor .source-search-match {
+  background: rgba(245, 158, 11, 0.28);
+  border-radius: 2px;
+}
+.monaco-editor .source-search-match-active {
+  background: rgba(245, 158, 11, 0.55);
+  outline: 1px solid rgba(251, 191, 36, 0.95);
+  border-radius: 2px;
+}
+/* A byte range from the bytecode's source map (#file=…&R=…) */
+.monaco-editor .source-range-highlight {
+  background: rgba(56, 189, 248, 0.22);
+  outline: 1px solid rgba(56, 189, 248, 0.7);
+  border-radius: 2px;
+}
+.monaco-editor .source-range-highlight-gutter {
+  background: rgba(56, 189, 248, 0.8);
+  width: 3px !important;
+  margin-left: 3px;
+}
+
+/* Sticky bars at the top of the window publish their heights (see src/utils/stickyHeight.ts).
+   Jumps to a section stop below them. */
+:root {
+  --sticky-banner-height: 0px;
+  --section-nav-height: 0px;
+}
+.page-section {
+  scroll-margin-top: calc(var(--sticky-banner-height) + var(--section-nav-height) + 8px);
+}
+
+/* Header links: a pink underline grows on hover, as on sourcify.dev (sourcify-ui index.css) */
+.link-underline {
+  background-image: linear-gradient(transparent calc(100% - 3px), var(--color-light-coral) 3px);
+  background-repeat: no-repeat;
+  background-size: 0% 100%;
+  transition: background-size 0.3s;
+}
+.link-underline:hover {
+  background-size: 100% 100%;
+}
+.hover-to-fill:hover > svg {
+  fill: var(--color-cerulean-blue-500);
+}

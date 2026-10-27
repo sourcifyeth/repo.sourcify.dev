@@ -15,13 +15,16 @@ export default function ImmutableTransformations({
     .sort((a, b) => a.offset - b.offset);
 
   // Group transformations by id to show offsets together
-  const groupedTransformations = immutableTransformations.reduce((acc, t) => {
-    if (!acc[t.id]) {
-      acc[t.id] = [];
-    }
-    acc[t.id].push(t.offset);
-    return acc;
-  }, {} as Record<string, number[]>);
+  const groupedTransformations = immutableTransformations.reduce(
+    (acc, t) => {
+      if (!acc[t.id]) {
+        acc[t.id] = [];
+      }
+      acc[t.id].push(t.offset);
+      return acc;
+    },
+    {} as Record<string, number[]>
+  );
 
   // Sort offsets within each group
   Object.values(groupedTransformations).forEach((offsets) => offsets.sort((a, b) => a - b));
@@ -59,10 +62,11 @@ export default function ImmutableTransformations({
             {Object.entries(groupedTransformations).map(([id, offsets]) => (
               <tr key={id}>
                 <td className="px-3 md:px-6 py-4 whitespace-nowrap font-mono">{id}</td>
-                <td className="px-3 md:px-6 py-4 whitespace-nowrap font-mono text-gray-500">
+                {/* Values can be hundreds of characters long: wrap them instead of widening the table */}
+                <td className="px-3 md:px-6 py-4 font-mono text-gray-500 break-all min-w-[12rem] max-w-xl">
                   {transformationValues.immutables?.[id] || "N/A"}
                 </td>
-                <td className="px-3 md:px-6 py-4 whitespace-nowrap font-mono text-gray-500">{offsets.join(", ")}</td>
+                <td className="px-3 md:px-6 py-4 font-mono text-gray-500 min-w-[6rem]">{offsets.join(", ")}</td>
               </tr>
             ))}
           </tbody>

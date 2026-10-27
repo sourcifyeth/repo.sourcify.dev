@@ -7,6 +7,9 @@ export interface ContractData {
   runtimeBytecode: BytecodeData;
   deployment: DeploymentData;
   sources: Record<string, SourceData>;
+  // The files of the compilation, with the id that source maps use. Files in
+  // `sources` but not here are not used by the compiled contract.
+  sourceIds?: Record<string, { id: number }>;
   compilation: CompilationData;
   abi: AbiItem[] | null;
   metadata: Record<string, unknown> | null;
@@ -25,6 +28,27 @@ export interface ContractData {
   address: string;
   signatures?: SignatureData;
 }
+
+/**
+ * The large fields that the contract page does not request. The browser
+ * loads each one when its section comes into view (see LazyJsonSection).
+ */
+export const LAZY_CONTRACT_FIELDS = ["metadata", "stdJsonInput", "stdJsonOutput"] as const;
+export type LazyContractField = (typeof LAZY_CONTRACT_FIELDS)[number];
+
+/** The contract as the page requests it: all fields except the lazy ones. */
+export type ContractPageData = Omit<ContractData, LazyContractField>;
+
+/**
+ * The fields that the source view reads. The page gives it only these: each
+ * prop of a client component goes into the page, and React writes a long
+ * string (a bytecode, a source map) again for every component that gets it.
+ * The source view reads the source maps from the bytecode sections in the
+ * browser (registeredSourceMap in sourceRegistry.ts).
+ */
+export type SourceViewData = Pick<ContractPageData, "sources" | "sourceIds" | "signatures" | "userdoc" | "devdoc"> & {
+  compilation: Pick<CompilationData, "fullyQualifiedName" | "compilerSettings">;
+};
 
 export interface LibraryReferenceObject {
   start: number;
@@ -190,9 +214,7 @@ export interface VyperStorageLayoutEntry {
 
 export type VyperStorageLayout = Record<string, VyperStorageLayoutEntry>;
 
-export function isSolidityStorageLayout(
-  layout: StorageLayoutData | VyperStorageLayout
-): layout is StorageLayoutData {
+export function isSolidityStorageLayout(layout: StorageLayoutData | VyperStorageLayout): layout is StorageLayoutData {
   return "storage" in layout && Array.isArray((layout as StorageLayoutData).storage);
 }
 
@@ -206,4 +228,15 @@ export interface SignatureItem {
   signature: string;
   signatureHash32: string;
   signatureHash4: string;
+}
+
+// One verified deployment, as returned by /v2/contract/all-chains/{address}
+export interface VerifiedContractMinimal {
+  match: "match" | "exact_match" | null;
+  creationMatch: "match" | "exact_match" | null;
+  runtimeMatch: "match" | "exact_match" | null;
+  matchId: string;
+  chainId: string;
+  address: string;
+  verifiedAt: string;
 }

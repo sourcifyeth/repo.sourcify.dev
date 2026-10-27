@@ -149,8 +149,7 @@ export default function SimilarityVerification({ chainId, address, serverUrl }: 
       <div className="bg-green-50 border-l-4 border-green-500 p-4 my-6">
         <div className="text-sm text-green-800">
           <p>
-            This contract has been verified with similarity search, but the page couldn&apos;t be updated
-            automatically.{" "}
+            This contract has been verified with similarity search, but the page couldn&apos;t be updated automatically.{" "}
             <button onClick={() => window.location.reload()} className="underline hover:text-green-900 font-medium">
               Reload the page
             </button>{" "}
@@ -169,12 +168,7 @@ export default function SimilarityVerification({ chainId, address, serverUrl }: 
       >
         <p className="mt-1">
           You can verify this contract yourself on{" "}
-          <a
-            href={VERIFY_UI_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:text-red-900"
-          >
+          <a href={VERIFY_UI_URL} target="_blank" rel="noopener noreferrer" className="underline hover:text-red-900">
             verify.sourcify.dev
           </a>
           .

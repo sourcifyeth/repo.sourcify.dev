@@ -1,10 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { FaCheckCircle } from "react-icons/fa";
-import { getChainName } from "@/utils/api";
-import { ChainData } from "@/types/chain";
-
 interface ExampleContract {
   name: string;
   address: string;
@@ -12,7 +7,8 @@ interface ExampleContract {
 }
 
 interface ExampleContractsProps {
-  chains: ChainData[];
+  /** Called with the address of the chip that the user clicked */
+  onPick: (address: string) => void;
 }
 
 const EXAMPLE_CONTRACTS: ExampleContract[] = [
@@ -58,61 +54,24 @@ const EXAMPLE_CONTRACTS: ExampleContract[] = [
   },
 ];
 
-export default function ExampleContracts({ chains }: ExampleContractsProps) {
-  const router = useRouter();
+// Phones show only this many chips, so the row stays short
+const MOBILE_CHIP_COUNT = 4;
 
-  const handleContractClick = (contract: ExampleContract) => {
-    router.push(`/${contract.chainId}/${contract.address}`);
-  };
-
+// A row of chips under the search. A click fills the search with the address, so the user sees the chain list.
+export default function ExampleContracts({ onPick }: ExampleContractsProps) {
   return (
-    <>
-      <h4 className="text-lg font-medium text-gray-700 mb-3 text-center">Example Contracts</h4>
-      <div className="max-h-[400px] overflow-auto pr-2">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50 sticky top-0">
-            <tr>
-              <th scope="col" className="pl-3 pr-1 py-2 w-6">
-                {/* Empty header for consistency */}
-              </th>
-              <th
-                scope="col"
-                className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5"
-              >
-                Name
-              </th>
-              <th
-                scope="col"
-                className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Address
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {EXAMPLE_CONTRACTS.map((contract) => (
-              <tr
-                key={contract.address}
-                onClick={() => handleContractClick(contract)}
-                className="cursor-pointer hover:bg-gray-50"
-              >
-                <td className="pl-3 pr-1 py-2 whitespace-nowrap text-sm text-gray-500 text-center w-6">
-                  <FaCheckCircle
-                    className="h-4 w-4 text-green-500 cursor-help"
-                    data-tooltip-id="global-tooltip"
-                    data-tooltip-content="Verified on Sourcify"
-                  />
-                </td>
-                <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-left max-w-[170px] truncate">
-                  <span className="text-blue-600 hover:underline">{contract.name}</span>
-                  <div className="text-xs text-gray-500 font-normal">on {getChainName(contract.chainId, chains)}</div>
-                </td>
-                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500 text-left">{contract.address}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </>
+    <div className="flex flex-wrap items-center justify-center gap-2 text-sm">
+      <span className="text-gray-500">Try:</span>
+      {EXAMPLE_CONTRACTS.map((contract, index) => (
+        <button
+          key={contract.address}
+          type="button"
+          onClick={() => onPick(contract.address)}
+          className={`${index >= MOBILE_CHIP_COUNT ? "hidden sm:inline-block" : ""} px-2.5 py-1 rounded-full border border-cerulean-blue-200 bg-white text-cerulean-blue-600 hover:bg-cerulean-blue-100 cursor-pointer`}
+        >
+          {contract.name}
+        </button>
+      ))}
+    </div>
   );
 }
