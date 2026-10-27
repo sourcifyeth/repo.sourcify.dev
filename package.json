@@ -14,7 +14,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@ethereum-sourcify/bytecode-utils": "1.6.2",
+    "@ethereum-sourcify/bytecode-utils": "1.6.3",
     "@ethersproject/abi": "5.8.0",
     "@ethersproject/address": "5.8.0",
     "@ethersproject/keccak256": "5.8.0",
