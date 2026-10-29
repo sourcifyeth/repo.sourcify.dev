@@ -3,7 +3,7 @@ import CopyToClipboard from "../../../../components/CopyToClipboard";
 import { IoCheckmarkCircle, IoCloseCircle } from "react-icons/io5";
 import InfoTooltip from "@/components/InfoTooltip";
 import Link from "next/link";
-import { checkVerification, shortenAddress } from "@/utils/api";
+import { checkVerification } from "@/utils/api";
 
 /**
  * Whether the implementation address comes from values that the contract controls (a storage slot,
@@ -55,19 +55,16 @@ interface ImplementationItemProps {
 }
 
 const ImplementationItem = ({ address, name, isVerified, chainId }: ImplementationItemProps) => {
-  // Create shortened address display
-  const shortenedAddress = shortenAddress(address);
-
   // Create the address display component that will be used in both cases
   const addressDisplay = (
-    <span className="font-mono inline-flex items-center">
-      {shortenedAddress}
+    <span className="font-mono inline-flex items-center min-w-0">
+      <span className="break-all">{address}</span>
       <CopyToClipboard text={address} className="ml-2" />
     </span>
   );
 
   return (
-    <div className="mt-2 first:mt-0 flex items-center">
+    <div className="mt-2 first:mt-0 flex flex-wrap items-center gap-y-1">
       {/* If verified, wrap in a link; otherwise just show the address */}
       {isVerified ? (
         <Link href={`/${chainId}/${address}`} className="text-blue-600 hover:underline">
@@ -85,7 +82,7 @@ const ImplementationItem = ({ address, name, isVerified, chainId }: Implementati
           <div className="flex items-center">
             <IoCheckmarkCircle className="text-green-600 text-xl" />
             <InfoTooltip
-              content={`Implementation <span style="word-break: break-all;">${shortenedAddress}</span> verified on Sourcify`}
+              content={`Implementation <span style="word-break: break-all;">${address}</span> verified on Sourcify`}
               className="ml-1"
               html={true}
             />
@@ -94,7 +91,7 @@ const ImplementationItem = ({ address, name, isVerified, chainId }: Implementati
           <div className="flex items-center">
             <IoCloseCircle className="text-red-600 text-xl" />
             <InfoTooltip
-              content={`Implementation <span style="word-break: break-all;">${shortenedAddress}</span> not verified on Sourcify`}
+              content={`Implementation <span style="word-break: break-all;">${address}</span> not verified on Sourcify`}
               className="ml-1"
               html={true}
             />
