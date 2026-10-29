@@ -76,28 +76,22 @@ const ImplementationItem = ({ address, name, isVerified, chainId }: Implementati
 
       {name && <span className="ml-2 text-gray-500">({name})</span>}
 
-      {/* Verification status with tooltips */}
-      <div className="ml-2">
+      {/* Verification status: the tooltip sits on the icon itself */}
+      <span
+        className="ml-2 inline-flex items-center cursor-help"
+        role="img"
+        aria-label={isVerified ? "Verified on Sourcify" : "Not verified on Sourcify"}
+        data-tooltip-id="global-tooltip"
+        data-tooltip-html={`Implementation <span style="word-break: break-all;">${address}</span> ${
+          isVerified ? "verified" : "not verified"
+        } on Sourcify`}
+      >
         {isVerified ? (
-          <div className="flex items-center">
-            <IoCheckmarkCircle className="text-green-600 text-xl" />
-            <InfoTooltip
-              content={`Implementation <span style="word-break: break-all;">${address}</span> verified on Sourcify`}
-              className="ml-1"
-              html={true}
-            />
-          </div>
+          <IoCheckmarkCircle className="text-green-600 text-xl" />
         ) : (
-          <div className="flex items-center">
-            <IoCloseCircle className="text-red-600 text-xl" />
-            <InfoTooltip
-              content={`Implementation <span style="word-break: break-all;">${address}</span> not verified on Sourcify`}
-              className="ml-1"
-              html={true}
-            />
-          </div>
+          <IoCloseCircle className="text-red-600 text-xl" />
         )}
-      </div>
+      </span>
     </div>
   );
 };
