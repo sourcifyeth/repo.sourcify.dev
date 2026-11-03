@@ -152,7 +152,12 @@ export default function ContractDetails({ contract, chainId }: ContractDetailsPr
     contract.creationBytecode?.onchainBytecode || contract.creationBytecode?.recompiledBytecode
   );
 
-  const [version, commit] = compilation.compilerVersion.split("+");
+  const [version, buildMetadata] = compilation.compilerVersion.split("+");
+  // Solar reports a solc-compatible version: <emulated solc>+commit.<solar commit>.solar.<solar version>,
+  // e.g. 0.8.38+commit.a2b44354.solar.0.3.0-dev
+  const solarMatch = buildMetadata?.match(/^(commit\.[0-9a-f]+)\.solar\.(.+)$/);
+  const commit = solarMatch ? solarMatch[1] : buildMetadata;
+  const solarVersion = solarMatch?.[2];
 
   let optimizer: ReactNode;
   if (isSolidity) {
@@ -243,8 +248,9 @@ export default function ContractDetails({ contract, chainId }: ContractDetailsPr
       label: "Compiler",
       value: (
         <span data-tooltip-id="global-tooltip" data-tooltip-content={compilation.compilerVersion}>
-          {compilation.compiler} {version}
+          {compilation.compiler} {solarVersion ?? version}
           {commit && <span className="text-gray-500"> +{commit.replace(/^commit\./, "").slice(0, 8)}</span>}
+          {solarVersion && <span className="text-gray-500"> (solc {version} compatible)</span>}
         </span>
       ),
     },
