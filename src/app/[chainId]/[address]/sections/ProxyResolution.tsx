@@ -3,7 +3,42 @@ import CopyToClipboard from "../../../../components/CopyToClipboard";
 import { IoCheckmarkCircle, IoCloseCircle } from "react-icons/io5";
 import InfoTooltip from "@/components/InfoTooltip";
 import Link from "next/link";
-import { checkVerification, shortenAddress } from "@/utils/api";
+import { checkVerification } from "@/utils/api";
+
+/**
+ * Whether the implementation address comes from values that the contract controls (a storage slot,
+ * or a function such as `implementation()`), so it is not proof of where the contract sends its calls.
+ * The exception is an EIP-1167 clone: Sourcify reports this type only if the runtime bytecode starts
+ * with the exact 45-byte stub, and the stub has the address inside it next to the DELEGATECALL.
+ */
+export function isHeuristicProxyResolution(proxyType: string | null | undefined): boolean {
+  return proxyType !== "EIP1167Proxy";
+}
+
+/** The tooltip text of the "Proxy" badge in the page header. */
+export function proxyBadgeTooltip(proxyResolution: NonNullable<ContractData["proxyResolution"]>): string {
+  const names = (proxyResolution.implementations ?? []).map(
+    (implementation) => implementation.name || implementation.address
+  );
+  const target = names.length ? ` for ${names.join(", ")}` : "";
+  return isHeuristicProxyResolution(proxyResolution.proxyType)
+    ? `This contract reports that it is a proxy${target}. Found with heuristics, not confirmed.`
+    : `This contract is a proxy${target}.`;
+}
+
+const HEURISTIC_TOOLTIP = [
+  "<b>How Sourcify finds the implementation</b><br/>",
+  "WhatsABI looks for known proxy patterns in the bytecode. ",
+  "Then Sourcify reads the implementation address from the storage of the contract, ",
+  "or calls a function such as <code>implementation()</code> on the contract.<br/><br/>",
+  "<b>What Sourcify does not check</b><br/>",
+  "Sourcify does not check that the contract really sends its calls (DELEGATECALL) to this address. ",
+  "The contract controls these values. ",
+  "So a contract can show a trusted implementation and run other code.<br/><br/>",
+  "<b>What you can do</b><br/>",
+  "Read the fallback function in the source code of this contract. ",
+  "Confirm that it delegates to the implementation address.",
+].join("");
 
 interface ProxyResolutionProps {
   proxyResolution: ContractData["proxyResolution"];
@@ -20,19 +55,16 @@ interface ImplementationItemProps {
 }
 
 const ImplementationItem = ({ address, name, isVerified, chainId }: ImplementationItemProps) => {
-  // Create shortened address display
-  const shortenedAddress = shortenAddress(address);
-
   // Create the address display component that will be used in both cases
   const addressDisplay = (
-    <span className="font-mono inline-flex items-center">
-      {shortenedAddress}
+    <span className="font-mono inline-flex items-center min-w-0">
+      <span className="break-all">{address}</span>
       <CopyToClipboard text={address} className="ml-2" />
     </span>
   );
 
   return (
-    <div className="mt-2 first:mt-0 flex items-center">
+    <div className="mt-2 first:mt-0 flex flex-wrap items-center gap-y-1">
       {/* If verified, wrap in a link; otherwise just show the address */}
       {isVerified ? (
         <Link href={`/${chainId}/${address}`} className="text-blue-600 hover:underline">
@@ -44,28 +76,22 @@ const ImplementationItem = ({ address, name, isVerified, chainId }: Implementati
 
       {name && <span className="ml-2 text-gray-500">({name})</span>}
 
-      {/* Verification status with tooltips */}
-      <div className="ml-2">
+      {/* Verification status: the tooltip sits on the icon itself */}
+      <span
+        className="ml-2 inline-flex items-center cursor-help"
+        role="img"
+        aria-label={isVerified ? "Verified on Sourcify" : "Not verified on Sourcify"}
+        data-tooltip-id="global-tooltip"
+        data-tooltip-html={`Implementation <span style="word-break: break-all;">${address}</span> ${
+          isVerified ? "verified" : "not verified"
+        } on Sourcify`}
+      >
         {isVerified ? (
-          <div className="flex items-center">
-            <IoCheckmarkCircle className="text-green-600 text-xl" />
-            <InfoTooltip
-              content={`Implementation <span style="word-break: break-all;">${shortenedAddress}</span> verified on Sourcify`}
-              className="ml-1"
-              html={true}
-            />
-          </div>
+          <IoCheckmarkCircle className="text-green-600 text-xl" />
         ) : (
-          <div className="flex items-center">
-            <IoCloseCircle className="text-red-600 text-xl" />
-            <InfoTooltip
-              content={`Implementation <span style="word-break: break-all;">${shortenedAddress}</span> not verified on Sourcify`}
-              className="ml-1"
-              html={true}
-            />
-          </div>
+          <IoCloseCircle className="text-red-600 text-xl" />
         )}
-      </div>
+      </span>
     </div>
   );
 };
@@ -77,6 +103,8 @@ export default async function ProxyResolution({ proxyResolution, chainId }: Prox
   const verificationPromises = proxyResolution.implementations.map((impl) => checkVerification(chainId, impl.address));
 
   const verificationResults = await Promise.all(verificationPromises);
+
+  const isHeuristic = isHeuristicProxyResolution(proxyResolution.proxyType);
 
   return (
     <div className="">
@@ -105,7 +133,10 @@ export default async function ProxyResolution({ proxyResolution, chainId }: Prox
               <div className="font-bold text-gray-900">Implementations</div>
               {proxyResolution.implementations.map((impl, index) => (
                 <div key={index} className="md:grid md:grid-cols-[150px_1fr] md:gap-4 md:items-center ml-4">
-                  <dt className="font-bold text-gray-900 mb-1 md:mb-0">Implementation {index + 1}</dt>
+                  <dt className="font-bold text-gray-900 mb-1 md:mb-0">
+                    Implementation {index + 1}
+                    {isHeuristic && "*"}
+                  </dt>
                   <dd className="text-gray-900">
                     <div className="flex flex-col">
                       <ImplementationItem
@@ -123,6 +154,15 @@ export default async function ProxyResolution({ proxyResolution, chainId }: Prox
           </dl>
         </div>
       </div>
+
+      {/* Always shown and cannot be closed: the result is a heuristic, not proof */}
+      {isHeuristic && (
+        <p className="mt-2 flex items-center text-xs text-gray-500 md:text-sm">
+          * Reported by the contract and found with heuristics. This is not proof that the contract sends its calls
+          there.
+          <InfoTooltip content={HEURISTIC_TOOLTIP} html={true} className="ml-1" />
+        </p>
+      )}
     </div>
   );
 }

@@ -12,7 +12,7 @@ import CopyToClipboard from "@/components/CopyToClipboard";
 import SectionNav, { PageSection } from "@/components/SectionNav";
 import LazyJsonSection from "@/components/LazyJsonSection";
 import ContractDetails from "@/app/[chainId]/[address]/sections/ContractDetails";
-import ProxyResolution from "./sections/ProxyResolution";
+import ProxyResolution, { proxyBadgeTooltip } from "./sections/ProxyResolution";
 import ContractAbi from "./sections/ABI";
 import ContractSource from "./sections/ContractSource";
 import { ChainExplorerLinks } from "@/components/ExplorerLinks";
@@ -381,13 +381,7 @@ export default async function ContractPage({ params }: { params: Promise<{ chain
               href="#proxy"
               className="inline-flex items-center gap-1 rounded-md border border-purple-200 bg-purple-50 px-2 py-0.5 text-xs md:text-sm font-medium text-purple-800 hover:bg-purple-100"
               data-tooltip-id="global-tooltip"
-              data-tooltip-content={`This contract is a proxy${
-                contract.proxyResolution.implementations?.length
-                  ? ` for ${contract.proxyResolution.implementations
-                      .map((implementation) => implementation.name || implementation.address)
-                      .join(", ")}`
-                  : ""
-              }`}
+              data-tooltip-content={proxyBadgeTooltip(contract.proxyResolution)}
             >
               Proxy
             </a>
