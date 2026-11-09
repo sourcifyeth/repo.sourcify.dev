@@ -4,27 +4,7 @@ import { IoCheckmarkCircle, IoCloseCircle } from "react-icons/io5";
 import InfoTooltip from "@/components/InfoTooltip";
 import Link from "next/link";
 import { checkVerification } from "@/utils/api";
-
-/**
- * Whether the implementation address comes from values that the contract controls (a storage slot,
- * or a function such as `implementation()`), so it is not proof of where the contract sends its calls.
- * The exception is an EIP-1167 clone: Sourcify reports this type only if the runtime bytecode starts
- * with the exact 45-byte stub, and the stub has the address inside it next to the DELEGATECALL.
- */
-export function isHeuristicProxyResolution(proxyType: string | null | undefined): boolean {
-  return proxyType !== "EIP1167Proxy";
-}
-
-/** The tooltip text of the "Proxy" badge in the page header. */
-export function proxyBadgeTooltip(proxyResolution: NonNullable<ContractData["proxyResolution"]>): string {
-  const names = (proxyResolution.implementations ?? []).map(
-    (implementation) => implementation.name || implementation.address
-  );
-  const target = names.length ? ` for ${names.join(", ")}` : "";
-  return isHeuristicProxyResolution(proxyResolution.proxyType)
-    ? `This contract reports that it is a proxy${target}. Found with heuristics, not confirmed.`
-    : `This contract is a proxy${target}.`;
-}
+import { isHeuristicProxyResolution } from "@/utils/proxy";
 
 const HEURISTIC_TOOLTIP = [
   "<b>How Sourcify finds the implementation</b><br/>",
@@ -32,12 +12,12 @@ const HEURISTIC_TOOLTIP = [
   "Then Sourcify reads the implementation address from the storage of the contract, ",
   "or calls a function such as <code>implementation()</code> on the contract.<br/><br/>",
   "<b>What Sourcify does not check</b><br/>",
-  "Sourcify does not check that the contract really sends its calls (DELEGATECALL) to this address. ",
+  "Sourcify does not check that the contract really sends its calls (DELEGATECALL) to the address(es) shown. ",
   "The contract controls these values. ",
   "So a contract can show a trusted implementation and run other code.<br/><br/>",
   "<b>What you can do</b><br/>",
   "Read the fallback function in the source code of this contract. ",
-  "Confirm that it delegates to the implementation address.",
+  "Confirm that the fallback function delegates to the address(es) shown.",
 ].join("");
 
 interface ProxyResolutionProps {
@@ -55,6 +35,10 @@ interface ImplementationItemProps {
 }
 
 const ImplementationItem = ({ address, name, isVerified, chainId }: ImplementationItemProps) => {
+  const verificationLabel = isVerified
+    ? "Implementation verified on Sourcify"
+    : "Implementation not verified on Sourcify";
+
   // Create the address display component that will be used in both cases
   const addressDisplay = (
     <span className="font-mono inline-flex items-center min-w-0">
@@ -80,11 +64,9 @@ const ImplementationItem = ({ address, name, isVerified, chainId }: Implementati
       <span
         className="ml-2 inline-flex items-center cursor-help"
         role="img"
-        aria-label={isVerified ? "Verified on Sourcify" : "Not verified on Sourcify"}
+        aria-label={verificationLabel}
         data-tooltip-id="global-tooltip"
-        data-tooltip-html={`Implementation <span style="word-break: break-all;">${address}</span> ${
-          isVerified ? "verified" : "not verified"
-        } on Sourcify`}
+        data-tooltip-content={verificationLabel}
       >
         {isVerified ? (
           <IoCheckmarkCircle className="text-green-600 text-xl" />
@@ -157,10 +139,10 @@ export default async function ProxyResolution({ proxyResolution, chainId }: Prox
 
       {/* Always shown and cannot be closed: the result is a heuristic, not proof */}
       {isHeuristic && (
-        <p className="mt-2 flex items-center text-xs text-gray-500 md:text-sm">
+        <p className="mt-2 text-xs text-gray-500 md:text-sm">
           * Reported by the contract and found with heuristics. This is not proof that the contract sends its calls
           there.
-          <InfoTooltip content={HEURISTIC_TOOLTIP} html={true} className="ml-1" />
+          <InfoTooltip content={HEURISTIC_TOOLTIP} html={true} className="ml-1 align-middle" />
         </p>
       )}
     </div>
