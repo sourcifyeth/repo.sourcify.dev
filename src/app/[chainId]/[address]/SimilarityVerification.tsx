@@ -14,6 +14,15 @@ const TIMEOUT_MS = 5 * 60 * 1000;
 const REFRESH_RETRIES = 3;
 const REFRESH_WAIT_MS = 2000;
 
+// Retry-After holds the seconds left in the server's cooldown
+function recentlyFailedMessage(retryAfter: string | null): string {
+  const message = "Similarity verification recently found no match for this contract.";
+  const seconds = Number(retryAfter);
+  if (!Number.isFinite(seconds) || seconds <= 0) return `${message} Try again later.`;
+  const minutes = Math.ceil(seconds / 60);
+  return `${message} Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`;
+}
+
 interface SimilarityVerificationProps {
   chainId: string;
   address: string;
@@ -108,8 +117,15 @@ export default function SimilarityVerification({ chainId, address, serverUrl }: 
           // already_verified: the contract got verified between the page load and this request
           verified = true;
         } else if (response.status === 429) {
-          // duplicate_verification_request: a verification job is already running for this contract
-          verified = await pollContract();
+          const error = await response.json().catch(() => null);
+          if (error?.customCode === "similarity_recently_failed") {
+            // A recent job found no match: the server blocks retries until its cooldown ends
+            setFailureDetail(recentlyFailedMessage(response.headers.get("Retry-After")));
+            verified = false;
+          } else {
+            // duplicate_verification_request: a verification job is already running for this contract
+            verified = await pollContract();
+          }
         } else {
           // e.g. 400 bytecode_too_short_for_similarity or 404 cannot_fetch_bytecode
           try {
