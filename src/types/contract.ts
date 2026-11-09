@@ -169,9 +169,24 @@ export interface AbiOutput {
   type: string;
 }
 
+/** Mirrors `ProxyType` in sourcify-server (`proxy-contract-util.ts`). The server can add types later. */
+export type ProxyType =
+  | "EIP1167Proxy"
+  | "FixedProxy"
+  | "EIP1967Proxy"
+  | "GnosisSafeProxy"
+  | "DiamondProxy"
+  | "PROXIABLEProxy"
+  | "ZeppelinOSProxy"
+  | "MaticProxy"
+  | "SequenceWalletProxy"
+  | "LivepeerManagerProxy"
+  | "AragonAppProxy";
+
 export interface ProxyResolutionData {
   isProxy: boolean;
-  proxyType: string;
+  /** `null` when `isProxy` is false. */
+  proxyType: ProxyType | null;
   implementations: ProxyImplementation[];
 }
 

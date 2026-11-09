@@ -103,16 +103,6 @@ export async function fetchContractSummary(chainId: string, address: string): Pr
 }
 
 /**
- * Formats an address for display
- * @param address The address to format
- * @returns The formatted address
- */
-export function shortenAddress(address: string): string {
-  if (!address || address.length < 10) return address;
-  return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
-}
-
-/**
  * Formats a timestamp in UTC
  * e.g. 2024-08-08 13:20:07 UTC
  */
