@@ -151,9 +151,24 @@ In a Solidity file, the path of each `import` is a link. **Cmd+click** (macOS) o
 
 On a desktop screen, the source view is about 75% of the window height (at least 540 px). The fullscreen button in the editor toolbar makes the source view fill the window. To leave fullscreen, click the button again or press **Esc**. In the editor, Esc first closes the find box or clears a selection, and the next Esc leaves fullscreen.
 
+## Read / Write Contract
+
+A contract page has two tabs under the contract header and the three cards: **Code** (the verification data) and **Read/Write Contract** (call the functions of the verified ABI). Each tab has its own URL: `/<chainId>/<address>` and `/<chainId>/<address>/read-write`. Both URLs render the same page, so a tab switch happens in the browser only: the URL changes, the page does not load again, and the back button works. When the Code tab is idle, the page builds the Read/Write tab hidden in the background (its code, the implementation ABI and the RPC list), so the first switch does not wait. The hidden tab reads nothing from a chain. A link to a part of the Code tab (`#proxy`, `#file=…`) opens the Code tab. The tab does not show for a contract without functions in its ABI, unless it is a proxy.
+
+The Read/Write tab lists the functions as rows that open with a short animation. The list uses the full height of the page. For a proxy, "Read/Write as proxy" shows the functions of the implementation (loaded from the Sourcify API in the browser), and "Read/Write contract" shows the proxy's own functions. Every call goes to the proxy address. `?fn=<name, signature or selector>` opens one function and scrolls to it.
+
+- **Read functions** need no wallet. Each read asks two public RPC endpoints at the same block and compares the answers: the result says "2 sources agree", or shows both answers if they differ. The endpoints come from [Chainlist](https://chainlist.org/rpcs.json) through the route `/api/chain-rpcs/<chainId>`, which keeps the list in server memory for a day and skips endpoints that do not answer. By default the page takes the first two endpoints from different providers, with "no tracking" ones first. The user can choose others, or enter a custom RPC URL, in "Read data sources"; the choice is kept per chain in the browser. The calls go from the browser directly to these providers, not through this site. Nothing is sent before the user opens a function or clicks: opening a read function that has no inputs reads it at once ("Expand all" does not).
+- **Write functions** need a browser wallet. The page finds installed wallets with EIP-6963 (`window.ethereum` for older wallets), switches or adds the chain (with the Chainlist data), and sends with viem. There is no simulation before sending and no WalletConnect. "Copy calldata" works without a wallet. The only Connect button is at the top right of the list; until a wallet is connected, the Write buttons are disabled.
+- **Forms:** each input has its name and type above it. Integer inputs have a unit select (wei, gwei, ether and others), and address inputs have "Self" (the connected account). Structs and arrays can be filled from JSON.
+- Results and reverts are decoded with the ABI: `Error(string)`, `Panic(uint256)` and the custom errors of the contract and its implementation.
+- NatSpec shows in small text with badges: "NatSpec Note @notice", "NatSpec Note @dev", "NatSpec Note @param" (under the input) and "NatSpec Note @return" (under a returned value).
+- The short terms of use for this feature are at `/write-contract-terms`.
+
+The code is in `src/app/[chainId]/[address]/` (`ContractView.tsx` renders both tabs, `ContractTabs.tsx` switches them, `ContractHeader.tsx` is the part above the tabs), `sections/interact/` (the Read/Write UI, loaded only in the browser with `next/dynamic`, so viem is not in the page's first load) and `src/utils/interact/` (ABI model, two-RPC read, decoding, wallet). Set `HIDE_CONTRACT_INTERACTION=true` to hide the tab; `/read-write` then redirects to the Code tab.
+
 ## Page sections
 
-A bar under the contract header links to each section of the page (Details, ABI, Source Code, Compiler, Metadata, the bytecode sections, Storage, and the Standard JSON sections). It sticks to the top while you scroll and marks the section you are in. A click scrolls to the section and does not change the URL hash, because the hash holds the source position. Links with a plain section anchor, such as `#abi` or `#storage-layout`, also work.
+The Code tab has a list of its sections: Proxy, ABI, Source Code, Compiler Settings, Metadata.json, the bytecode sections, the storage layouts and the Standard JSON sections. Each label is the heading of its section. From 1280 px wide, the list is a sidebar ("On this page") on the left that stays in view while you scroll. On narrower screens, it is a bar above the sections that sticks to the top. Both mark the section you are in. A click scrolls to the section and does not change the URL hash, because the hash holds the source position. Links with a plain section anchor, such as `#abi` or `#storage-layout`, also work.
 
 The page does not include the large JSON values. The Metadata, Standard JSON Input and Standard JSON Output sections load their value from the Sourcify API when you scroll near them. If the request fails, the section shows a **Retry** button. Each JSON viewer starts its editor only when it comes near the screen.
 
@@ -181,6 +196,7 @@ SOURCIFY_SERVER_INTERNAL_URL=https://sourcify.dev/server
 
 - `SOURCIFY_SERVER_URL`: the public URL of the Sourcify server. The browser uses it (similarity verification) and so do redirects, so it must be reachable from the internet.
 - `SOURCIFY_SERVER_INTERNAL_URL`: the URL the Next.js server uses for its own calls to the Sourcify server (contract pages are rendered server-side). Locally this is just the public URL again. In production it must be the Sourcify server's direct service URL (its Cloud Run `*.run.app` URL, without the `/server` path prefix) so the traffic stays inside the network instead of leaving and re-entering through the public load balancer, where a per-IP rate limit would put every visitor's page view in one shared bucket. Both are required and checked in `next.config.ts`, so `next build` and `next dev` fail immediately when one is missing. Pass both at build time (the growthepie top-contracts route is pre-rendered during `next build`) and at runtime, in every environment that builds the app: Cloud Build, Netlify deploy previews, local `.env`.
+- `HIDE_CONTRACT_INTERACTION` (optional): set to `true` to hide the Read / Write Contract section on contract pages, without a new build.
 
 ### Running Locally
 

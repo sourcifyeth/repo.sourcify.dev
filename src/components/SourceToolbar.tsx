@@ -6,6 +6,7 @@ import { MdWrapText } from "react-icons/md";
 import { VscGoToFile, VscScreenFull, VscScreenNormal } from "react-icons/vsc";
 import { formatSourceHash } from "@/utils/sourceHash";
 import type { SourceShortcuts } from "@/utils/shortcuts";
+import { copyText } from "@/utils/clipboard";
 
 interface SourceToolbarProps {
   path: string;
@@ -72,14 +73,13 @@ export default function SourceToolbar({
   }, [helpOpen, onHelpOpenChange]);
 
   const copy = async (what: Exclude<Copied, null>, text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(what);
-      if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
-      resetTimerRef.current = setTimeout(() => setCopied(null), 1500);
-    } catch (error) {
-      console.error("Failed to copy:", error);
+    if (!(await copyText(text))) {
+      console.error("Failed to copy");
+      return;
     }
+    setCopied(what);
+    if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+    resetTimerRef.current = setTimeout(() => setCopied(null), 1500);
   };
 
   return (

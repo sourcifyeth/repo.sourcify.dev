@@ -59,17 +59,19 @@ export default function CborAuxdataTransformations({
               const cborAuxdata = transformationValues.cborAuxdata?.[transformation.id] || "";
               // Convert byte offset to character position (each byte is 2 hex chars)
               const originalValue = recompiledBytecodeCborAuxdata?.[transformation.id]?.value || "";
+              // The value already starts with 0x: do not add a second prefix, and do not count it as a byte
+              const originalHex = originalValue.startsWith("0x") ? originalValue : `0x${originalValue}`;
 
               return (
                 <tr key={transformation.offset}>
                   <td className="px-3 md:px-6 py-4 whitespace-nowrap font-mono">{transformation.offset}</td>
-                  <td className="px-3 md:px-6 py-4 whitespace-nowrap font-mono">{originalValue.length / 2}</td>
+                  <td className="px-3 md:px-6 py-4 whitespace-nowrap font-mono">{(originalHex.length - 2) / 2}</td>
                   <td className="px-3 md:px-6 py-4 whitespace-nowrap font-mono">
                     <div className="flex flex-col gap-0">
                       <div className="flex items-center">
                         <span className="text-gray-500 text-xs w-36 font-sans">Original (recompiled):</span>
                         <span className="font-mono flex-1">{originalValue}</span>
-                        <CopyToClipboard text={`0x${originalValue}`} className="ml-2" />
+                        <CopyToClipboard text={originalHex} className="ml-2" />
                       </div>
                       <div className="flex items-center">
                         <span className="text-gray-500 text-xs w-36 font-sans">Transformed (onchain):</span>

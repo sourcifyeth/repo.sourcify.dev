@@ -9,8 +9,9 @@ export interface PageSection {
 }
 
 /**
- * A bar of links to the sections of the contract page. It sticks below the
- * staging banner while you scroll, and marks the section you are in. A click
+ * The links to the sections of the contract page. Below 1280 px it is a bar that sticks below the
+ * staging banner; from 1280 px it is a sidebar on the left that sticks while you scroll. It marks
+ * the section you are in. A click
  * scrolls to the section without changing the URL hash, because the hash
  * holds the source position (#file=…).
  */
@@ -26,7 +27,10 @@ export default function SectionNav({ sections }: { sections: PageSection[] }) {
     let frame: number | null = null;
     const update = () => {
       frame = null;
-      const offset = (navRef.current?.getBoundingClientRect().bottom ?? 0) + 16;
+      // The bar: below its bottom. The sidebar (taller than wide): a little below the banner.
+      const rect = navRef.current?.getBoundingClientRect();
+      const banner = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--sticky-banner-height"));
+      const offset = rect && rect.height > rect.width ? (banner || 0) + 96 : (rect?.bottom ?? 0) + 16;
       // At the top of the page, the first section counts as current
       let current: string | null = sections[0]?.id ?? null;
       for (const { id } of sections) {
@@ -70,10 +74,15 @@ export default function SectionNav({ sections }: { sections: PageSection[] }) {
       ref={navRef}
       data-sticky-top
       aria-label="Sections of this page"
-      className="sticky z-40 -mx-2 mb-2 border-b border-gray-200 bg-gray-100/95 px-2 backdrop-blur"
-      style={{ top: "var(--sticky-banner-height)" }}
+      className="sticky top-[var(--sticky-banner-height)] z-40 -mx-2 mb-2 border-b border-gray-200 bg-gray-100/95 px-2 backdrop-blur xl:top-[calc(var(--sticky-banner-height)+1rem)] xl:mx-0 xl:mb-0 xl:self-start xl:border-b-0 xl:bg-transparent xl:px-0 xl:backdrop-blur-none"
     >
-      <ul ref={listRef} className="flex gap-1 overflow-x-auto whitespace-nowrap py-1.5 text-sm">
+      <p className="mb-2 hidden px-3 text-xs font-semibold uppercase tracking-wide text-gray-500 xl:block">
+        On this page
+      </p>
+      <ul
+        ref={listRef}
+        className="flex gap-1 overflow-x-auto whitespace-nowrap py-1.5 text-sm xl:flex-col xl:gap-0 xl:overflow-visible xl:whitespace-normal xl:border-l xl:border-gray-200 xl:py-0"
+      >
         {sections.map(({ id, label }) => (
           <li key={id}>
             <button
@@ -81,10 +90,10 @@ export default function SectionNav({ sections }: { sections: PageSection[] }) {
               data-section={id}
               onClick={() => go(id)}
               aria-current={active === id ? "location" : undefined}
-              className={`rounded px-2 py-1 cursor-pointer transition-colors ${
+              className={`cursor-pointer rounded px-2 py-1 transition-colors xl:-ml-px xl:w-full xl:rounded-none xl:border-l-2 xl:px-3 xl:py-1.5 xl:text-left xl:shadow-none ${
                 active === id
-                  ? "bg-white text-gray-900 font-medium shadow-sm"
-                  : "text-gray-600 hover:bg-gray-200 hover:text-gray-900"
+                  ? "bg-white font-medium text-gray-900 shadow-sm xl:border-cerulean-blue-500 xl:bg-transparent xl:text-cerulean-blue-600"
+                  : "text-gray-600 hover:bg-gray-200 hover:text-gray-900 xl:border-transparent xl:hover:border-gray-400 xl:hover:bg-transparent"
               }`}
             >
               {label}

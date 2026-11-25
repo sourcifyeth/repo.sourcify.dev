@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { FaCopy, FaCheck } from "react-icons/fa";
+import { copyText } from "@/utils/clipboard";
 
 interface CopyToClipboardProps {
   text: string;
@@ -19,13 +20,12 @@ export default function CopyToClipboard({
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), successDuration);
-    } catch (err) {
-      console.error("Failed to copy text: ", err);
+    if (!(await copyText(text))) {
+      console.error("Failed to copy text");
+      return;
     }
+    setCopied(true);
+    setTimeout(() => setCopied(false), successDuration);
   };
 
   return (

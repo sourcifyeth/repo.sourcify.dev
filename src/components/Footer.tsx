@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Footer() {
   return (
     <footer className="bg-white border-t border-gray-200 mt-12">
@@ -29,6 +31,9 @@ export default function Footer() {
             >
               Documentation
             </a>
+            <Link href="/write-contract-terms" className="text-sm text-gray-500 hover:text-gray-700">
+              Terms
+            </Link>
           </div>
         </div>
       </div>
