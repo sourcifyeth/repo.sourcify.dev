@@ -82,9 +82,14 @@ export function walletErrorCode(error: unknown): number | undefined {
 
 /**
  * Switches the wallet to the chain. If the wallet does not know the chain (error 4902), it asks the wallet
- * to add it with the given data, which also switches to it.
+ * to add it with the given data, which also switches to it. Then it asks the wallet for its chain and
+ * returns it: some wallets send no `chainChanged` event after a switch.
  */
-export async function switchWalletChain(provider: EIP1193Provider, chainId: number, add?: AddChainParams) {
+export async function switchWalletChain(
+  provider: EIP1193Provider,
+  chainId: number,
+  add?: AddChainParams
+): Promise<number> {
   const hex = numberToHex(chainId);
   try {
     await provider.request({ method: "wallet_switchEthereumChain", params: [{ chainId: hex }] });
@@ -92,6 +97,8 @@ export async function switchWalletChain(provider: EIP1193Provider, chainId: numb
     if (!isUnknownChain(error) || !add) throw error;
     await provider.request({ method: "wallet_addEthereumChain", params: [{ chainId: hex, ...add }] });
   }
+  const current = (await provider.request({ method: "eth_chainId" })) as string;
+  return Number.parseInt(current, 16);
 }
 
 /** A transaction that is in a block: it either ran, or reverted (and its gas was paid). */

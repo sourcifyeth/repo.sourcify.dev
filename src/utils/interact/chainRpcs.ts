@@ -31,39 +31,19 @@ export interface ChainRpcs {
   /** The two endpoints that a read asks by default: the best two from different providers (fewer if there are fewer) */
   defaults: string[];
   /**
-   * The chain's official RPC URLs, from the ethereum-lists registry (chain teams submit these), for
-   * wallet_addEthereumChain only. The wallet keeps them for the user, so the read defaults are not used.
-   * Empty if the registry has none that a wallet can use: the page then asks the user to add the chain.
+   * The URLs for wallet_addEthereumChain, used only when the wallet does not know the chain. The wallet keeps
+   * them for the user, so only endpoints that passed the server's check go there: the read defaults first,
+   * then other checked endpoints, at most three. Empty if none passed: the page then asks the user to add
+   * the chain in the wallet.
    */
   walletRpcs: string[];
 }
 
-/** One chain in the ethereum-lists registry (https://chainid.network/chains.json), only the fields that we read. */
-export interface RegistryEntry {
-  chainId: number;
-  rpc?: unknown[];
-}
-
-/**
- * The official RPCs of a chain for a wallet: the first `count` https URLs of the registry entry, in its
- * order, without API key placeholders (${INFURA_API_KEY}) and without WebSocket URLs.
- */
-export function officialRpcs(entry: RegistryEntry | undefined, count = 3): string[] {
-  const urls: string[] = [];
-  for (const raw of entry?.rpc ?? []) {
-    if (typeof raw !== "string" || /[{}$]/.test(raw)) continue;
-    let url: URL;
-    try {
-      url = new URL(raw);
-    } catch {
-      continue;
-    }
-    if (url.protocol !== "https:") continue;
-    const href = url.href.replace(/\/$/, "");
-    if (!urls.includes(href)) urls.push(href);
-    if (urls.length === count) break;
-  }
-  return urls;
+/** The endpoints for a wallet: checked ones only ("ok"), the defaults first, at most `count`. */
+export function walletRpcsOf(rpcs: PublicRpc[], defaults: string[], count = 3): string[] {
+  const ok = new Set(rpcs.filter((rpc) => rpc.health === "ok").map((rpc) => rpc.url));
+  const urls = [...defaults.filter((url) => ok.has(url)), ...rpcs.map((rpc) => rpc.url).filter((url) => ok.has(url))];
+  return [...new Set(urls)].slice(0, count);
 }
 
 /** One chain as it appears in rpcs.json (only the fields that we read). */
@@ -148,15 +128,15 @@ export function pickDefaults(rpcs: PublicRpc[], count = 2): string[] {
 export function chainRpcs(
   chainId: number,
   entry: ChainlistEntry | undefined,
-  health?: Map<string, boolean>,
-  walletRpcs: string[] = []
+  health?: Map<string, boolean>
 ): ChainRpcs {
-  if (!entry) return { chainId, known: false, explorers: [], rpcs: [], defaults: [], walletRpcs };
+  if (!entry) return { chainId, known: false, explorers: [], rpcs: [], defaults: [], walletRpcs: [] };
   const checked = usableRpcs(entry).map((rpc) => {
     const ok = health?.get(rpc.url);
     return ok === undefined ? rpc : { ...rpc, health: ok ? ("ok" as const) : ("down" as const) };
   });
   const rpcs = [...checked.filter((rpc) => rpc.health !== "down"), ...checked.filter((rpc) => rpc.health === "down")];
+  const defaults = pickDefaults(rpcs);
   return {
     chainId,
     known: true,
@@ -166,16 +146,16 @@ export function chainRpcs(
       explorer.url?.startsWith("https://") ? [explorer.url.replace(/\/$/, "")] : []
     ),
     rpcs,
-    defaults: pickDefaults(rpcs),
-    walletRpcs,
+    defaults,
+    walletRpcs: walletRpcsOf(rpcs, defaults),
   };
 }
 
-/** Indexes a chain list (Chainlist or the registry) by chain id. Entries without a numeric chain id are skipped. */
-export function indexChainlist<T extends { chainId: number } = ChainlistEntry>(list: unknown): Map<number, T> {
-  const index = new Map<number, T>();
+/** Indexes the Chainlist list by chain id. Entries without a numeric chain id are skipped. */
+export function indexChainlist(list: unknown): Map<number, ChainlistEntry> {
+  const index = new Map<number, ChainlistEntry>();
   if (!Array.isArray(list)) return index;
-  for (const entry of list as T[]) {
+  for (const entry of list as ChainlistEntry[]) {
     if (entry && Number.isInteger(entry.chainId)) index.set(entry.chainId, entry);
   }
   return index;

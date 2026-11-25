@@ -108,8 +108,8 @@ export function WalletProvider({ chainId, children }: { chainId: string; childre
   const switchChain = useCallback(async () => {
     if (!connection) return;
     setProblem(null);
-    // A wallet that does not know the chain gets the chain's official RPCs (ethereum-lists), never the read
-    // defaults: the wallet keeps these URLs for the user. Without official RPCs, the user adds the chain.
+    // A wallet that does not know the chain gets only endpoints that passed the server's check (the wallet
+    // keeps these URLs for the user). If none passed, the user adds the chain in the wallet.
     const add: AddChainParams | undefined =
       chain?.known && chain.name && chain.nativeCurrency && chain.walletRpcs.length > 0
         ? {
@@ -121,7 +121,9 @@ export function WalletProvider({ chainId, children }: { chainId: string; childre
         : undefined;
     const name = plainChainName(chain?.name ?? `chain ${chainId}`);
     try {
-      await switchWalletChain(connection.wallet.provider, Number(chainId), add);
+      const walletChain = await switchWalletChain(connection.wallet.provider, Number(chainId), add);
+      // Without a chainChanged event the page would still show "Switch to …"
+      setConnection((current) => (current ? { ...current, chainId: walletChain } : null));
     } catch (error) {
       const explained = walletError(error);
       setProblem(

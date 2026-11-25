@@ -3,10 +3,10 @@ import {
   chainRpcs,
   indexChainlist,
   isAllowedRpcUrl,
-  officialRpcs,
   pickDefaults,
   providerOf,
   usableRpcs,
+  walletRpcsOf,
 } from "./chainRpcs";
 
 describe("providerOf", () => {
@@ -104,11 +104,6 @@ describe("chainRpcs and indexChainlist", () => {
     });
   });
 
-  it("passes the official RPCs for wallets through, apart from the read defaults", () => {
-    const result = chainRpcs(10, index.get(10), undefined, ["https://mainnet.optimism.io"]);
-    expect(result.walletRpcs).toEqual(["https://mainnet.optimism.io"]);
-  });
-
   it("marks an unknown chain", () => {
     expect(chainRpcs(999, undefined)).toEqual({
       chainId: 999,
@@ -118,33 +113,6 @@ describe("chainRpcs and indexChainlist", () => {
       defaults: [],
       walletRpcs: [],
     });
-  });
-});
-
-describe("officialRpcs", () => {
-  it("takes the first https URLs of the registry, without key placeholders, WebSockets or duplicates", () => {
-    expect(
-      officialRpcs({
-        chainId: 1,
-        rpc: [
-          "https://mainnet.infura.io/v3/${INFURA_API_KEY}",
-          "wss://mainnet.infura.io/ws/v3/${INFURA_API_KEY}",
-          "https://api.mycryptoapi.com/eth",
-          "http://insecure.example",
-          "https://cloudflare-eth.com/",
-          "https://cloudflare-eth.com",
-          "not a url",
-          42,
-          "https://ethereum-rpc.publicnode.com",
-          "https://fourth.example",
-        ],
-      })
-    ).toEqual(["https://api.mycryptoapi.com/eth", "https://cloudflare-eth.com", "https://ethereum-rpc.publicnode.com"]);
-  });
-
-  it("gives nothing for a chain that is not in the registry, or that has no usable URL", () => {
-    expect(officialRpcs(undefined)).toEqual([]);
-    expect(officialRpcs({ chainId: 5, rpc: ["wss://only.example", "https://{API_KEY}.example"] })).toEqual([]);
   });
 });
 
@@ -173,6 +141,44 @@ describe("health", () => {
       ["b.nodeflare.app", "unchecked"],
       ["dead.example.com", "down"],
     ]);
+    // A wallet gets only endpoints that passed the check: not the unchecked default, not the dead one
+    expect(result.walletRpcs).toEqual(["https://a.publicnode.com"]);
+  });
+
+  it("gives a wallet nothing when no endpoint passed the check", () => {
+    expect(chainRpcs(1, entry).walletRpcs).toEqual([]);
+    expect(chainRpcs(1, entry, new Map([["https://dead.example.com", false]])).walletRpcs).toEqual([]);
+  });
+});
+
+describe("walletRpcsOf", () => {
+  const rpc = (url: string, health: "ok" | "down" | "unchecked") => ({
+    url,
+    host: new URL(url).host,
+    provider: new URL(url).host,
+    tracking: "none" as const,
+    health,
+  });
+
+  it("puts the checked defaults first, then other checked endpoints, at most three", () => {
+    const rpcs = [
+      rpc("https://a.example", "ok"),
+      rpc("https://b.example", "ok"),
+      rpc("https://c.example", "unchecked"),
+      rpc("https://d.example", "ok"),
+      rpc("https://e.example", "ok"),
+      rpc("https://f.example", "down"),
+    ];
+    expect(walletRpcsOf(rpcs, ["https://d.example", "https://c.example"])).toEqual([
+      "https://d.example",
+      "https://a.example",
+      "https://b.example",
+    ]);
+  });
+
+  it("never gives an endpoint that is down or was not checked", () => {
+    const rpcs = [rpc("https://down.example", "down"), rpc("https://unchecked.example", "unchecked")];
+    expect(walletRpcsOf(rpcs, ["https://down.example", "https://unchecked.example"])).toEqual([]);
   });
 });
 

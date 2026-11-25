@@ -80,18 +80,40 @@ describe("switchWalletChain", () => {
   };
 
   it("switches, and adds the chain when the wallet does not know it", async () => {
-    const known = fakeProvider({ wallet_switchEthereumChain: () => null });
+    const known = fakeProvider({ wallet_switchEthereumChain: () => null, eth_chainId: () => "0xa" });
     await switchWalletChain(known.provider, 10, add);
-    expect(known.requests).toEqual([{ method: "wallet_switchEthereumChain", params: [{ chainId: "0xa" }] }]);
+    expect(known.requests).toEqual([
+      { method: "wallet_switchEthereumChain", params: [{ chainId: "0xa" }] },
+      { method: "eth_chainId", params: undefined },
+    ]);
 
     const unknown = fakeProvider({
       wallet_switchEthereumChain: () => {
         throw Object.assign(new Error("Unrecognized chain"), { code: 4902 });
       },
       wallet_addEthereumChain: () => null,
+      eth_chainId: () => "0xa",
     });
     await switchWalletChain(unknown.provider, 10, add);
     expect(unknown.requests[1]).toEqual({ method: "wallet_addEthereumChain", params: [{ chainId: "0xa", ...add }] });
+  });
+
+  it("returns the chain that the wallet is on after the switch (some wallets send no chainChanged)", async () => {
+    const wallet = fakeProvider({ wallet_switchEthereumChain: () => null, eth_chainId: () => "0x1" });
+    expect(await switchWalletChain(wallet.provider, 1)).toBe(1);
+    // A wallet that accepted but stayed on another chain: the page sees the real chain
+    const stuck = fakeProvider({ wallet_switchEthereumChain: () => null, eth_chainId: () => "0x89" });
+    expect(await switchWalletChain(stuck.provider, 1)).toBe(137);
+  });
+
+  it("does not add the chain without data for it", async () => {
+    const unknown = fakeProvider({
+      wallet_switchEthereumChain: () => {
+        throw Object.assign(new Error("Unrecognized chain"), { code: 4902 });
+      },
+    });
+    await expect(switchWalletChain(unknown.provider, 10)).rejects.toMatchObject({ code: 4902 });
+    expect(unknown.requests.map((request) => request.method)).toEqual(["wallet_switchEthereumChain"]);
   });
 
   it("passes other errors on", async () => {
@@ -151,6 +173,7 @@ describe("wallets that answer differently (Rabby)", () => {
         throw { code: -32603, message: "Unrecognized chain ID" };
       },
       wallet_addEthereumChain: () => null,
+      eth_chainId: () => "0xaa36a7",
     });
     await switchWalletChain(rabby.provider, 11155111, {
       chainName: "Sepolia",
@@ -160,6 +183,7 @@ describe("wallets that answer differently (Rabby)", () => {
     expect(rabby.requests.map((request) => request.method)).toEqual([
       "wallet_switchEthereumChain",
       "wallet_addEthereumChain",
+      "eth_chainId",
     ]);
   });
 });

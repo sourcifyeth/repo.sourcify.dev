@@ -157,11 +157,15 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
 
   // The wallet that sent the last transaction: an unconfirmed one is watched through it
   const sentWith = useRef<EIP1193Provider | null>(null);
+  // Each send gets a number. "Dismiss" moves the number on, so that a late answer of an old send is ignored
+  const txRun = useRef(0);
 
   // No simulation before sending (decision D6): the wallet opens at once
   const send = async () => {
     const connection = wallet.connection;
     if (!connection || !wallet.ready || !calldata) return;
+    const run = ++txRun.current;
+    const update = (state: TxState) => txRun.current === run && setTx(state);
     setTx({ step: "wallet" });
     sentWith.current = connection.wallet.provider;
     try {
@@ -169,10 +173,10 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
         connection.wallet.provider,
         { from: connection.account, to: ctx.address, data: calldata, value: BigInt(wei ?? "0") },
         Number(ctx.chainId),
-        (hash) => setTx({ step: "pending", hash })
+        (hash) => update({ step: "pending", hash })
       );
       // Sent, but no receipt yet: keep watching (below); never offer to send it again
-      setTx(
+      update(
         sent.status === "unconfirmed"
           ? { step: "unconfirmed", hash: sent.hash, problem: sent.problem }
           : minedState(sent)
@@ -182,11 +186,11 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
       if (error instanceof WrongChainError) wallet.noteWalletChain(error.walletChain);
       // Some wallets estimate the gas first and refuse a call that would revert: explain the revert
       const revertData = revertDataOf(error);
-      setTx({ step: "failed", error: revertData ? decodeRevert(revertData, ctx.errorAbi) : walletError(error) });
+      update({ step: "failed", error: revertData ? decodeRevert(revertData, ctx.errorAbi) : walletError(error) });
     }
   };
 
-  // An unconfirmed transaction: ask for its receipt again until it comes, or until the user resets the form
+  // An unconfirmed transaction: ask for its receipt again until it comes, or until the user dismisses the note
   const unconfirmedHash = tx.step === "unconfirmed" ? tx.hash : null;
   useEffect(() => {
     const provider = sentWith.current;
@@ -200,10 +204,17 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
     };
   }, [unconfirmedHash]);
 
+  // Reset clears the form. A transaction that is still on its way keeps its note and its watch (see dismiss)
   const reset = () => {
     setValues(fn.inputs.map(emptyValue));
     setEthText("");
     setOutcome(null);
+    if (!["wallet", "pending", "unconfirmed"].includes(tx.step)) setTx({ step: "idle" });
+  };
+
+  // Hides the note of a pending or unconfirmed transaction and stops watching it. It does not cancel the transaction.
+  const dismiss = () => {
+    txRun.current++;
     setTx({ step: "idle" });
   };
 
@@ -563,6 +574,7 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
             </p>
             <TxHash hash={tx.hash} />
             <p className="mt-1 text-sm">{explorerTx(tx.hash)}</p>
+            <DismissButton onClick={dismiss} />
           </div>
         )}
         {tx.step === "unconfirmed" && (
@@ -577,6 +589,7 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
             <p className="mt-1 break-words text-xs opacity-80">Last problem: {tx.problem}</p>
             <TxHash hash={tx.hash} />
             <p className="mt-1 text-sm">{explorerTx(tx.hash)}</p>
+            <DismissButton onClick={dismiss} />
           </div>
         )}
         {tx.step === "confirmed" && (
@@ -616,6 +629,21 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
         )}
       </div>
     </div>
+  );
+}
+
+/** Hides the note of a transaction that is on its way, and stops watching it. The transaction itself goes on. */
+function DismissButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      className={`${buttonSmall} mt-2`}
+      onClick={onClick}
+      data-tooltip-id="global-tooltip"
+      data-tooltip-content="Hide this note and stop watching. This does not cancel the transaction."
+    >
+      Dismiss
+    </button>
   );
 }
 
