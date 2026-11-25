@@ -216,7 +216,7 @@ export function ErrorBox({
   explorerUrl?: string;
 }) {
   // A choice of the user, or a refusal of the wallet, is not an error of the contract: use the yellow box
-  const isSoft = error.kind === "wallet-rejected" || error.kind === "wallet-error";
+  const isSoft = ["wallet-rejected", "wallet-error", "wrong-chain", "read-error"].includes(error.kind);
   const box = isSoft ? "border-yellow-200 bg-yellow-50 text-yellow-900" : "border-red-200 bg-red-50 text-red-900";
   const reverted = isWrite ? "The transaction would revert, so the wallet did not send it." : "The call reverted.";
   return (
@@ -338,6 +338,21 @@ export function ErrorBox({
         <>
           <p className="font-medium">The wallet did not send the transaction.</p>
           <p className="mt-1 break-words">The wallet said: {error.message}</p>
+        </>
+      )}
+      {error.kind === "wrong-chain" && (
+        <>
+          <p className="font-medium">Your wallet is on another network. Nothing was sent.</p>
+          <p className="mt-1">
+            The wallet is on chain {error.walletChain}, and this contract is on {chainName}. Switch the network, then
+            write again.
+          </p>
+        </>
+      )}
+      {error.kind === "read-error" && (
+        <>
+          <p className="font-medium">The read could not finish.</p>
+          <p className="mt-1 break-words">{error.message}</p>
         </>
       )}
       {onRetry && (

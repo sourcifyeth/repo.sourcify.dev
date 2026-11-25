@@ -25,12 +25,9 @@ export function isValidChainId(chainId: string): boolean {
   return /^\d+$/.test(chainId);
 }
 
-/** True if the page shows the "Read/Write Contract" tab: functions in the ABI, or a proxy. HIDE_CONTRACT_INTERACTION=true hides it. */
+/** True if the page shows the "Read/Write Contract" tab: functions in the ABI, or a proxy. */
 export function canInteract(contract: ContractPageData): boolean {
-  return (
-    process.env.HIDE_CONTRACT_INTERACTION !== "true" &&
-    ((contract.abi?.length ?? 0) > 0 || !!contract.proxyResolution?.isProxy)
-  );
+  return (contract.abi?.length ?? 0) > 0 || !!contract.proxyResolution?.isProxy;
 }
 
 /** Checks on Sourcify whether each linked library is verified. */

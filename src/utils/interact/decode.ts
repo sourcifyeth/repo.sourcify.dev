@@ -86,7 +86,7 @@ export function decodeRevert(data: string, errorAbi: ReadonlyArray<Record<string
       selector: raw.slice(0, 10),
       args: inputs.map((input, i) => ({
         name: input.name || `arg ${i}`,
-        type: input.type === "tuple" ? "tuple" : input.type,
+        type: input.type,
         value: argText((decoded.args as unknown[] | undefined)?.[i]),
       })),
       raw,

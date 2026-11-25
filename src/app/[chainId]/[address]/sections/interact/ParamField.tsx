@@ -13,7 +13,8 @@ import {
   parseJsonExact,
   groupDigits,
   leafError,
-  scaleDecimal,
+  scaledInput,
+  unitProblem,
   toJson,
   userTypeName,
 } from "@/utils/interact/abi";
@@ -80,6 +81,18 @@ export function Field({
 
 /* --------------------------------------------------------------- integers */
 
+/** An integer as decimal text: hex text (0x10) becomes 16. Text that is not a number stays as it is. */
+function decimalOf(text: string): string {
+  const trimmed = text.trim();
+  const negative = trimmed.startsWith("-");
+  try {
+    const value = BigInt(negative ? trimmed.slice(1) : trimmed);
+    return `${negative && value !== BigInt(0) ? "-" : ""}${value.toString()}`;
+  } catch {
+    return trimmed;
+  }
+}
+
 /** Units for an amount, with the Ethereum unit name first. 10^8 (tokens with 8 decimals, e.g. WBTC) has no unit name. */
 const UNITS = [
   { exp: 0, label: "wei ×1" },
@@ -93,7 +106,8 @@ function IntegerInput({ param, value, onChange, id, errorId }: FieldProps & { id
   const stored = typeof value === "string" ? value : "";
   const [text, setText] = useState(stored);
   const [exp, setExp] = useState(0);
-  const scaled = (input: string, unit: number) => (unit === 0 ? input : (scaleDecimal(input, unit) ?? input));
+  // With a unit, the field takes a decimal number only (see scaledInput)
+  const scaled = scaledInput;
 
   // The value came from outside (reset, pasted JSON): show it as it is
   if (stored !== scaled(text, exp)) {
@@ -104,8 +118,7 @@ function IntegerInput({ param, value, onChange, id, errorId }: FieldProps & { id
   const bits = Number(/\d+$/.exec(param.type)?.[0] ?? 256);
   const isEnum = userTypeName(param)?.kind === "enum";
   // With a unit (×10^n), more than n decimal places cannot become a whole number
-  const tooPrecise = exp > 0 && /^-?\d*\.\d+$/.test(text.trim()) && scaleDecimal(text, exp) === null;
-  const error = tooPrecise ? `With ×10^${exp}, enter at most ${exp} decimal places.` : leafError(param.type, stored);
+  const error = unitProblem(text, exp) ?? leafError(param.type, stored);
   // Amounts get a "Max" helper, as on Blockscout (approvals often use the largest value)
   const canMax = !isEnum && !param.type.startsWith("int") && bits >= 128 && text === "";
   const hasUnits = !isEnum && bits >= 64;
@@ -170,9 +183,10 @@ function IntegerInput({ param, value, onChange, id, errorId }: FieldProps & { id
       </div>
       <FieldError id={errorId} message={error} />
       {looksDecimal && <Hint>To enter a decimal amount, choose a unit on the right, for example ×10^18.</Hint>}
-      {!error && exp > 0 && stored !== "" && (
+      {!error && stored !== "" && (exp > 0 || /^-?0x/i.test(stored.trim())) && (
+        // Always in decimal: also for hex text (wei ×1), so the user sees the number that is sent
         <Hint>
-          Sent value ({param.type}): <span className="font-mono break-all">{groupDigits(stored)}</span>
+          Sent value ({param.type}): <span className="font-mono break-all">{groupDigits(decimalOf(stored))}</span>
         </Hint>
       )}
       {isEnum && <Hint>Enum {userTypeName(param)!.name}: enter the number of the option. The first option is 0.</Hint>}
@@ -288,7 +302,7 @@ function LeafField({ param, value, onChange, doc, fallbackName }: FieldProps) {
           rows={text.length > 60 ? 3 : 1}
           spellCheck={false}
           value={text}
-          placeholder={isBytes ? "0x…" : "text"}
+          placeholder={isBytes ? "0x… (empty: no data, 0x)" : "text"}
           aria-invalid={!!error}
           aria-describedby={describedBy}
           onChange={(e) => onChange(isBytes ? e.target.value.trim() : e.target.value)}

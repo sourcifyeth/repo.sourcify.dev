@@ -7,7 +7,7 @@ import type { CallContext } from "@/utils/interact/types";
 import { DataSources, useSources } from "./DataSources";
 import { ProxyNote, keepSelectedTabInView, useOpenRows } from "./Frame";
 import FunctionPanel from "./FunctionPanel";
-import { EmptyFunctions, FunctionDetails, FunctionName, functionFromUrl } from "./FunctionRow";
+import { EmptyFunctions, FunctionDetails, FunctionName } from "./FunctionRow";
 import { type ContractInteractionProps, useContractFunctions } from "./useContractFunctions";
 import { WalletChip, useWallet } from "./Wallet";
 import { KindBadge, Segmented, SearchInput, SelectorChip, buttonQuiet, matchesSearch } from "./ui";
@@ -17,7 +17,7 @@ type Filter = "all" | "read" | "write";
 /**
  * The functions of the contract, in the manner of Blockscout: one list with an All / Read / Write filter.
  * Each row shows the name, a read or write mark and the selector, and opens in place.
- * The box has a limited height; the list scrolls inside it.
+ * The list has no height limit: it scrolls with the page.
  */
 export default function FunctionList(props: ContractInteractionProps) {
   const sources = useSources();
@@ -27,34 +27,9 @@ export default function FunctionList(props: ContractInteractionProps) {
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const tabsRef = useRef<HTMLDivElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
-  // A function opened by a link (?fn=): scroll the page so that its row is at the top, below the sticky banner
-  const [scrollTo, setScrollTo] = useState<string | null>(null);
   // Rows that the user opened one at a time. Only these read at once: "Expand all" must not start a read for every row.
   const [openedOne, setOpenedOne] = useState<Set<string>>(new Set());
-  useEffect(() => {
-    if (!scrollTo) return;
-    const row = listRef.current?.querySelector<HTMLElement>(`[data-row="${scrollTo}"]`);
-    if (!row) return;
-    // A hidden tab (built in the background) has no position: scroll when it shows
-    if (row.offsetParent !== null) {
-      const root = document.documentElement;
-      const banner = parseFloat(getComputedStyle(root).getPropertyValue("--sticky-banner-height")) || 0;
-      window.scrollTo({ top: row.getBoundingClientRect().top + window.scrollY - banner - 8 });
-    }
-    setScrollTo(null);
-  }, [scrollTo, rows.open]);
   useEffect(() => keepSelectedTabInView(tabsRef.current), [set.source]);
-
-  useEffect(() => {
-    const fn = functionFromUrl(set.functions);
-    if (fn) {
-      rows.toggle([fn.id], true);
-      setOpenedOne((current) => new Set(current).add(fn.id));
-      setScrollTo(fn.id);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [set.functions]);
 
   const ordered = [...set.functions].sort((a, b) => a.name.localeCompare(b.name));
   const byKind = ordered.filter((fn) => filter === "all" || (filter === "read") === isRead(fn));
@@ -162,7 +137,7 @@ export default function FunctionList(props: ContractInteractionProps) {
       ) : visible.length === 0 ? (
         <EmptyFunctions kind={filter === "all" ? "any" : filter} query={query || undefined} />
       ) : (
-        <div ref={listRef} className="relative rounded-b-lg border-t border-gray-200">
+        <div className="relative rounded-b-lg border-t border-gray-200">
           <ol className="divide-y divide-gray-200">
             {visible.map((fn) => (
               <Row
@@ -204,10 +179,7 @@ function Row({
   const panelId = `panel-${fn.id}`;
   return (
     // The open function gets a bar on its left edge, over its title, form and result
-    <li
-      data-row={fn.id}
-      className={`border-l-[3px] ${isOpen ? "border-cerulean-blue-500 bg-gray-100" : "border-transparent"}`}
-    >
+    <li className={`border-l-[3px] ${isOpen ? "border-cerulean-blue-500 bg-gray-100" : "border-transparent"}`}>
       <button
         type="button"
         aria-expanded={isOpen}

@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { chainRpcs, indexChainlist, isAllowedRpcUrl, pickDefaults, providerOf, usableRpcs } from "./chainRpcs";
+import {
+  chainRpcs,
+  indexChainlist,
+  isAllowedRpcUrl,
+  officialRpcs,
+  pickDefaults,
+  providerOf,
+  usableRpcs,
+} from "./chainRpcs";
 
 describe("providerOf", () => {
   it("takes the registered domain", () => {
@@ -92,11 +100,51 @@ describe("chainRpcs and indexChainlist", () => {
         },
       ],
       defaults: ["https://mainnet.optimism.io"],
+      walletRpcs: [],
     });
   });
 
+  it("passes the official RPCs for wallets through, apart from the read defaults", () => {
+    const result = chainRpcs(10, index.get(10), undefined, ["https://mainnet.optimism.io"]);
+    expect(result.walletRpcs).toEqual(["https://mainnet.optimism.io"]);
+  });
+
   it("marks an unknown chain", () => {
-    expect(chainRpcs(999, undefined)).toEqual({ chainId: 999, known: false, explorers: [], rpcs: [], defaults: [] });
+    expect(chainRpcs(999, undefined)).toEqual({
+      chainId: 999,
+      known: false,
+      explorers: [],
+      rpcs: [],
+      defaults: [],
+      walletRpcs: [],
+    });
+  });
+});
+
+describe("officialRpcs", () => {
+  it("takes the first https URLs of the registry, without key placeholders, WebSockets or duplicates", () => {
+    expect(
+      officialRpcs({
+        chainId: 1,
+        rpc: [
+          "https://mainnet.infura.io/v3/${INFURA_API_KEY}",
+          "wss://mainnet.infura.io/ws/v3/${INFURA_API_KEY}",
+          "https://api.mycryptoapi.com/eth",
+          "http://insecure.example",
+          "https://cloudflare-eth.com/",
+          "https://cloudflare-eth.com",
+          "not a url",
+          42,
+          "https://ethereum-rpc.publicnode.com",
+          "https://fourth.example",
+        ],
+      })
+    ).toEqual(["https://api.mycryptoapi.com/eth", "https://cloudflare-eth.com", "https://ethereum-rpc.publicnode.com"]);
+  });
+
+  it("gives nothing for a chain that is not in the registry, or that has no usable URL", () => {
+    expect(officialRpcs(undefined)).toEqual([]);
+    expect(officialRpcs({ chainId: 5, rpc: ["wss://only.example", "https://{API_KEY}.example"] })).toEqual([]);
   });
 });
 

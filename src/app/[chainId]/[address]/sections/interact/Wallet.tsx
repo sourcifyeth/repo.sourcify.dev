@@ -15,6 +15,7 @@ import {
   type WalletInfo,
   connectWallet,
   discoverWallets,
+  isUnknownChain,
   switchWalletChain,
   walletError,
 } from "@/utils/interact/wallet";
@@ -43,6 +44,8 @@ interface WalletContextValue {
   disconnect: () => void;
   /** Switches the wallet to the chain of the contract, and adds the chain if the wallet does not know it */
   switchChain: () => Promise<void>;
+  /** The wallet said at send time that it is on this chain: update the state (some wallets send no "chainChanged") */
+  noteWalletChain: (chainId: number) => void;
   /** The last problem with connecting or switching, for the user */
   problem: string | null;
 }
@@ -105,15 +108,18 @@ export function WalletProvider({ chainId, children }: { chainId: string; childre
   const switchChain = useCallback(async () => {
     if (!connection) return;
     setProblem(null);
+    // A wallet that does not know the chain gets the chain's official RPCs (ethereum-lists), never the read
+    // defaults: the wallet keeps these URLs for the user. Without official RPCs, the user adds the chain.
     const add: AddChainParams | undefined =
-      chain?.known && chain.name && chain.nativeCurrency && chain.defaults.length > 0
+      chain?.known && chain.name && chain.nativeCurrency && chain.walletRpcs.length > 0
         ? {
             chainName: chain.name,
             nativeCurrency: chain.nativeCurrency,
-            rpcUrls: chain.defaults,
+            rpcUrls: chain.walletRpcs,
             blockExplorerUrls: chain.explorers.length > 0 ? chain.explorers.slice(0, 1) : undefined,
           }
         : undefined;
+    const name = plainChainName(chain?.name ?? `chain ${chainId}`);
     try {
       await switchWalletChain(connection.wallet.provider, Number(chainId), add);
     } catch (error) {
@@ -121,12 +127,17 @@ export function WalletProvider({ chainId, children }: { chainId: string; childre
       setProblem(
         explained.kind === "wallet-rejected"
           ? "You did not switch the network in the wallet."
-          : add
-            ? `The wallet could not switch the network: ${explained.kind === "wallet-error" ? explained.message : ""}`
-            : "The wallet does not know this network. Add it in the wallet, then try again."
+          : !add && isUnknownChain(error)
+            ? `Your wallet does not know ${name}. Add it in your wallet, then try again.`
+            : `The wallet could not switch the network: ${explained.kind === "wallet-error" ? explained.message : ""}`
       );
     }
   }, [connection, chain, chainId]);
+
+  const noteWalletChain = useCallback(
+    (walletChain: number) => setConnection((current) => (current ? { ...current, chainId: walletChain } : null)),
+    []
+  );
 
   const value = useMemo(
     () => ({
@@ -136,9 +147,10 @@ export function WalletProvider({ chainId, children }: { chainId: string; childre
       connect,
       disconnect,
       switchChain,
+      noteWalletChain,
       problem,
     }),
-    [wallets, connection, chainId, connect, disconnect, switchChain, problem]
+    [wallets, connection, chainId, connect, disconnect, switchChain, noteWalletChain, problem]
   );
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
 }

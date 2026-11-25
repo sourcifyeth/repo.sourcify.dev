@@ -4,8 +4,8 @@
  */
 import { type Fn, type FormValue, encodeCall } from "./abi";
 import { decodeOutputs, decodeRevert } from "./decode";
-import { type Answer, type RpcOptions, readFromSources } from "./rpcRead";
-import type { CallContext, CallError, CallOutcome, MismatchSide, RpcEndpoint, SourceResult } from "./types";
+import { type Answer, type HeadGap, type RpcOptions, isLargeGap, readFromSources } from "./rpcRead";
+import type { CallContext, CallError, CallOutcome, MismatchSide, ReadGap, RpcEndpoint, SourceResult } from "./types";
 
 type Decoded = { values: FormValue[] } | { error: CallError };
 
@@ -18,8 +18,24 @@ function decodeAnswer(fn: Fn, answer: Answer, ctx: CallContext): Decoded {
   }
 }
 
+/** The gap between the two newest blocks, with host names for the page. */
+function gapOf(gap: HeadGap | undefined, asked: RpcEndpoint[]): ReadGap | undefined {
+  if (!gap) return undefined;
+  const host = (url: string) => asked.find((endpoint) => endpoint.url === url)?.host ?? url;
+  return {
+    behind: host(gap.behindUrl),
+    ahead: host(gap.aheadUrl),
+    behindHead: gap.behindHead,
+    aheadHead: gap.aheadHead,
+    blocks: gap.blocks,
+    ...(gap.ageSeconds !== undefined ? { ageSeconds: gap.ageSeconds } : {}),
+    large: isLargeGap(gap),
+  };
+}
+
 /**
- * Reads a view or pure function. `from` is the connected wallet, if any: some functions read msg.sender.
+ * Reads a view or pure function. `from` is the sender, only where a function needs one: the page sends
+ * the proxy admin for a transparent proxy's own functions, and no sender otherwise.
  * Never throws for network problems; they come back as an outcome with status "error".
  */
 export async function readFunction(
@@ -44,9 +60,12 @@ export async function readFunction(
     ms: source.ms,
     ok: source.ok,
     ...(source.ok ? { raw: source.answer.data } : { problem: source.problem }),
+    ...(source.head !== undefined ? { head: source.head } : {}),
   }));
 
   if (result.check === "all-failed") return { status: "error", at, error: { kind: "all-failed", sources } };
+  const gap = gapOf(result.gap, asked);
+  const withGap = gap ? { gap } : {};
 
   if (result.check === "mismatch") {
     const sides: MismatchSide[] = result.sources.flatMap((source, i) =>
@@ -62,11 +81,13 @@ export async function readFunction(
       sources,
       check: "mismatch",
       sides,
+      ...withGap,
     };
   }
 
   const decoded = decodeAnswer(fn, result.answer, ctx);
-  if ("error" in decoded) return { status: "error", at, block: result.block, error: decoded.error, sources };
+  if ("error" in decoded)
+    return { status: "error", at, block: result.block, error: decoded.error, sources, ...withGap };
   return {
     status: "success",
     values: decoded.values,
@@ -75,5 +96,6 @@ export async function readFunction(
     at,
     sources,
     check: result.check,
+    ...withGap,
   };
 }

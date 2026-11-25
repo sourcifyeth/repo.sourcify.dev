@@ -1,5 +1,15 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { BLOCK_CACHE_MS, clearBlockCache, isRevert, jsonRpc, latestBlock, readFromSources, RpcError } from "./rpcRead";
+import {
+  BLOCK_CACHE_MS,
+  clearBlockCache,
+  formatAge,
+  isLargeGap,
+  isRevert,
+  jsonRpc,
+  latestBlock,
+  readFromSources,
+  RpcError,
+} from "./rpcRead";
 
 type Reply = { status?: number; body?: unknown; throws?: Error };
 type Node = (method: string, params: unknown[]) => Reply;
@@ -159,5 +169,97 @@ describe("revert data in an object", () => {
     const result = await readFromSources([A], CALL, { fetchImpl });
     if (result.check === "all-failed") throw new Error("unexpected");
     expect(result.answer).toMatchObject({ kind: "revert", data: "0x9e87fac8" });
+  });
+});
+
+describe("readFromSources: the newest blocks of the two sources", () => {
+  /** A node at `block` whose blocks are 12 s apart, with the newest block at time `newest` (seconds). */
+  const timedNode =
+    (block: number, newest: number): Node =>
+    (method, params) => {
+      if (method === "eth_blockNumber") return { body: { result: `0x${block.toString(16)}` } };
+      if (method === "eth_getBlockByNumber") {
+        const asked = Number.parseInt(String(params[0]), 16);
+        return { body: { result: { timestamp: `0x${(newest - (block - asked) * 12).toString(16)}` } } };
+      }
+      return { body: { result: RESULT } };
+    };
+
+  it("keeps the newest block of each source, and gives no gap when they are equal", async () => {
+    const { fetchImpl, requests } = fakeNetwork({ [A]: timedNode(100, 1000), [B]: timedNode(100, 1000) });
+    const result = await readFromSources([A, B], CALL, { fetchImpl, now: () => 1_000_000 });
+    if (result.check === "all-failed") throw new Error("unexpected");
+    expect(result.sources.map((source) => source.head)).toEqual([100, 100]);
+    expect(result.gap).toBeUndefined();
+    expect(requests.some((request) => request.method === "eth_getBlockByNumber")).toBe(false);
+  });
+
+  it("notes a gap of one block, with the age of the read block from the source that is ahead", async () => {
+    const { fetchImpl, requests } = fakeNetwork({ [A]: timedNode(101, 1000), [B]: timedNode(100, 988) });
+    const result = await readFromSources([A, B], CALL, { fetchImpl, now: () => 1_000_000 });
+    if (result.check === "all-failed") throw new Error("unexpected");
+    expect(result.block).toBe(100);
+    expect(result.gap).toEqual({
+      behindUrl: B,
+      aheadUrl: A,
+      behindHead: 100,
+      aheadHead: 101,
+      blocks: 1,
+      ageSeconds: 12,
+    });
+    expect(isLargeGap(result.gap!)).toBe(false);
+    const asked = requests.find((request) => request.method === "eth_getBlockByNumber");
+    expect(asked).toMatchObject({ url: A, params: ["0x64", false] });
+  });
+
+  it("calls a gap large when the read block is older than a minute", async () => {
+    const { fetchImpl } = fakeNetwork({ [A]: timedNode(110, 1000), [B]: timedNode(100, 880) });
+    const result = await readFromSources([A, B], CALL, { fetchImpl, now: () => 1_000_000 });
+    if (result.check === "all-failed") throw new Error("unexpected");
+    expect(result.gap).toMatchObject({ blocks: 10, ageSeconds: 120 });
+    expect(isLargeGap(result.gap!)).toBe(true);
+  });
+
+  it("judges by the number of blocks when the source that is ahead gives no time", async () => {
+    const noTime =
+      (block: number): Node =>
+      (method) =>
+        method === "eth_blockNumber"
+          ? { body: { result: `0x${block.toString(16)}` } }
+          : method === "eth_getBlockByNumber"
+            ? { body: { error: { code: -32000, message: "not available" } } }
+            : { body: { result: RESULT } };
+    const small = await readFromSources([A, B], CALL, {
+      fetchImpl: fakeNetwork({ [A]: noTime(102), [B]: noTime(100) }).fetchImpl,
+    });
+    if (small.check === "all-failed") throw new Error("unexpected");
+    expect(small.gap).toMatchObject({ blocks: 2 });
+    expect(small.gap!.ageSeconds).toBeUndefined();
+    expect(isLargeGap(small.gap!)).toBe(false);
+    clearBlockCache();
+    const large = await readFromSources([A, B], CALL, {
+      fetchImpl: fakeNetwork({ [A]: noTime(200), [B]: noTime(100) }).fetchImpl,
+    });
+    if (large.check === "all-failed") throw new Error("unexpected");
+    expect(isLargeGap(large.gap!)).toBe(true);
+  });
+
+  it("treats an eth_call result that is not hex text as a failed source", async () => {
+    const { fetchImpl } = fakeNetwork({
+      [A]: node(100, { body: { result: null } }),
+      [B]: node(100, { body: { result: RESULT } }),
+    });
+    const result = await readFromSources([A, B], CALL, { fetchImpl });
+    expect(result.check).toBe("one-failed");
+    expect(result.sources[0]).toMatchObject({ ok: false, problem: "the answer is not hex data" });
+  });
+});
+
+describe("formatAge", () => {
+  it("uses the largest unit that reads well", () => {
+    expect(formatAge(45)).toBe("45 s");
+    expect(formatAge(12 * 60)).toBe("12 min");
+    expect(formatAge(3 * 3600)).toBe("3 h");
+    expect(formatAge(2 * 86400)).toBe("2 days");
   });
 });

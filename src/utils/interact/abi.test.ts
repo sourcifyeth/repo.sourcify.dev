@@ -1,6 +1,16 @@
 import { Interface, defaultAbiCoder } from "@ethersproject/abi";
 import { describe, expect, it } from "vitest";
-import { type AbiEntry, buildFunctions, checkForm, encodeCall, fromJson, leafError, toJson } from "./abi";
+import {
+  type AbiEntry,
+  buildFunctions,
+  checkForm,
+  encodeCall,
+  fromJson,
+  leafError,
+  scaledInput,
+  toJson,
+  unitProblem,
+} from "./abi";
 
 // A second, independent ABI coder (ethers v5) is the reference for the encoding with viem
 const reference = (entry: AbiEntry, args: unknown[]) =>
@@ -239,5 +249,60 @@ describe("parseJsonExact", () => {
     const { parseJsonExact } = await import("./abi");
     const param = { name: "s", type: "tuple", components: [{ name: "amount", type: "uint256" }] };
     expect(fromJson(param, parseJsonExact('{"amount":12345678901234567891}'))).toEqual(["12345678901234567891"]);
+  });
+});
+
+describe("empty bytes", () => {
+  const [fn] = buildFunctions(
+    [
+      {
+        type: "function",
+        name: "supply",
+        stateMutability: "nonpayable",
+        inputs: [
+          { name: "assets", type: "uint256" },
+          { name: "data", type: "bytes" },
+        ],
+        outputs: [],
+      },
+    ],
+    {},
+    "own"
+  );
+
+  it("counts an empty bytes field as 0x, not as missing", () => {
+    expect(checkForm(fn.inputs, ["1", ""])).toEqual({ missing: 0, invalid: 0 });
+    const iface = new Interface(["function supply(uint256 assets, bytes data)"]);
+    expect(encodeCall(fn, ["1", ""])).toBe(iface.encodeFunctionData("supply", [1, "0x"]));
+  });
+
+  it("still counts an empty fixed-size bytes field as missing", () => {
+    const [fixed] = buildFunctions(
+      [{ type: "function", name: "f", stateMutability: "view", inputs: [{ name: "h", type: "bytes32" }], outputs: [] }],
+      {},
+      "own"
+    );
+    expect(checkForm(fixed.inputs, [""])).toEqual({ missing: 1, invalid: 0 });
+  });
+});
+
+describe("integer units", () => {
+  it("scales a decimal number with a unit, and keeps the text without one", () => {
+    expect(scaledInput("1.5", 18)).toBe("1500000000000000000");
+    expect(scaledInput("0x10", 0)).toBe("0x10");
+    expect(scaledInput("", 18)).toBe("");
+  });
+
+  it("refuses hex text with a unit, and makes the stored value invalid so that it is never sent unscaled", () => {
+    expect(unitProblem("0x10", 18)).toMatch(/Hex \(0x…\) works only with wei/);
+    expect(unitProblem("0x10", 0)).toBeNull();
+    const stored = scaledInput("0x10", 18);
+    expect(stored).not.toBe("0x10");
+    expect(leafError("uint256", stored)).not.toBeNull();
+  });
+
+  it("explains too many decimal places", () => {
+    expect(unitProblem("1.1234567", 6)).toBe("With ×10^6, enter at most 6 decimal places.");
+    expect(unitProblem("1.5", 6)).toBeNull();
   });
 });

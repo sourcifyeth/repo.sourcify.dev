@@ -1,5 +1,6 @@
 "use client";
 
+import type { EIP1193Provider } from "viem";
 import { copyText } from "@/utils/clipboard";
 import { useEffect, useRef, useState } from "react";
 import { FiExternalLink } from "react-icons/fi";
@@ -21,8 +22,15 @@ import { decodeRevert } from "@/utils/interact/decode";
 import { proxyAdmin } from "@/utils/interact/proxyAdmin";
 import { readFunction } from "@/utils/interact/read";
 import type { CallContext, CallError, CallOutcome, RpcEndpoint, TxState } from "@/utils/interact/types";
-import { revertDataOf, sendTransaction, walletError } from "@/utils/interact/wallet";
-import { Provenance, SourcesFailed, useSources } from "./DataSources";
+import {
+  type MinedTransaction,
+  WrongChainError,
+  revertDataOf,
+  sendTransaction,
+  walletError,
+  watchTransaction,
+} from "@/utils/interact/wallet";
+import { GapNote, Provenance, SourcesFailed, useSources } from "./DataSources";
 import ParamField, { Field } from "./ParamField";
 import { ErrorBox, RawData, ValueTree } from "./ResultView";
 import { SafetyLine, useWallet } from "./Wallet";
@@ -73,7 +81,8 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
   const nativeAmount = `${shiftDecimal(wei ?? "0", 18)} ${sources.chain?.nativeCurrency?.symbol ?? "ETH"}`;
   const ready = check.missing === 0 && check.invalid === 0 && !valueError;
   const calldata = ready ? encodeCall(fn, values) : null;
-  const busy = loading || tx.step === "wallet" || tx.step === "pending";
+  // An unconfirmed transaction counts as busy: Write stays off, so that the same transaction is not sent twice
+  const busy = loading || tx.step === "wallet" || tx.step === "pending" || tx.step === "unconfirmed";
   // A struct or list result, and the two answers of a mismatch, may use the full width; everything else keeps the form's right edge
   const wideResult =
     outcome?.status === "success" &&
@@ -86,7 +95,8 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
         ? `${check.missing} ${check.missing === 1 ? "field is" : "fields are"} empty`
         : null;
 
-  // A read asks the selected endpoints (two if possible). The connected wallet, if any, is the sender.
+  // A read asks the selected endpoints (two if possible). It sends no sender: the connected wallet's
+  // address would go to the public RPCs for nothing. Only a transparent proxy's own functions read as its admin.
   const call = async (endpoints: RpcEndpoint[] = sources.selected) => {
     if (endpoints.length === 0) return;
     setLoading(true);
@@ -100,7 +110,7 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
           )
         : null;
       setReadAs(admin);
-      const sender = admin ?? wallet.connection?.account;
+      const sender = admin ?? undefined;
       let result = await readFunction(fn, values, ctx, endpoints, sender);
       // A source that failed is swapped for the next working one, and the read runs once more
       const failedIds = (
@@ -113,6 +123,13 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
         if (next) result = await readFunction(fn, values, ctx, next, sender);
       }
       setOutcome(result);
+    } catch (error) {
+      // A bug or a value that cannot be encoded: say so, instead of a silent button
+      setOutcome({
+        status: "error",
+        at: Date.now(),
+        error: { kind: "read-error", message: error instanceof Error ? error.message : String(error) },
+      });
     } finally {
       setLoading(false);
     }
@@ -133,28 +150,55 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canAutoRead]);
 
+  const minedState = (mined: MinedTransaction): TxState =>
+    mined.reverted
+      ? { step: "failed", error: { kind: "reverted-onchain", hash: mined.hash, block: mined.block } }
+      : { step: "confirmed", hash: mined.hash, block: mined.block, gasUsed: mined.gasUsed };
+
+  // The wallet that sent the last transaction: an unconfirmed one is watched through it
+  const sentWith = useRef<EIP1193Provider | null>(null);
+
   // No simulation before sending (decision D6): the wallet opens at once
   const send = async () => {
     const connection = wallet.connection;
     if (!connection || !wallet.ready || !calldata) return;
     setTx({ step: "wallet" });
+    sentWith.current = connection.wallet.provider;
     try {
       const sent = await sendTransaction(
         connection.wallet.provider,
         { from: connection.account, to: ctx.address, data: calldata, value: BigInt(wei ?? "0") },
+        Number(ctx.chainId),
         (hash) => setTx({ step: "pending", hash })
       );
+      // Sent, but no receipt yet: keep watching (below); never offer to send it again
       setTx(
-        sent.reverted
-          ? { step: "failed", error: { kind: "reverted-onchain", hash: sent.hash, block: sent.block } }
-          : { step: "confirmed", hash: sent.hash, block: sent.block, gasUsed: sent.gasUsed }
+        sent.status === "unconfirmed"
+          ? { step: "unconfirmed", hash: sent.hash, problem: sent.problem }
+          : minedState(sent)
       );
     } catch (error) {
+      // Nothing was sent. The wallet is on another chain: the page shows "Switch to …" again
+      if (error instanceof WrongChainError) wallet.noteWalletChain(error.walletChain);
       // Some wallets estimate the gas first and refuse a call that would revert: explain the revert
       const revertData = revertDataOf(error);
       setTx({ step: "failed", error: revertData ? decodeRevert(revertData, ctx.errorAbi) : walletError(error) });
     }
   };
+
+  // An unconfirmed transaction: ask for its receipt again until it comes, or until the user resets the form
+  const unconfirmedHash = tx.step === "unconfirmed" ? tx.hash : null;
+  useEffect(() => {
+    const provider = sentWith.current;
+    if (!unconfirmedHash || !provider) return;
+    let stopped = false;
+    watchTransaction(provider, unconfirmedHash, () => stopped).then((mined) => {
+      if (mined && !stopped) setTx(minedState(mined));
+    });
+    return () => {
+      stopped = true;
+    };
+  }, [unconfirmedHash]);
 
   const reset = () => {
     setValues(fn.inputs.map(emptyValue));
@@ -324,7 +368,7 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
               {busy && <Spinner className="h-3.5 w-3.5" />}
               {tx.step === "wallet"
                 ? "Confirm in your wallet…"
-                : tx.step === "pending"
+                : tx.step === "pending" || tx.step === "unconfirmed"
                   ? "Waiting for confirmation…"
                   : "Write"}
             </button>
@@ -442,6 +486,7 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
                 Both read at block <span className="font-mono text-[13px]">{groupDigits(String(outcome.block))}</span>
               </span>
             </div>
+            {outcome.gap && <GapNote gap={outcome.gap} block={outcome.block} className="mt-2" />}
           </div>
         )}
         {outcome?.status === "success" && outcome.check !== "mismatch" && (
@@ -472,6 +517,7 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
               check={outcome.check}
               sources={outcome.sources}
               block={outcome.block}
+              gap={outcome.gap}
               onTryAnother={tryAnother}
             />
           </div>
@@ -502,6 +548,7 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
                   }
                   sources={outcome.sources}
                   block={outcome.block}
+                  gap={outcome.gap}
                   onTryAnother={tryAnother}
                 />
               )}
@@ -514,6 +561,20 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
             <p className="flex items-center gap-2 font-medium text-gray-900">
               <Spinner className="h-3.5 w-3.5 text-cerulean-blue-500" /> Transaction sent. Waiting for confirmation.
             </p>
+            <TxHash hash={tx.hash} />
+            <p className="mt-1 text-sm">{explorerTx(tx.hash)}</p>
+          </div>
+        )}
+        {tx.step === "unconfirmed" && (
+          <div role="status" className="rounded-md border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-900">
+            <p className="flex items-center gap-2 font-medium">
+              <Spinner className="h-3.5 w-3.5 text-yellow-700" /> Sent, but not confirmed yet.
+            </p>
+            <p className="mt-1">
+              Your wallet sent the transaction, but no receipt came in time. It can still be included in a block. Do not
+              send it again: check its status on the block explorer or in your wallet. This page keeps checking.
+            </p>
+            <p className="mt-1 break-words text-xs opacity-80">Last problem: {tx.problem}</p>
             <TxHash hash={tx.hash} />
             <p className="mt-1 text-sm">{explorerTx(tx.hash)}</p>
           </div>
@@ -539,8 +600,9 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
             <ErrorBox
               error={tx.error}
               chainName={ctx.chainName}
-              // After a revert on chain, "Try again" would send and pay again: the form stays, Write is still there
-              onRetry={tx.error.kind === "reverted-onchain" ? undefined : send}
+              // Only errors before the wallet sent anything offer "Try again". After a revert on chain it would send and
+              // pay again; on the wrong chain the page shows "Switch to …" instead
+              onRetry={["reverted-onchain", "wrong-chain"].includes(tx.error.kind) ? undefined : send}
               isWrite
               explorerUrl={ctx.explorerUrl}
             />

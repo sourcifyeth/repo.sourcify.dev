@@ -94,7 +94,10 @@ export async function switchWalletChain(provider: EIP1193Provider, chainId: numb
   }
 }
 
-export interface SentTransaction {
+/** A transaction that is in a block: it either ran, or reverted (and its gas was paid). */
+export interface MinedTransaction {
+  status: "mined";
+  /** The hash of the transaction in the block: a replacement (speed up, cancel) has a new hash */
   hash: string;
   block: number;
   gasUsed: string;
@@ -102,33 +105,33 @@ export interface SentTransaction {
 }
 
 /**
- * Sends a transaction from the wallet and waits until it is mined. `onHash` runs when the wallet has sent it.
- * If the user speeds up or cancels the transaction in the wallet, viem follows the replacement.
+ * The result of a send. "unconfirmed": the wallet sent the transaction (it has a hash), but the page
+ * got no receipt in time, or the wallet's RPC failed while the page waited. The transaction can still
+ * be mined: the page must never offer to send it again.
  */
-export async function sendTransaction(
-  provider: EIP1193Provider,
-  tx: { from: string; to: string; data: string; value: bigint },
-  onHash: (hash: string) => void
-): Promise<SentTransaction> {
-  const wallet = createWalletClient({ transport: custom(provider) });
-  const hash = await wallet.sendTransaction({
-    account: tx.from as `0x${string}`,
-    to: tx.to as `0x${string}`,
-    data: tx.data as `0x${string}`,
-    value: tx.value,
-    // The page checks the chain itself before it sends
-    chain: null,
-  });
-  onHash(hash);
+export type SendResult = MinedTransaction | { status: "unconfirmed"; hash: string; problem: string };
+
+/** The wallet is on another chain than the contract. Thrown before anything is sent. */
+export class WrongChainError extends Error {
+  constructor(readonly walletChain: number) {
+    super(`The wallet is on chain ${walletChain}`);
+    this.name = "WrongChainError";
+  }
+}
+
+/** Waits for the receipt of a sent transaction. Follows a replacement (speed up or cancel in the wallet). */
+async function waitMined(provider: EIP1193Provider, hash: `0x${string}`, timeout?: number): Promise<MinedTransaction> {
   const reader = createPublicClient({ transport: custom(provider) });
   let finalHash: string = hash;
   const receipt = await reader.waitForTransactionReceipt({
     hash,
+    timeout,
     onReplaced: (replacement) => {
       finalHash = replacement.transaction.hash;
     },
   });
   return {
+    status: "mined",
     hash: finalHash,
     block: Number(receipt.blockNumber),
     gasUsed: receipt.gasUsed.toString(),
@@ -136,8 +139,64 @@ export async function sendTransaction(
   };
 }
 
+/**
+ * Sends a transaction from the wallet and waits until it is mined. `onHash` runs when the wallet has sent it.
+ *
+ * 1. Asks the wallet for its chain right before the send, and stops with WrongChainError on another chain.
+ *    The page's own state can be old: some wallets do not send "chainChanged".
+ * 2. Sends. Errors up to here (rejection, refusal, revert in the gas estimate) are thrown: nothing was sent.
+ * 3. Waits for the receipt. A failure from here on returns "unconfirmed" with the hash, and never throws.
+ */
+export async function sendTransaction(
+  provider: EIP1193Provider,
+  tx: { from: string; to: string; data: string; value: bigint },
+  chainId: number,
+  onHash: (hash: string) => void,
+  /** How long to wait for the receipt before the result is "unconfirmed" (viem's default: 180 s) */
+  { receiptTimeoutMs }: { receiptTimeoutMs?: number } = {}
+): Promise<SendResult> {
+  const walletChain = Number.parseInt((await provider.request({ method: "eth_chainId" })) as string, 16);
+  if (walletChain !== chainId) throw new WrongChainError(walletChain);
+  const wallet = createWalletClient({ transport: custom(provider) });
+  const hash = await wallet.sendTransaction({
+    account: tx.from as `0x${string}`,
+    to: tx.to as `0x${string}`,
+    data: tx.data as `0x${string}`,
+    value: tx.value,
+    // The chain was checked just above; viem's own check would need a full chain definition
+    chain: null,
+  });
+  onHash(hash);
+  try {
+    return await waitMined(provider, hash, receiptTimeoutMs);
+  } catch (error) {
+    return { status: "unconfirmed", hash, problem: walletMessage(error) };
+  }
+}
+
+/**
+ * Keeps waiting for an "unconfirmed" transaction: asks for the receipt again after each failed wait.
+ * Returns null when `stopped()` becomes true (the user left or reset the form).
+ */
+export async function watchTransaction(
+  provider: EIP1193Provider,
+  hash: string,
+  stopped: () => boolean,
+  { waitMs = 120_000, pauseMs = 15_000 }: { waitMs?: number; pauseMs?: number } = {}
+): Promise<MinedTransaction | null> {
+  while (!stopped()) {
+    try {
+      return await waitMined(provider, hash as `0x${string}`, waitMs);
+    } catch {
+      await new Promise((resolve) => setTimeout(resolve, pauseMs));
+    }
+  }
+  return null;
+}
+
 /** A wallet error as an error that the page can explain. 4001 is "the user rejected the request" (EIP-1193). */
 export function walletError(error: unknown): CallError {
+  if (error instanceof WrongChainError) return { kind: "wrong-chain", walletChain: error.walletChain };
   if (walletErrorCode(error) === 4001) return { kind: "wallet-rejected" };
   return { kind: "wallet-error", message: walletMessage(error) };
 }

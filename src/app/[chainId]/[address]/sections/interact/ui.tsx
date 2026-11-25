@@ -82,31 +82,12 @@ export function SelectorChip({ fn, focusable = true }: { fn: Fn; focusable?: boo
   );
 }
 
-const MUTABILITY_STYLE: Record<Mutability, string> = {
-  view: "border-cerulean-blue-200 bg-cerulean-blue-100 text-cerulean-blue-700",
-  pure: "border-gray-200 bg-gray-100 text-gray-700",
-  nonpayable: "border-amber-200 bg-amber-50 text-amber-800",
-  payable: "border-light-coral-300 bg-light-coral-100 text-light-coral-800",
-};
-
 const MUTABILITY_HELP: Record<Mutability, string> = {
   view: "view: reads the state of the contract. No wallet and no gas.",
   pure: "pure: computes a result from the inputs only. No wallet and no gas.",
   nonpayable: "nonpayable: changes state. You send a transaction from your wallet.",
   payable: "payable: changes state and can take ether with the transaction.",
 };
-
-export function MutabilityBadge({ mutability }: { mutability: Mutability }) {
-  return (
-    <span
-      className={`inline-flex shrink-0 cursor-help items-center rounded border px-1.5 text-xs leading-[18px] ${MUTABILITY_STYLE[mutability]}`}
-      data-tooltip-id="global-tooltip"
-      data-tooltip-content={MUTABILITY_HELP[mutability]}
-    >
-      {mutability}
-    </span>
-  );
-}
 
 /** `(address,uint256)`: the part that tells two functions with the same name apart. */
 export const argumentList = (fn: Fn) => fn.signature.slice(fn.name.length);

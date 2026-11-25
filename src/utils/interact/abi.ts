@@ -261,6 +261,8 @@ export function checkForm(params: AbiParam[], values: FormValue[]): { missing: n
       return;
     }
     if (param.type === "bool" || param.type === "string") return;
+    // Empty dynamic bytes is a common value (no data): an empty field means 0x
+    if (param.type === "bytes" && (typeof value !== "string" || value.trim() === "")) return;
     if (typeof value !== "string" || value.trim() === "") missing++;
     else if (leafError(param.type, value)) invalid++;
   };
@@ -367,7 +369,8 @@ function toEncoderValue(param: AbiParam, value: FormValue): unknown {
     return (param.components ?? []).map((component, i) => toEncoderValue(component, (value as FormValue[])[i]));
   if (param.type === "bool") return value === true;
   if (param.type === "string") return value;
-  const text = String(value).trim();
+  const text = String(value ?? "").trim();
+  if (param.type === "bytes" && text === "") return "0x";
   // viem wants a bigint for every integer type, and a checksum address or lower case
   if (/^u?int\d*$/.test(param.type)) return BigInt(text);
   if (param.type === "address") return text.slice(2) === text.slice(2).toUpperCase() ? text.toLowerCase() : text;
@@ -420,6 +423,25 @@ export function scaleDecimal(text: string, decimals: number): string | null {
   if (fraction.length > decimals) return null;
   const digits = (match[2] + fraction.padEnd(decimals, "0")).replace(/^0+(?=\d)/, "");
   return (match[1] && digits !== "0" ? "-" : "") + digits;
+}
+
+/**
+ * The value that an integer field with a unit (×10^exp) stores. A decimal number is scaled. Text that cannot
+ * be scaled (hex, too many decimal places) is stored with its unit attached, so that the form counts it as
+ * invalid and never sends the unscaled number. Without a unit (exp 0), the text stays as it is.
+ */
+export function scaledInput(text: string, exp: number): string {
+  if (exp === 0 || text.trim() === "") return text;
+  return scaleDecimal(text, exp) ?? `${text} ×10^${exp}`;
+}
+
+/** Why an integer text does not work with the unit ×10^exp, or null. Hex works only without a unit. */
+export function unitProblem(text: string, exp: number): string | null {
+  const trimmed = text.trim();
+  if (exp === 0 || trimmed === "" || scaleDecimal(trimmed, exp) !== null) return null;
+  if (/^-?0x/i.test(trimmed)) return "With a unit, enter a decimal number. Hex (0x…) works only with wei ×1.";
+  if (/^-?\d*\.\d+$/.test(trimmed)) return `With ×10^${exp}, enter at most ${exp} decimal places.`;
+  return `With ×10^${exp}, enter a decimal number.`;
 }
 
 export const shortHex = (value: string, head = 6, tail = 4) =>

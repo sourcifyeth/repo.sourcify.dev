@@ -242,7 +242,7 @@ export default async function ContractView({
   const differentOrUndefined = (onchain: string, recompiled: string) =>
     onchain && onchain === recompiled ? undefined : recompiled;
 
-  // The "Read/Write Contract" tab: for a contract with functions in its ABI (or a proxy), unless switched off
+  // The "Read/Write Contract" tab: for a contract with functions in its ABI, or a proxy
   const showInteraction = canInteract(contract);
   if (tab === "read-write" && !showInteraction) redirect(`/${chainId}/${contract.address}`);
 

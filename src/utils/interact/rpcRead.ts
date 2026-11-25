@@ -14,8 +14,24 @@ export interface CallRequest {
 /** What one endpoint answered: the return data, or a revert with its data. */
 export type Answer = { kind: "return"; data: string } | { kind: "revert"; data: string; message: string };
 
+/** What one endpoint did. `head` is its newest block, if it answered eth_blockNumber. */
 export type SourceResult =
-  { url: string; ok: true; answer: Answer; ms: number } | { url: string; ok: false; problem: string; ms: number };
+  | { url: string; ok: true; answer: Answer; ms: number; head?: number }
+  | { url: string; ok: false; problem: string; ms: number; head?: number };
+
+/**
+ * The two endpoints had different newest blocks. The read used the lower one, so the value is as old as
+ * the endpoint that is behind. `ageSeconds`: the age of the read block, from the endpoint that is ahead
+ * (undefined if it did not answer).
+ */
+export interface HeadGap {
+  behindUrl: string;
+  aheadUrl: string;
+  behindHead: number;
+  aheadHead: number;
+  blocks: number;
+  ageSeconds?: number;
+}
 
 export type ReadResult =
   | {
@@ -25,8 +41,27 @@ export type ReadResult =
       /** The answer of the first endpoint that answered. For a mismatch, see `sources` for both. */
       answer: Answer;
       sources: SourceResult[];
+      /** Set if the two newest blocks differ, by any number of blocks */
+      gap?: HeadGap;
     }
   | { check: "all-failed"; sources: SourceResult[] };
+
+/** A gap counts as large if the read block is older than this, or (without its time) the gap is this many blocks. */
+export const LARGE_GAP_SECONDS = 60;
+export const LARGE_GAP_BLOCKS = 5;
+
+/** True if the note about the gap should be a warning (amber), not a quiet note (grey). */
+export function isLargeGap(gap: HeadGap): boolean {
+  return gap.ageSeconds !== undefined ? gap.ageSeconds > LARGE_GAP_SECONDS : gap.blocks >= LARGE_GAP_BLOCKS;
+}
+
+/** "45 s", "12 min", "3 h", "2 days" */
+export function formatAge(seconds: number): string {
+  if (seconds < 90) return `${Math.max(0, Math.round(seconds))} s`;
+  if (seconds < 90 * 60) return `${Math.round(seconds / 60)} min`;
+  if (seconds < 36 * 3600) return `${Math.round(seconds / 3600)} h`;
+  return `${Math.round(seconds / 86400)} days`;
+}
 
 export interface RpcOptions {
   timeoutMs?: number;
@@ -153,34 +188,59 @@ export async function readFromSources(
   });
   if (alive.length === 0) return { check: "all-failed", sources: asked.map((url) => results.get(url)!) };
 
-  const block = Math.min(...alive.map((url) => heads[asked.indexOf(url)].value!));
+  const headOf = (url: string) => heads[asked.indexOf(url)].value!;
+  const block = Math.min(...alive.map(headOf));
   const blockHex = `0x${block.toString(16)}`;
   const tx = { to: call.to, data: call.data, ...(call.from ? { from: call.from } : {}) };
 
-  const calls = await Promise.all(
-    alive.map((url) => timed(() => jsonRpc<string>(url, "eth_call", [tx, blockHex], options), now))
-  );
+  // Two different newest blocks: the read uses the lower one. Ask the endpoint that is ahead how old that block is.
+  const [low, high] = [...alive].sort((x, y) => headOf(x) - headOf(y));
+  const gapPromise: Promise<HeadGap | undefined> =
+    alive.length === 2 && headOf(high) > headOf(low)
+      ? jsonRpc<{ timestamp?: string } | null>(high, "eth_getBlockByNumber", [blockHex, false], options)
+          .then((found) => Number.parseInt(found?.timestamp ?? "", 16))
+          .catch(() => Number.NaN)
+          .then((timestamp) => ({
+            behindUrl: low,
+            aheadUrl: high,
+            behindHead: headOf(low),
+            aheadHead: headOf(high),
+            blocks: headOf(high) - headOf(low),
+            ...(Number.isFinite(timestamp) ? { ageSeconds: Math.max(0, now() / 1000 - timestamp) } : {}),
+          }))
+      : Promise.resolve(undefined);
+
+  const [calls, gap] = await Promise.all([
+    Promise.all(alive.map((url) => timed(() => jsonRpc<unknown>(url, "eth_call", [tx, blockHex], options), now))),
+    gapPromise,
+  ]);
   alive.forEach((url, i) => {
     const { value, error, ms } = calls[i];
-    if (value !== undefined)
-      results.set(url, { url, ok: true, answer: { kind: "return", data: value.toLowerCase() }, ms });
-    else if (isRevert(error))
+    const head = headOf(url);
+    if (value !== undefined) {
+      // Return data is hex text; anything else is a broken endpoint, not an answer
+      if (typeof value === "string" && /^0x([0-9a-fA-F]{2})*$/.test(value))
+        results.set(url, { url, ok: true, answer: { kind: "return", data: value.toLowerCase() }, ms, head });
+      else results.set(url, { url, ok: false, problem: "the answer is not hex data", ms, head });
+    } else if (isRevert(error))
       results.set(url, {
         url,
         ok: true,
         answer: { kind: "revert", data: (error.data ?? "0x").toLowerCase(), message: error.message },
         ms,
+        head,
       });
-    else results.set(url, { url, ok: false, problem: problemOf(error), ms });
+    else results.set(url, { url, ok: false, problem: problemOf(error), ms, head });
   });
 
   const sources = asked.map((url) => results.get(url)!);
   const answered = sources.filter((source): source is Extract<SourceResult, { ok: true }> => source.ok);
   if (answered.length === 0) return { check: "all-failed", sources };
   const first = answered[0].answer;
-  if (asked.length === 1) return { check: "single", block, answer: first, sources };
-  if (answered.length === 1) return { check: "one-failed", block, answer: first, sources };
+  const extra = gap ? { gap } : {};
+  if (asked.length === 1) return { check: "single", block, answer: first, sources, ...extra };
+  if (answered.length === 1) return { check: "one-failed", block, answer: first, sources, ...extra };
   const [a, b] = answered.map((source) => source.answer);
   const same = a.kind === b.kind && a.data === b.data;
-  return { check: same ? "agree" : "mismatch", block, answer: first, sources };
+  return { check: same ? "agree" : "mismatch", block, answer: first, sources, ...extra };
 }

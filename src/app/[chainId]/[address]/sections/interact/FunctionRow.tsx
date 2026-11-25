@@ -1,7 +1,7 @@
 "use client";
 
 import type { Fn } from "@/utils/interact/abi";
-import { MutabilityBadge, Selector, argumentList } from "./ui";
+import { Selector, argumentList } from "./ui";
 
 /** NatSpec text with `code` in backticks shown as code. */
 export function DocText({ text }: { text: string }) {
@@ -24,9 +24,7 @@ export function DocText({ text }: { text: string }) {
 export const returnList = (fn: Fn) =>
   fn.outputs.length === 0
     ? "nothing"
-    : fn.outputs
-        .map((output) => `${output.type === "tuple" ? "tuple" : output.type}${output.name ? ` ${output.name}` : ""}`)
-        .join(", ");
+    : fn.outputs.map((output) => `${output.type}${output.name ? ` ${output.name}` : ""}`).join(", ");
 
 /**
  * The text of a closed row: the function name only. Overloaded functions also show
@@ -51,16 +49,6 @@ export function FunctionName({
     >
       <span className={`text-gray-900 ${bold ? "font-semibold" : ""}`}>{fn.name}</span>
       {fn.overloaded && <span className="font-mono text-xs text-gray-500">{argumentList(fn)}</span>}
-    </span>
-  );
-}
-
-/** Kept for older callers: the name and the mutability badge. */
-export function FunctionTitle({ fn }: { fn: Fn }) {
-  return (
-    <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5">
-      <FunctionName fn={fn} mono />
-      <MutabilityBadge mutability={fn.mutability} />
     </span>
   );
 }
@@ -139,30 +127,4 @@ export function EmptyFunctions({ kind, query }: { kind: "read" | "write" | "any"
             : "This contract has no write functions."}
     </div>
   );
-}
-
-export function Chevron({ open }: { open: boolean }) {
-  return (
-    <svg
-      className={`h-5 w-5 shrink-0 text-gray-500 transition-transform ${open ? "rotate-180" : ""}`}
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 20 20"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <path
-        fillRule="evenodd"
-        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-        clipRule="evenodd"
-      />
-    </svg>
-  );
-}
-
-/** The function that `?fn=` in the URL names: by name, signature or selector. For screenshots and deep links. */
-export function functionFromUrl(functions: Fn[]): Fn | undefined {
-  if (typeof window === "undefined") return undefined;
-  const wanted = new URLSearchParams(window.location.search).get("fn");
-  if (!wanted) return undefined;
-  return functions.find((fn) => fn.signature === wanted || fn.selector === wanted || fn.name === wanted);
 }

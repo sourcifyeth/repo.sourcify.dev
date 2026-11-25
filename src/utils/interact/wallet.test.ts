@@ -2,8 +2,10 @@ import { UserRejectedRequestError, type EIP1193Provider } from "viem";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   DISCOVERY_FALLBACK_MS,
+  WrongChainError,
   connectWallet,
   discoverWallets,
+  sendTransaction,
   switchWalletChain,
   walletError,
   walletErrorCode,
@@ -159,5 +161,75 @@ describe("wallets that answer differently (Rabby)", () => {
       "wallet_switchEthereumChain",
       "wallet_addEthereumChain",
     ]);
+  });
+});
+
+describe("sendTransaction", () => {
+  const HASH = `0x${"ab".repeat(32)}`;
+  const TX = {
+    from: "0x1111111111111111111111111111111111111111",
+    to: "0x2222222222222222222222222222222222222222",
+    data: "0xd0e30db0",
+    value: BigInt(1),
+  };
+  const receipt = {
+    transactionHash: HASH,
+    blockHash: `0x${"cd".repeat(32)}`,
+    blockNumber: "0x10",
+    transactionIndex: "0x0",
+    from: TX.from,
+    to: TX.to,
+    cumulativeGasUsed: "0x5208",
+    gasUsed: "0x5208",
+    effectiveGasPrice: "0x1",
+    logs: [],
+    logsBloom: `0x${"00".repeat(256)}`,
+    status: "0x1",
+    type: "0x2",
+    contractAddress: null,
+  };
+
+  it("asks the wallet for its chain right before the send, and sends nothing on another chain", async () => {
+    const { provider, requests } = fakeProvider({ eth_chainId: () => "0x89", eth_sendTransaction: () => HASH });
+    const onHash = vi.fn();
+    await expect(sendTransaction(provider, TX, 1, onHash)).rejects.toBeInstanceOf(WrongChainError);
+    expect(requests.map((request) => request.method)).toEqual(["eth_chainId"]);
+    expect(onHash).not.toHaveBeenCalled();
+    expect(walletError(new WrongChainError(137))).toEqual({ kind: "wrong-chain", walletChain: 137 });
+  });
+
+  it("returns 'unconfirmed' with the hash when waiting for the receipt fails, and sends only once", async () => {
+    const { provider, requests } = fakeProvider({
+      eth_chainId: () => "0x1",
+      eth_sendTransaction: () => HASH,
+      eth_blockNumber: () => "0x10",
+      eth_getTransactionReceipt: () => {
+        throw Object.assign(new Error("Internal JSON-RPC error."), { code: -32603 });
+      },
+      eth_getTransactionByHash: () => {
+        throw Object.assign(new Error("Internal JSON-RPC error."), { code: -32603 });
+      },
+    });
+    const onHash = vi.fn();
+    const result = await sendTransaction(provider, TX, 1, onHash, { receiptTimeoutMs: 300 });
+    expect(result).toMatchObject({ status: "unconfirmed", hash: HASH });
+    expect(onHash).toHaveBeenCalledWith(HASH);
+    expect(requests.filter((request) => request.method === "eth_sendTransaction")).toHaveLength(1);
+  });
+
+  it("returns the mined transaction with its block and gas", async () => {
+    const { provider } = fakeProvider({
+      eth_chainId: () => "0x1",
+      eth_sendTransaction: () => HASH,
+      eth_blockNumber: () => "0x10",
+      eth_getTransactionReceipt: () => receipt,
+    });
+    expect(await sendTransaction(provider, TX, 1, () => undefined)).toEqual({
+      status: "mined",
+      hash: HASH,
+      block: 16,
+      gasUsed: "21000",
+      reverted: false,
+    });
   });
 });

@@ -57,3 +57,22 @@ describe("proxyAdmin per chain", () => {
     );
   });
 });
+
+describe("proxyAdmin cache", () => {
+  it("keeps a valid 'no admin' answer, so that later reads send no storage requests", async () => {
+    const calls: string[] = [];
+    const fetchImpl = node({}, calls);
+    expect(await proxyAdmin("1", PROXY, ["https://a"], { fetchImpl })).toBeNull();
+    expect(await proxyAdmin("1", PROXY, ["https://a"], { fetchImpl })).toBeNull();
+    expect(calls).toEqual([ADMIN_SLOTS[0], ADMIN_SLOTS[1]]);
+  });
+
+  it("tries again after a lookup that no endpoint answered", async () => {
+    const down = (async () => new Response("down", { status: 503 })) as typeof fetch;
+    expect(await proxyAdmin("1", PROXY, ["https://a", "https://b"], { fetchImpl: down })).toBeNull();
+    const admin = "0x3333333333333333333333333333333333333333";
+    expect(await proxyAdmin("1", PROXY, ["https://a"], { fetchImpl: node({ [ADMIN_SLOTS[0]]: word(admin) }) })).toBe(
+      admin
+    );
+  });
+});

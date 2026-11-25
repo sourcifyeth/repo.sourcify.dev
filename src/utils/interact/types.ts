@@ -20,6 +20,22 @@ export interface SourceResult {
   problem?: string;
   /** The raw return data, or the revert data */
   raw?: string;
+  /** The newest block of the endpoint when the read ran, if it answered */
+  head?: number;
+}
+
+/** The two endpoints had different newest blocks; the value is from the lower one (see rpcRead.ts). */
+export interface ReadGap {
+  /** Host names */
+  behind: string;
+  ahead: string;
+  behindHead: number;
+  aheadHead: number;
+  blocks: number;
+  /** The age of the read block, if the endpoint that is ahead gave its time */
+  ageSeconds?: number;
+  /** A large gap gets a warning; a small one a quiet note */
+  large: boolean;
 }
 
 /** What the calls of one function need to know about the contract and the chain. */
@@ -54,6 +70,10 @@ export type CallError =
   | { kind: "bad-result"; raw: string }
   /** The wallet or its RPC refused the request; the message comes from the wallet */
   | { kind: "wallet-error"; message: string }
+  /** The wallet was on another chain at send time; nothing was sent */
+  | { kind: "wrong-chain"; walletChain: number }
+  /** The read stopped with an error of the page itself, not of the contract or the RPCs */
+  | { kind: "read-error"; message: string }
   /** No simulation before sending (decision D6): a transaction that reverts is mined, fails, and its gas is spent */
   | { kind: "reverted-onchain"; hash: string; block: number };
 
@@ -79,12 +99,15 @@ export type CallOutcome =
       check: "agree" | "mismatch" | "single" | "one-failed";
       /** For a mismatch: what each endpoint gave */
       sides?: MismatchSide[];
+      gap?: ReadGap;
     }
-  | { status: "error"; error: CallError; at: number; block?: number; sources?: SourceResult[] };
+  | { status: "error"; error: CallError; at: number; block?: number; sources?: SourceResult[]; gap?: ReadGap };
 
 export type TxState =
   | { step: "idle" }
   | { step: "wallet" }
   | { step: "pending"; hash: string }
+  /** Sent (it has a hash), but no receipt yet: the page keeps watching, and never offers to send again */
+  | { step: "unconfirmed"; hash: string; problem: string }
   | { step: "confirmed"; hash: string; block: number; gasUsed: string }
   | { step: "failed"; error: CallError };

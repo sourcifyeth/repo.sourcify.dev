@@ -105,3 +105,41 @@ describe("readFunction", () => {
     });
   });
 });
+
+describe("readFunction: different newest blocks", () => {
+  it("names the hosts of the gap, keeps each newest block, and sends no sender unless one is given", async () => {
+    const encoded = defaultAbiCoder.encode(["uint256"], [7]);
+    const bodies: Array<{ method: string; params: unknown[] }> = [];
+    const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const { id, method, params } = JSON.parse(String(init?.body));
+      bodies.push({ method, params });
+      const ahead = String(input) === A.url;
+      const body =
+        method === "eth_blockNumber"
+          ? { result: ahead ? "0x20" : "0x10" }
+          : method === "eth_getBlockByNumber"
+            ? { result: { timestamp: `0x${(1_000).toString(16)}` } }
+            : { result: encoded };
+      return new Response(JSON.stringify({ jsonrpc: "2.0", id, ...body }));
+    }) as typeof fetch;
+    const outcome = await readFunction(balanceOf, [owner], ctx, [A, B], undefined, {
+      fetchImpl,
+      now: () => 1_300_000,
+    });
+    expect(outcome.status).toBe("success");
+    if (outcome.status !== "success") return;
+    expect(outcome.block).toBe(16);
+    expect(outcome.sources.map((source) => source.head)).toEqual([32, 16]);
+    expect(outcome.gap).toEqual({
+      behind: "b.example.org",
+      ahead: "a.example.com",
+      behindHead: 16,
+      aheadHead: 32,
+      blocks: 16,
+      ageSeconds: 300,
+      large: true,
+    });
+    const call = bodies.find((body) => body.method === "eth_call");
+    expect(call?.params[0]).not.toHaveProperty("from");
+  });
+});

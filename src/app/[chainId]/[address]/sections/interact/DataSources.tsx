@@ -3,15 +3,17 @@
 import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
 import { IoCheckmarkCircle, IoChevronDown, IoServerOutline, IoWarning } from "react-icons/io5";
 import CopyToClipboard from "@/components/CopyToClipboard";
-import { groupDigits, shortHex } from "@/utils/interact/abi";
+import { groupDigits } from "@/utils/interact/abi";
 import { type ChainRpcs, type Tracking, isAllowedRpcUrl } from "@/utils/interact/chainRpcs";
-import type { RpcEndpoint, SourceResult } from "@/utils/interact/types";
-import { jsonRpc } from "@/utils/interact/rpcRead";
+import type { ReadGap, RpcEndpoint, SourceResult } from "@/utils/interact/types";
+import { formatAge, jsonRpc } from "@/utils/interact/rpcRead";
 import { buttonQuiet, buttonSecondary, buttonSmall, inputBorder, inputClass } from "./ui";
 
 /* ------------------------------------------------------------------ state */
 
 interface SourcesContextValue {
+  /** The chain of the contract, from the page: known even when the list failed to load */
+  chainId: string;
   /** "loading" until the list of public RPC endpoints has arrived from /api/chain-rpcs */
   status: "loading" | "ready" | "failed";
   /** The Chainlist data of the chain: name, currency, explorers (for "add chain" and explorer links) */
@@ -26,7 +28,7 @@ interface SourcesContextValue {
   replace: (id: string) => RpcEndpoint[] | null;
   /**
    * Marks endpoints as failed for this visit and swaps them for working ones. Returns the new selection,
-   * or null if no other endpoint is left.
+   * or null if no other endpoint is left. The swap lasts for this visit only: it is not saved as the user's choice.
    */
   replaceFailed: (ids: string[]) => RpcEndpoint[] | null;
   isOpen: boolean;
@@ -80,6 +82,8 @@ export function SourcesProvider({ chainId, children }: { chainId: string; childr
   const [status, setStatus] = useState<SourcesContextValue["status"]>("loading");
   // null: the defaults of the list (the best two endpoints from different providers)
   const [picked, setPicked] = useState<string[] | null>(null);
+  // An automatic swap after a failure, for this visit only; a pick of the user replaces it
+  const [swapped, setSwapped] = useState<string[] | null>(null);
   const [customUrl, setCustomUrl] = useState<string | null>(null);
   const [isOpen, setOpen] = useState(false);
   // Endpoints that failed in this visit: never picked again by "Try another RPC" or by the automatic swap
@@ -132,12 +136,14 @@ export function SourcesProvider({ chainId, children }: { chainId: string; childr
   }, [chain, customUrl]);
 
   const selected = useMemo(() => {
-    const ids = picked ?? chain?.defaults ?? [];
+    const ids = swapped ?? picked ?? chain?.defaults ?? [];
     return ids.flatMap((id) => available.find((endpoint) => endpoint.id === id) ?? []).slice(0, 2);
-  }, [picked, chain, available]);
+  }, [swapped, picked, chain, available]);
 
+  // The user's own choice: saved in this browser for the chain
   const choose = useCallback(
     (ids: string[], custom: string | null) => {
+      setSwapped(null);
       setPicked(ids);
       setCustomUrl(custom);
       saveChoice(chainId, ids, custom);
@@ -189,13 +195,11 @@ export function SourcesProvider({ chainId, children }: { chainId: string; childr
         return next;
       });
       if (!changed) return null;
-      choose(
-        result.map((endpoint) => endpoint.id),
-        customUrl
-      );
+      // In memory only: one timeout or rate limit must not pin this browser to another pair for good
+      setSwapped(result.map((endpoint) => endpoint.id));
       return result;
     },
-    [selected, nextCandidate, choose, customUrl]
+    [selected, nextCandidate]
   );
 
   const replace = useCallback((id: string) => replaceFailed([id]), [replaceFailed]);
@@ -207,6 +211,7 @@ export function SourcesProvider({ chainId, children }: { chainId: string; childr
 
   const value = useMemo(
     () => ({
+      chainId,
       status,
       chain,
       available,
@@ -220,7 +225,7 @@ export function SourcesProvider({ chainId, children }: { chainId: string; childr
       show,
       controlRef,
     }),
-    [status, chain, available, selected, toggle, setCustom, replace, replaceFailed, isOpen, show]
+    [chainId, status, chain, available, selected, toggle, setCustom, replace, replaceFailed, isOpen, show]
   );
   return <SourcesContext.Provider value={value}>{children}</SourcesContext.Provider>;
 }
@@ -251,8 +256,8 @@ function TrackingLabel({ tracking }: { tracking: Tracking }) {
  * the whole section. Closed, it is one line with the two host names.
  */
 export function DataSources({ compact = false }: { compact?: boolean }) {
-  const { status, chain, available, selected, toggle, setCustom, isOpen, setOpen, controlRef } = useSources();
-  const chainId = String(chain?.chainId ?? "");
+  // The chain id comes from the page, so a custom URL can be checked when the list did not load
+  const { chainId, status, chain, available, selected, toggle, setCustom, isOpen, setOpen, controlRef } = useSources();
   const panelId = useId();
   const customId = useId();
   const [customText, setCustomText] = useState("");
@@ -492,6 +497,11 @@ function SourceDetails({ sources }: { sources: SourceResult[] }) {
             <span className={`h-2 w-2 shrink-0 rounded-full ${source.ok ? "bg-green-500" : "bg-red-500"}`} />
             <span className="min-w-0 break-all font-mono text-gray-900">{source.endpoint.url}</span>
             <TrackingLabel tracking={source.endpoint.tracking} />
+            {source.head !== undefined && (
+              <span className="text-gray-500">
+                newest block <span className="font-mono">{groupDigits(String(source.head))}</span>
+              </span>
+            )}
             <span className="ml-auto tabular-nums text-gray-500">{groupDigits(String(source.ms))} ms</span>
           </div>
           {source.ok && source.raw ? (
@@ -519,11 +529,14 @@ export function Provenance({
   check,
   sources,
   block,
+  gap,
   onTryAnother,
 }: {
   check: "agree" | "mismatch" | "single" | "one-failed";
   sources: SourceResult[];
   block?: number;
+  /** The two endpoints were at different blocks: the note says so */
+  gap?: ReadGap;
   /** Swaps the given endpoint for another one and calls again. Not given if there is no other endpoint. */
   onTryAnother?: (endpointId: string) => void;
 }) {
@@ -566,6 +579,7 @@ export function Provenance({
         </button>
       </div>
 
+      {gap && block !== undefined && <GapNote gap={gap} block={block} />}
       {check === "one-failed" && failedSource && (
         <p className="text-yellow-900">
           <span className="font-mono text-[13px]">{failedSource.endpoint.host}</span> gave no answer:{" "}
@@ -621,4 +635,25 @@ export function SourcesFailed({ sources, onRetry }: { sources: SourceResult[]; o
   );
 }
 
-export const shortRaw = (raw: string) => shortHex(raw, 10, 8);
+/**
+ * The two endpoints were at different newest blocks, so the value is from the lower block. Any gap shows:
+ * a quiet grey note for a small gap, an amber warning for a large one (an old block, see rpcRead.ts).
+ */
+export function GapNote({ gap, block, className = "" }: { gap: ReadGap; block: number; className?: string }) {
+  return (
+    <p
+      className={`flex items-start gap-1.5 text-sm leading-5 ${gap.large ? "text-amber-800" : "text-gray-500"} ${className}`}
+    >
+      {gap.large && <IoWarning className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />}
+      <span>
+        <span className="font-mono text-[13px]">{gap.ahead}</span> is at block{" "}
+        <span className="font-mono text-[13px]">{groupDigits(String(gap.aheadHead))}</span>,{" "}
+        <span className="font-mono text-[13px]">{gap.behind}</span> at block{" "}
+        <span className="font-mono text-[13px]">{groupDigits(String(gap.behindHead))}</span> (
+        {groupDigits(String(gap.blocks))} {gap.blocks === 1 ? "block" : "blocks"} behind). This value is from block{" "}
+        <span className="font-mono text-[13px]">{groupDigits(String(block))}</span>
+        {gap.ageSeconds !== undefined && <>, {formatAge(gap.ageSeconds)} old</>}.
+      </span>
+    </p>
+  );
+}

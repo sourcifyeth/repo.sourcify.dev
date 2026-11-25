@@ -17,9 +17,12 @@ export const ADMIN_SLOTS = [
 
 const found = new Map<string, Promise<string | null>>();
 
+/** No endpoint answered: the lookup gave no answer at all (not "no admin"). */
+const NO_ANSWER = Symbol("no answer");
+
 /**
- * The admin address of the proxy, or null if no known slot holds one. Asks the given endpoints in turn;
- * the answer is kept for the visit.
+ * The admin address of the proxy, or null if no known slot holds one. Asks the given endpoints in turn.
+ * An answer, also "no admin", is kept for the visit; only a lookup that no endpoint answered is tried again.
  */
 export function proxyAdmin(
   chainId: string,
@@ -30,7 +33,7 @@ export function proxyAdmin(
   const key = `${chainId}:${proxy.toLowerCase()}`;
   const cached = found.get(key);
   if (cached) return cached;
-  const lookup = (async () => {
+  const answer = (async (): Promise<string | null | typeof NO_ANSWER> => {
     for (const url of urls) {
       try {
         for (const slot of ADMIN_SLOTS) {
@@ -43,11 +46,12 @@ export function proxyAdmin(
         // Try the next endpoint
       }
     }
-    return null;
+    return NO_ANSWER;
   })();
+  // No endpoint answered: forget it, so that the next read tries again
+  answer.then((result) => result === NO_ANSWER && found.delete(key));
+  const lookup = answer.then((result) => (result === NO_ANSWER ? null : result));
   found.set(key, lookup);
-  // A failed lookup (all endpoints down) may be tried again later
-  lookup.then((admin) => admin === null && found.delete(key));
   return lookup;
 }
 

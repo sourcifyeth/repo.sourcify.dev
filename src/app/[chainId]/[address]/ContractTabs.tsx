@@ -36,9 +36,8 @@ export default function ContractTabs({
       if (next === "read-write") setReadWriteOpened(true);
       const path = next === "read-write" ? `${base}/read-write` : base;
       if (push && window.location.pathname !== path) {
-        // Keep ?fn= on the Read/Write tab; drop the hash, which belongs to the Code tab (#file=…)
-        const search = next === "read-write" ? window.location.search : "";
-        window.history.pushState(null, "", `${path}${search}`);
+        // Drop the query and the hash: the hash belongs to the Code tab (#file=…)
+        window.history.pushState(null, "", path);
       }
     },
     [base]
