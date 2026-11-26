@@ -1,5 +1,6 @@
 "use client";
 
+import { copyText } from "@/utils/clipboard";
 import { FileNode } from "@/types/codeEditor";
 import { SourceViewData } from "@/types/contract";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
@@ -572,7 +573,7 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
         return uri;
       },
       copyText: (text) => {
-        navigator.clipboard.writeText(text).catch((error) => console.error("Failed to copy:", error));
+        copyText(text).then((ok) => ok || console.error("Failed to copy"));
       },
     };
   });
@@ -774,11 +775,7 @@ export default function ContractSourceV2({ contract }: ContractSourceProps) {
         anchorLineRef.current = lines.start;
         const next = { file: path, lines };
         setLocation(next);
-        try {
-          await navigator.clipboard.writeText(linkFor(next));
-        } catch (error) {
-          console.error("Failed to copy:", error);
-        }
+        if (!(await copyText(linkFor(next)))) console.error("Failed to copy");
       },
     });
 

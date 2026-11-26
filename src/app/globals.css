@@ -154,6 +154,12 @@
 .page-section {
   scroll-margin-top: calc(var(--sticky-banner-height) + var(--section-nav-height) + 8px);
 }
+/* From 1280 px the section list is a sidebar (see SectionNav), not a bar above the sections */
+@media (min-width: 80rem) {
+  .page-section {
+    scroll-margin-top: calc(var(--sticky-banner-height) + 16px);
+  }
+}
 
 /* Header links: a pink underline grows on hover, as on sourcify.dev (sourcify-ui index.css) */
 .link-underline {
