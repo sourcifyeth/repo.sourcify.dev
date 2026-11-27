@@ -2,7 +2,7 @@
 
 import type { EIP1193Provider } from "viem";
 import { copyText } from "@/utils/clipboard";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FiExternalLink } from "react-icons/fi";
 import { IoCheckmarkCircle, IoRefresh } from "react-icons/io5";
 import CopyToClipboard from "@/components/CopyToClipboard";
@@ -18,6 +18,8 @@ import {
   scaleDecimal,
   shiftDecimal,
 } from "@/utils/interact/abi";
+import { crossCheck } from "@/utils/interact/clearSigning/crossCheck";
+import { sdkBuildCalldata } from "@/utils/interact/clearSigning/registry";
 import { decodeRevert } from "@/utils/interact/decode";
 import { proxyAdmin } from "@/utils/interact/proxyAdmin";
 import { readFunction } from "@/utils/interact/read";
@@ -31,9 +33,12 @@ import {
   watchTransaction,
 } from "@/utils/interact/wallet";
 import { GapNote, Provenance, SourcesFailed, useSources } from "./DataSources";
+import DescriptorForm from "./DescriptorForm";
 import ParamField, { Field } from "./ParamField";
 import { ErrorBox, RawData, ValueTree } from "./ResultView";
-import { SafetyLine, useWallet } from "./Wallet";
+import type { ClearSigning } from "./useClearSigning";
+import WalletPreview from "./WalletPreview";
+import { useWallet } from "./Wallet";
 import {
   Spinner,
   buttonGhost,
@@ -51,13 +56,23 @@ interface FunctionPanelProps {
   ctx: CallContext;
   /** Read at once, without a click on the read button: for an opened read function that has no inputs (decision D5) */
   autoRead?: boolean;
+  /** Set if the contract's ERC-7730 descriptor (or a token template) describes this function */
+  clear?: ClearSigning;
+  /**
+   * Which form the user wants for a function with a descriptor. The switch is in the card, on the line of
+   * the selector and "Show Docs" (see Row in FunctionList). Both forms edit the same values.
+   */
+  wantedForm: FormKind;
+  onFormChange: (form: FormKind) => void;
 }
+
+export type FormKind = "clear" | "abi";
 
 const ETH_UNITS = { wei: 0, gwei: 9, ether: 18 } as const;
 type EthUnit = keyof typeof ETH_UNITS;
 
 /** The form, the action buttons and the result of one function. */
-export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps) {
+export default function FunctionPanel({ fn, ctx, autoRead, clear, wantedForm, onFormChange }: FunctionPanelProps) {
   const sources = useSources();
   const wallet = useWallet();
   const [copied, setCopied] = useState<"done" | "failed" | null>(null);
@@ -70,6 +85,8 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
   const [tx, setTx] = useState<TxState>({ step: "idle" });
   // The admin address that the last read used as sender, for a proxy's own function (see utils/interact/proxyAdmin.ts)
   const [readAs, setReadAs] = useState<string | null>(null);
+  // A function with a descriptor shows its clear signing form first
+  const formKind: FormKind = clear ? wantedForm : "abi";
   const isProxyOwn = fn.source === "own" && !!ctx.implementation;
 
   const read = isRead(fn);
@@ -78,9 +95,19 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
   const wei = ethText.trim() === "" ? "0" : scaleDecimal(ethText, ETH_UNITS[ethUnit]);
   const valueError = wei === null || wei.startsWith("-");
   // The value in the chain's own currency (ETH on Ethereum), not in wei
-  const nativeAmount = `${shiftDecimal(wei ?? "0", 18)} ${sources.chain?.nativeCurrency?.symbol ?? "ETH"}`;
+  const nativeSymbol = sources.chain?.nativeCurrency?.symbol ?? "ETH";
+  const nativeAmount = `${shiftDecimal(wei ?? "0", 18)} ${nativeSymbol}`;
   const ready = check.missing === 0 && check.invalid === 0 && !valueError;
   const calldata = ready ? encodeCall(fn, values) : null;
+  // The clear signing form sends only if the SDK's encoder gives the same bytes as viem (see crossCheck.ts)
+  const encoders = useMemo(
+    () =>
+      clear && formKind === "clear" && calldata
+        ? crossCheck(clear.link.model, clear.link.inputs, fn.inputs, values, calldata, sdkBuildCalldata)
+        : null,
+    [clear, formKind, calldata, fn.inputs, values]
+  );
+  const encodersDisagree = encoders !== null && !encoders.ok;
   // An unconfirmed transaction counts as busy: Write stays off, so that the same transaction is not sent twice
   const busy = loading || tx.step === "wallet" || tx.step === "pending" || tx.step === "unconfirmed";
   // A struct or list result, and the two answers of a mismatch, may use the full width; everything else keeps the form's right edge
@@ -237,67 +264,110 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
 
   const noSource = read && sources.status !== "loading" && sources.selected.length === 0;
 
+  // The native value of a payable function, on a blue band: it is money that leaves the wallet, not an argument.
+  // The clear signing form shows it with the descriptor's label.
+  const valueField = (label = `Send native ${nativeSymbol}`) => (
+    <div className="rounded-md bg-cerulean-blue-100 px-3 py-2.5">
+      <Field htmlFor={`${fn.id}-value`} name={label} type="payable">
+        <div className="flex gap-2">
+          <input
+            id={`${fn.id}-value`}
+            type="text"
+            inputMode="decimal"
+            autoComplete="off"
+            value={ethText}
+            placeholder="0"
+            aria-invalid={valueError}
+            onChange={(e) => setEthText(e.target.value)}
+            className={`${inputClass} ${valueError ? "border-red-400" : "border-gray-300"}`}
+          />
+          <select
+            aria-label="Unit of the value"
+            value={ethUnit}
+            onChange={(e) => setEthUnit(e.target.value as EthUnit)}
+            className={`${selectClass} w-[5.75rem]`}
+          >
+            {Object.keys(ETH_UNITS).map((unit) => (
+              <option key={unit}>{unit}</option>
+            ))}
+          </select>
+        </div>
+        {valueError ? (
+          <p className="mt-1 text-sm leading-5 text-red-700">
+            {ethUnit === "wei"
+              ? "Enter a whole number of wei."
+              : `Enter a positive amount with at most ${ETH_UNITS[ethUnit]} decimal places.`}
+          </p>
+        ) : (
+          ethText.trim() !== "" && (
+            <p className="mt-1 text-sm leading-5 text-gray-500">
+              Sent value: <span className="break-all font-mono">{nativeAmount}</span>
+            </p>
+          )
+        )}
+      </Field>
+    </div>
+  );
+
   return (
-    <div className="flex min-w-0 flex-col gap-6 *:max-w-4xl">
+    // One width (42rem) for the whole open function: the docs (see Row in FunctionList), the form, the preview
+    // and the result. It keeps the left and right edges in line.
+    <div className="flex min-w-0 flex-col gap-6 *:max-w-2xl">
       <form
-        className="flex max-w-none! flex-col gap-5 *:max-w-4xl"
+        className="flex flex-col gap-5"
         onSubmit={(e) => {
           e.preventDefault();
-          if (!ready || busy) return;
+          if (!ready || busy || encodersDisagree) return;
           if (read) call();
           else send();
         }}
       >
-        {fn.inputs.map((input, index) => (
-          <ParamField
-            key={index}
-            param={input}
-            value={values[index]}
-            onChange={(next) => setValues((current) => current.map((value, i) => (i === index ? next : value)))}
-            doc={fn.paramDocs[input.name]}
-            fallbackName={`input ${index}`}
-          />
-        ))}
+        {/* What the function does, in the words of its ERC-7730 descriptor: the heading of the form */}
+        {clear?.link.intent && (
+          <p className="pt-2 text-lg leading-7 text-gray-900">
+            <span className="text-gray-500">Action:</span> <span className="font-semibold">{clear.link.intent}</span>
+          </p>
+        )}
 
-        {payable && (
-          <Field htmlFor={`${fn.id}-value`} name="Value to send" type="payable">
-            <div className="flex gap-2">
-              <input
-                id={`${fn.id}-value`}
-                type="text"
-                inputMode="decimal"
-                autoComplete="off"
-                value={ethText}
-                placeholder="0"
-                aria-invalid={valueError}
-                onChange={(e) => setEthText(e.target.value)}
-                className={`${inputClass} ${valueError ? "border-red-400" : "border-gray-300"}`}
-              />
-              <select
-                aria-label="Unit of the value"
-                value={ethUnit}
-                onChange={(e) => setEthUnit(e.target.value as EthUnit)}
-                className={`${selectClass} w-[5.75rem]`}
-              >
-                {Object.keys(ETH_UNITS).map((unit) => (
-                  <option key={unit}>{unit}</option>
-                ))}
-              </select>
-            </div>
-            {valueError ? (
-              <p className="mt-1 text-sm leading-5 text-red-700">
-                {ethUnit === "wei"
-                  ? "Enter a whole number of wei."
-                  : `Enter a positive amount with at most ${ETH_UNITS[ethUnit]} decimal places.`}
-              </p>
-            ) : (
-              ethText.trim() !== "" && (
-                <p className="mt-1 text-sm leading-5 text-gray-500">
-                  Sent value: <span className="break-all font-mono">{nativeAmount}</span>
-                </p>
-              )
+        {/* The inputs. The clear signing form has a "Fields" title in the style of the "Action:" label, with a
+            line under it over the full width. The ABI form has no title. */}
+        {(fn.inputs.length > 0 || payable) && (
+          // After an Action line, the title is pulled up a little: the gaps above "Action:", above "Fields" and
+          // above the first field are then the same (16 px)
+          <div className={`min-w-0 ${clear?.link.intent && formKind === "clear" ? "-mt-1" : ""}`}>
+            {clear && formKind === "clear" && (
+              <p className="mb-4 border-b border-gray-300 pb-1.5 text-lg leading-7 text-gray-500">Fields</p>
             )}
-          </Field>
+            <div className="flex min-w-0 flex-col gap-5">
+              {clear && formKind === "clear" ? (
+                <DescriptorForm
+                  link={clear.link}
+                  source={clear.source}
+                  fn={fn}
+                  ctx={ctx}
+                  values={values}
+                  setValues={setValues}
+                  valueField={valueField}
+                />
+              ) : (
+                <>
+                  {fn.inputs.map((input, index) => (
+                    <ParamField
+                      key={index}
+                      param={input}
+                      value={values[index]}
+                      onChange={(next) =>
+                        setValues((current) => current.map((value, i) => (i === index ? next : value)))
+                      }
+                      doc={fn.paramDocs[input.name]}
+                      fallbackName={`input ${index}`}
+                    />
+                  ))}
+                  {payable && valueField()}
+                </>
+              )}
+            </div>
+          </div>
         )}
 
         {/* Writes: what the wallet will get, before the user sends it */}
@@ -341,6 +411,32 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
                 </dd>
               </div>
             </dl>
+            {clear && (
+              <WalletPreview
+                tx={{
+                  chainId: Number(ctx.chainId),
+                  to: ctx.address,
+                  data: calldata,
+                  value: BigInt(wei ?? "0"),
+                  from: wallet.connection?.account,
+                }}
+                standard={clear.standard}
+              />
+            )}
+          </div>
+        )}
+
+        {encodersDisagree && (
+          <div role="alert" className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">
+            <p className="font-medium">The two encoders disagree, so Write is off for this form.</p>
+            <p className="mt-0.5">
+              The page builds the calldata two times: with viem from the verified ABI, and with the clear signing SDK
+              from the descriptor. For these values {encoders && !encoders.ok ? encoders.detail : "they differ"}. Use
+              the ABI form to continue.
+            </p>
+            <button type="button" className={`${buttonSmall} mt-2`} onClick={() => onFormChange("abi")}>
+              Switch to the ABI form
+            </button>
           </div>
         )}
 
@@ -357,25 +453,23 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
                     : "Read"}
             </button>
           ) : !wallet.connection ? (
-            // One place to connect: the wallet button at the top right of the section
-            <>
-              <button
-                type="button"
-                className={buttonPrimary}
-                disabled
-                data-tooltip-id="global-tooltip"
-                data-tooltip-content="Connect a wallet at the top right of this section to write"
-              >
-                Write
+            // One place to connect: the wallet button at the top right of the list. Here the button only says
+            // what is missing. It is disabled, so its tooltip is on the wrapper.
+            <span
+              className="inline-flex"
+              data-tooltip-id="global-tooltip"
+              data-tooltip-content="Connect a wallet at the top right of the list to write"
+            >
+              <button type="button" className={buttonPrimary} disabled>
+                Connect wallet
               </button>
-              <span className="text-sm text-gray-500">Connect a wallet at the top right to write.</span>
-            </>
+            </span>
           ) : !wallet.ready ? (
             <button type="button" className={buttonPrimary} onClick={wallet.switchChain}>
               Switch to {plainChainName(ctx.chainName)}
             </button>
           ) : (
-            <button type="submit" className={buttonPrimary} disabled={!ready || busy}>
+            <button type="submit" className={buttonPrimary} disabled={!ready || busy || encodersDisagree}>
               {busy && <Spinner className="h-3.5 w-3.5" />}
               {tx.step === "wallet"
                 ? "Confirm in your wallet…"
@@ -412,11 +506,6 @@ export default function FunctionPanel({ fn, ctx, autoRead }: FunctionPanelProps)
           )}
         </div>
 
-        {!read && (
-          <div className="-mt-3">
-            <SafetyLine />
-          </div>
-        )}
         {noSource && (
           <div className="rounded-md border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-900">
             <p className="font-medium">No data source for {plainChainName(ctx.chainName)}.</p>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { IoAdd, IoClipboardOutline, IoCodeSlash, IoTrashOutline } from "react-icons/io5";
+import { IoAdd, IoChevronForward, IoClipboardOutline, IoCodeSlash, IoTrashOutline } from "react-icons/io5";
 import {
   AbiParam,
   FormValue,
@@ -22,7 +22,7 @@ import { NatSpecNote } from "./FunctionRow";
 import { useWallet } from "./Wallet";
 import { buttonQuiet, buttonSmall, inputBorder, inputClass, selectClass, textareaClass } from "./ui";
 
-interface FieldProps {
+export interface FieldProps {
   param: AbiParam;
   value: FormValue;
   onChange: (value: FormValue) => void;
@@ -31,9 +31,22 @@ interface FieldProps {
   /** Shown if the parameter has no name, e.g. "input 0" or "item 2" */
   fallbackName?: string;
   depth?: number;
+  /** Shown in place of the parameter's name: the label of a clear signing descriptor */
+  label?: string;
+  /** The name in the verified ABI, shown next to a descriptor's label when the two differ */
+  paramName?: string;
+  /** For a struct or a list: a control at the end of its title bar (the "remove this item" button of a list) */
+  groupAction?: React.ReactNode;
+  /**
+   * For a clear signing form: draws a single value inside this struct or list in another way (see DescriptorForm).
+   * `at` says where the value is, from the input that got this prop: "[].1" is field 1 of each list element.
+   * If it returns undefined, the value gets its normal field.
+   */
+  renderLeaf?: (at: string, props: FieldProps) => React.ReactNode | undefined;
+  at?: string;
 }
 
-function FieldError({ id, message }: { id: string; message: string | null }) {
+export function FieldError({ id, message }: { id: string; message: string | null }) {
   if (!message) return null;
   return (
     <p id={id} className="mt-1 text-sm leading-5 text-red-700">
@@ -42,39 +55,49 @@ function FieldError({ id, message }: { id: string; message: string | null }) {
   );
 }
 
-function Hint({ children }: { children: React.ReactNode }) {
+export function Hint({ children }: { children: React.ReactNode }) {
   return <p className="mt-1 text-sm leading-5 text-gray-500">{children}</p>;
 }
 
 /**
- * A label, its control and the @param note of the input. The label sits above the control, and the note
- * sits under it, so both have the full width.
+ * A label, its control and the @param note of the input. The label sits above the control, with the small
+ * grey detail next to it (the name in the verified ABI if it differs, "payable"). The note sits under the
+ * control. The open function has one width for all of its content (42rem, see FunctionPanel), so a control and
+ * its note are as wide as the struct bars and the result.
+ * A text control shows the type as its placeholder (`typeInInput`); for other controls (a switch, a select,
+ * a date) the type is part of the detail.
  */
 export function Field({
   htmlFor,
   name,
+  paramName,
   type,
+  typeInInput = false,
   doc,
   children,
 }: {
   htmlFor?: string;
   name: string;
+  /** The name in the verified ABI, if it differs from `name` */
+  paramName?: string;
   type: string;
+  /** True if the control shows the type as its placeholder */
+  typeInInput?: boolean;
   doc?: string;
   children: React.ReactNode;
 }) {
-  const label = (
-    <label htmlFor={htmlFor} className="break-words text-sm leading-5 text-gray-800">
-      <span className="font-medium">{name}</span>
-      <span className="ml-1.5 inline-block whitespace-nowrap font-mono text-xs text-gray-500">{type}</span>
-    </label>
-  );
-  const note = doc ? <NatSpecNote kind="param" text={doc} className="mt-1" /> : null;
+  const detail = [paramName, typeInInput ? null : type].filter(Boolean).join(" · ");
   return (
     <div className="min-w-0">
-      <div className="mb-1 min-w-0">{label}</div>
-      {children}
-      {note}
+      <label
+        htmlFor={htmlFor}
+        className="mb-1 flex min-w-0 flex-wrap items-baseline gap-x-1.5 break-words text-sm leading-5 text-gray-800"
+      >
+        <span className="font-medium">{name}</span>
+        {detail && <span className="font-mono text-xs text-gray-500">{detail}</span>}
+      </label>
+      <div className="min-w-0">{children}</div>
+      {doc && <NatSpecNote kind="param" text={doc} className="mt-1" />}
     </div>
   );
 }
@@ -82,7 +105,7 @@ export function Field({
 /* --------------------------------------------------------------- integers */
 
 /** An integer as decimal text: hex text (0x10) becomes 16. Text that is not a number stays as it is. */
-function decimalOf(text: string): string {
+export function decimalOf(text: string): string {
   const trimmed = text.trim();
   const negative = trimmed.startsWith("-");
   try {
@@ -135,7 +158,7 @@ function IntegerInput({ param, value, onChange, id, errorId }: FieldProps & { id
             autoComplete="off"
             spellCheck={false}
             value={text}
-            placeholder={isEnum ? "0" : exp > 0 ? "1.5" : "0"}
+            placeholder={displayTypeWithBase(param)}
             aria-invalid={!!error}
             aria-describedby={error ? errorId : undefined}
             onChange={(e) => {
@@ -196,11 +219,11 @@ function IntegerInput({ param, value, onChange, id, errorId }: FieldProps & { id
 
 /* ------------------------------------------------------------ single value */
 
-function LeafField({ param, value, onChange, doc, fallbackName }: FieldProps) {
+export function LeafField({ param, value, onChange, doc, fallbackName, label, paramName }: FieldProps) {
   const id = useId();
   const errorId = `${id}-error`;
   const { connection } = useWallet();
-  const name = param.name || fallbackName || "value";
+  const name = label || param.name || fallbackName || "value";
   const text = typeof value === "string" ? value : "";
   const error = leafError(param.type, value);
   const describedBy = error ? errorId : undefined;
@@ -208,7 +231,7 @@ function LeafField({ param, value, onChange, doc, fallbackName }: FieldProps) {
   if (param.type === "bool") {
     const checked = value === true;
     return (
-      <Field name={name} type="bool" doc={doc}>
+      <Field name={name} paramName={paramName} type="bool" doc={doc}>
         <div className="flex h-8 items-center">
           <button
             type="button"
@@ -234,7 +257,7 @@ function LeafField({ param, value, onChange, doc, fallbackName }: FieldProps) {
 
   if (/^u?int\d*$/.test(param.type)) {
     return (
-      <Field htmlFor={id} name={name} type={displayTypeWithBase(param)} doc={doc}>
+      <Field htmlFor={id} name={name} paramName={paramName} type={displayTypeWithBase(param)} typeInInput doc={doc}>
         <IntegerInput param={param} value={value} onChange={onChange} id={id} errorId={errorId} />
       </Field>
     );
@@ -242,7 +265,7 @@ function LeafField({ param, value, onChange, doc, fallbackName }: FieldProps) {
 
   if (param.type === "address") {
     return (
-      <Field htmlFor={id} name={name} type={displayTypeWithBase(param)} doc={doc}>
+      <Field htmlFor={id} name={name} paramName={paramName} type={displayTypeWithBase(param)} typeInInput doc={doc}>
         <div className="relative">
           <input
             id={id}
@@ -250,7 +273,7 @@ function LeafField({ param, value, onChange, doc, fallbackName }: FieldProps) {
             autoComplete="off"
             spellCheck={false}
             value={text}
-            placeholder="0x…"
+            placeholder={displayTypeWithBase(param)}
             aria-invalid={!!error}
             aria-describedby={describedBy}
             onChange={(e) => onChange(e.target.value.trim())}
@@ -296,13 +319,13 @@ function LeafField({ param, value, onChange, doc, fallbackName }: FieldProps) {
     const isBytes = param.type === "bytes";
     const byteCount = isBytes && !error && text.startsWith("0x") ? (text.length - 2) / 2 : null;
     return (
-      <Field htmlFor={id} name={name} type={param.type} doc={doc}>
+      <Field htmlFor={id} name={name} paramName={paramName} type={param.type} typeInInput doc={doc}>
         <textarea
           id={id}
           rows={text.length > 60 ? 3 : 1}
           spellCheck={false}
           value={text}
-          placeholder={isBytes ? "0x… (empty: no data, 0x)" : "text"}
+          placeholder={isBytes ? "bytes (empty: no data, 0x)" : "string"}
           aria-invalid={!!error}
           aria-describedby={describedBy}
           onChange={(e) => onChange(isBytes ? e.target.value.trim() : e.target.value)}
@@ -321,14 +344,14 @@ function LeafField({ param, value, onChange, doc, fallbackName }: FieldProps) {
   // bytesN and any other type
   const fixedBytes = /^bytes(\d+)$/.exec(param.type);
   return (
-    <Field htmlFor={id} name={name} type={param.type} doc={doc}>
+    <Field htmlFor={id} name={name} paramName={paramName} type={param.type} typeInInput doc={doc}>
       <input
         id={id}
         type="text"
         autoComplete="off"
         spellCheck={false}
         value={text}
-        placeholder={fixedBytes ? `0x + ${Number(fixedBytes[1]) * 2} hex characters` : ""}
+        placeholder={fixedBytes ? `${param.type} (0x + ${Number(fixedBytes[1]) * 2} hex characters)` : param.type}
         aria-invalid={!!error}
         aria-describedby={describedBy}
         onChange={(e) => onChange(e.target.value.trim())}
@@ -340,7 +363,7 @@ function LeafField({ param, value, onChange, doc, fallbackName }: FieldProps) {
 }
 
 /** `ItemType (uint8)` for an enum, `IERC20 (address)` for a contract type, else the plain type. */
-function displayTypeWithBase(param: AbiParam): string {
+export function displayTypeWithBase(param: AbiParam): string {
   const user = userTypeName(param);
   if (user && (user.kind === "enum" || user.kind === "contract")) return `${user.name} (${param.type})`;
   return param.type;
@@ -395,40 +418,80 @@ function JsonPaste({ param, value, onChange, onClose }: FieldProps & { onClose: 
 
 /* ------------------------------------------------------- tuples and arrays */
 
-const groupClass = (depth: number) =>
-  `min-w-0 rounded-md border border-gray-200 px-3 pb-3 pt-1 ${depth % 2 === 0 ? "bg-gray-50" : "bg-white"}`;
-
-function GroupLegend({
+/**
+ * A struct or a list: a title bar that opens and closes the fields under it. It starts closed, so a function
+ * with large structs stays short. The fields sit under the bar, behind a line on the left.
+ */
+function Group({
   name,
   type,
   detail,
-  jsonOpen,
-  onToggleJson,
+  action,
+  json,
+  children,
 }: {
   name: string;
   type: string;
   detail?: string;
-  jsonOpen: boolean;
-  onToggleJson: () => void;
+  /** A control at the end of the title bar */
+  action?: React.ReactNode;
+  /** The "paste as JSON" editor: `render` gets a function that closes it */
+  json: (close: () => void) => React.ReactNode;
+  children: React.ReactNode;
 }) {
+  const [open, setOpen] = useState(false);
+  const [jsonOpen, setJsonOpen] = useState(false);
+  const bodyId = useId();
   return (
-    <legend className="flex max-w-full flex-nowrap items-center gap-x-2 px-1 text-sm leading-6">
-      <span className="shrink-0 font-medium text-gray-800">{name}</span>
-      <span className="min-w-0 truncate font-mono text-xs text-gray-500">{type}</span>
-      {detail && <span className="hidden shrink-0 whitespace-nowrap text-xs text-gray-500 sm:inline">{detail}</span>}
-      <button type="button" className={buttonQuiet} aria-expanded={jsonOpen} onClick={onToggleJson}>
-        <IoCodeSlash className="h-3.5 w-3.5" />
-        JSON
-      </button>
-    </legend>
+    <div role="group" aria-label={name} className="min-w-0">
+      <div className="flex min-w-0 items-center gap-1 rounded-md bg-gray-200/70 pr-1.5 hover:bg-gray-200">
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={bodyId}
+          onClick={() => setOpen((current) => !current)}
+          className="flex min-h-9 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cerulean-blue-500"
+        >
+          <IoChevronForward
+            className={`h-4 w-4 shrink-0 text-gray-500 transition-transform ${open ? "rotate-90" : ""}`}
+            aria-hidden="true"
+          />
+          <span className="shrink-0 font-semibold text-gray-900">{name}</span>
+          <span className="min-w-0 truncate font-mono text-xs text-gray-600">{type}</span>
+          {detail && (
+            <span className="hidden shrink-0 whitespace-nowrap text-xs text-gray-500 sm:inline">{detail}</span>
+          )}
+        </button>
+        <button
+          type="button"
+          className={buttonQuiet}
+          aria-expanded={open && jsonOpen}
+          onClick={() => {
+            // The JSON editor is part of the fields: open the group with it
+            setJsonOpen(!(open && jsonOpen));
+            setOpen(true);
+          }}
+        >
+          <IoCodeSlash className="h-3.5 w-3.5" />
+          JSON
+        </button>
+        {action}
+      </div>
+      {open && (
+        <div id={bodyId} className="ml-[15px] border-l-2 border-gray-300 pb-1 pl-4 pt-3">
+          {jsonOpen && json(() => setJsonOpen(false))}
+          {children}
+        </div>
+      )}
+    </div>
   );
 }
 
 /** One input of a function: a single field, a struct (group of fields), or a list with add and remove. */
 export default function ParamField(props: FieldProps) {
-  const { param, value, onChange, doc, fallbackName, depth = 0 } = props;
-  const [jsonOpen, setJsonOpen] = useState(false);
-  const name = param.name || fallbackName || "value";
+  const { param, value, onChange, doc, fallbackName, depth = 0, label, renderLeaf, at = "", groupAction } = props;
+  const name = label || param.name || fallbackName || "value";
+  const inside = (step: string) => (at ? `${at}.${step}` : step);
   const array = arrayOf(param.type);
 
   if (array) {
@@ -436,25 +499,36 @@ export default function ParamField(props: FieldProps) {
     const element = elementParam(param);
     const isSimple = !arrayOf(element.type) && element.type !== "tuple";
     const setItem = (index: number, next: FormValue) => onChange(items.map((item, i) => (i === index ? next : item)));
+    // A single value has the button next to its input; a struct or a list has it in its title bar
+    const removeButton = (index: number, besideInput: boolean) => (
+      <button
+        type="button"
+        aria-label={`Remove ${name}[${index}]`}
+        data-tooltip-id="global-tooltip"
+        data-tooltip-content="Remove this item"
+        onClick={() => onChange(items.filter((_, i) => i !== index))}
+        className={`${besideInput ? "mt-[26px]" : ""} shrink-0 cursor-pointer rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cerulean-blue-500`}
+      >
+        <IoTrashOutline className="h-4 w-4" />
+      </button>
+    );
     return (
-      <fieldset className={groupClass(depth)}>
-        <GroupLegend
-          name={name}
-          type={displayType(param)}
-          detail={
-            array.length !== null
-              ? `fixed list of ${array.length}`
-              : `${items.length} ${items.length === 1 ? "item" : "items"}`
-          }
-          jsonOpen={jsonOpen}
-          onToggleJson={() => setJsonOpen((open) => !open)}
-        />
+      <Group
+        name={name}
+        type={displayType(param)}
+        detail={
+          array.length !== null
+            ? `fixed list of ${array.length}`
+            : `${items.length} ${items.length === 1 ? "item" : "items"}`
+        }
+        action={groupAction}
+        json={(close) => <JsonPaste {...props} onClose={close} />}
+      >
         {doc && <NatSpecNote kind="param" text={doc} className="mb-3" />}
-        {jsonOpen && <JsonPaste {...props} onClose={() => setJsonOpen(false)} />}
         {items.length === 0 && <p className="mb-2 text-sm text-gray-500">The list is empty. That is a valid value.</p>}
         <ol className="space-y-4">
           {items.map((item, index) => (
-            <li key={index} className={isSimple ? "flex items-start gap-2" : "relative"}>
+            <li key={index} className={isSimple ? "flex items-start gap-2" : undefined}>
               <div className="min-w-0 flex-1">
                 <ParamField
                   param={element}
@@ -462,24 +536,12 @@ export default function ParamField(props: FieldProps) {
                   onChange={(next) => setItem(index, next)}
                   fallbackName={`${name}[${index}]`}
                   depth={depth + 1}
+                  renderLeaf={renderLeaf}
+                  at={inside("[]")}
+                  groupAction={isSimple || array.length !== null ? undefined : removeButton(index, false)}
                 />
               </div>
-              {array.length === null && (
-                <button
-                  type="button"
-                  aria-label={`Remove ${name}[${index}]`}
-                  data-tooltip-id="global-tooltip"
-                  data-tooltip-content="Remove this item"
-                  onClick={() => onChange(items.filter((_, i) => i !== index))}
-                  className={
-                    isSimple
-                      ? `mt-[26px] shrink-0 cursor-pointer rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cerulean-blue-500`
-                      : "absolute right-1.5 top-0 cursor-pointer rounded bg-inherit p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cerulean-blue-500"
-                  }
-                >
-                  <IoTrashOutline className="h-4 w-4" />
-                </button>
-              )}
+              {isSimple && array.length === null && removeButton(index, true)}
             </li>
           ))}
         </ol>
@@ -493,7 +555,7 @@ export default function ParamField(props: FieldProps) {
             Add item
           </button>
         )}
-      </fieldset>
+      </Group>
     );
   }
 
@@ -501,16 +563,14 @@ export default function ParamField(props: FieldProps) {
     const components = param.components ?? [];
     const fields = Array.isArray(value) ? value : [];
     return (
-      <fieldset className={groupClass(depth)}>
-        <GroupLegend
-          name={name}
-          type={displayType(param)}
-          detail={`struct, ${components.length} fields`}
-          jsonOpen={jsonOpen}
-          onToggleJson={() => setJsonOpen((open) => !open)}
-        />
+      <Group
+        name={name}
+        type={displayType(param)}
+        detail={`struct, ${components.length} fields`}
+        action={groupAction}
+        json={(close) => <JsonPaste {...props} onClose={close} />}
+      >
         {doc && <NatSpecNote kind="param" text={doc} className="mb-3" />}
-        {jsonOpen && <JsonPaste {...props} onClose={() => setJsonOpen(false)} />}
         <div className="space-y-5">
           {components.map((component, index) => (
             <ParamField
@@ -522,12 +582,14 @@ export default function ParamField(props: FieldProps) {
               }
               fallbackName={`field ${index}`}
               depth={depth + 1}
+              renderLeaf={renderLeaf}
+              at={inside(String(index))}
             />
           ))}
         </div>
-      </fieldset>
+      </Group>
     );
   }
 
-  return <LeafField {...props} />;
+  return renderLeaf?.(at, props) ?? <LeafField {...props} />;
 }

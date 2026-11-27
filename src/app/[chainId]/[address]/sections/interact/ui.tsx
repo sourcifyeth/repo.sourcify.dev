@@ -48,12 +48,37 @@ export function KindBadge({ fn }: { fn: Fn }) {
 }
 
 /** The selector in a small grey chip with a copy button. */
-export function SelectorChip({ fn, focusable = true }: { fn: Fn; focusable?: boolean }) {
+export function SelectorChip({
+  fn,
+  focusable = true,
+  onGrey = false,
+}: {
+  fn: Fn;
+  focusable?: boolean;
+  /** On a grey background (an open card): the chip is white with a border, and the selector is a link
+   *  to its entry in Sourcify's signature database (4byte.sourcify.dev) */
+  onGrey?: boolean;
+}) {
   const [copied, setCopied] = useState(false);
   if (!fn.selector) return null;
   return (
-    <span className="inline-flex shrink-0 items-center gap-1 rounded bg-gray-100 pl-1.5 pr-0.5 font-mono text-xs leading-5 text-gray-600">
-      {fn.selector}
+    <span
+      className={`inline-flex shrink-0 items-center gap-1 rounded pl-1.5 pr-0.5 font-mono text-xs leading-5 text-gray-600 ${onGrey ? "border border-gray-200 bg-white" : "bg-gray-100"}`}
+    >
+      {onGrey ? (
+        <a
+          href={`https://4byte.sourcify.dev/?q=${fn.selector}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-tooltip-id="global-tooltip"
+          data-tooltip-content="The function selector. Look it up in the Sourcify signature database"
+          className="rounded hover:text-cerulean-blue-600 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-cerulean-blue-500"
+        >
+          {fn.selector}
+        </a>
+      ) : (
+        fn.selector
+      )}
       <span
         role="button"
         // Inside a row button the chip is not a second tab stop; the selector is also in the open row

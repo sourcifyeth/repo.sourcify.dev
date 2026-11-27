@@ -1,6 +1,7 @@
 "use client";
 
 import type { Fn } from "@/utils/interact/abi";
+import { useDocsShown } from "./NatSpecDisplay";
 import { Selector, argumentList } from "./ui";
 
 /** NatSpec text with `code` in backticks shown as code. */
@@ -60,7 +61,8 @@ export function FunctionName({
 export function FunctionDetails({ fn, showSelector = true }: { fn: Fn; showSelector?: boolean }) {
   const read = fn.mutability === "view" || fn.mutability === "pure";
   const returns = read && fn.outputs.length > 0;
-  if (!showSelector && !returns && !fn.notice && !fn.dev) return <div className="pt-2" />;
+  const notes = useDocsShown() && (!!fn.notice || !!fn.dev);
+  if (!showSelector && !returns && !notes) return <div className="pt-2" />;
   return (
     <div className="mb-5 space-y-1.5 pt-1">
       {(showSelector || returns) && (
@@ -100,11 +102,13 @@ export function NatSpecNote({
   className?: string;
 }) {
   const note = NOTE_KINDS[kind];
+  // Hidden until the user clicks "Show Docs" in the function
+  if (!useDocsShown()) return null;
   return (
     // All NatSpec notes are small (12px), so that they do not compete with the form and the results
     <p className={`text-xs leading-[18px] ${kind === "user" ? "text-gray-700" : "text-gray-500"} ${className}`}>
       <span
-        className={`mr-1.5 inline-block cursor-help whitespace-nowrap rounded bg-gray-200/70 px-1.5 align-[1px] text-gray-600 text-[11px] leading-4`}
+        className="mr-1.5 inline-block cursor-help whitespace-nowrap rounded bg-gray-200/70 px-1.5 align-[1px] text-[11px] leading-4 text-gray-600"
         data-tooltip-id="global-tooltip"
         data-tooltip-content={`From the ${note.tag} tag in the source code: ${note.help}`}
       >

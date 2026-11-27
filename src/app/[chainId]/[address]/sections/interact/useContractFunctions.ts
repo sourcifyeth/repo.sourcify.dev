@@ -121,6 +121,8 @@ export function useContractFunctions(props: ContractInteractionProps, explorerUr
       implementationCount: props.proxy.implementationCount,
       implementation,
       implementationVerified: !!verified,
+      /** The functions that run for a call: the implementation's for a proxy with a verified one, else the contract's own */
+      logicFunctions: verified ? verified.functions : own,
       ctx,
       counts: { own: own.length, implementation: verified?.functions.length ?? 0 },
     };

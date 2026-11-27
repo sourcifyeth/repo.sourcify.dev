@@ -168,7 +168,10 @@ export function ValueTree({
 
   return (
     <div
-      style={{ "--label-w": `calc(15rem - ${depth}rem)` } as React.CSSProperties}
+      // The name column is narrow (9rem; a long name wraps), so that the value gets most of the width:
+      // an address or a bytes32 then fits on one or two lines, also in a card of the two-column list.
+      // A nested value is indented by 1rem per level, so its name column is that much narrower.
+      style={{ "--label-w": `max(5rem, calc(9rem - ${depth}rem))` } as React.CSSProperties}
       className={`group/value min-w-0 rounded py-0.5 text-sm leading-5 ${stacked ? "" : "sm:grid sm:grid-cols-[var(--label-w)_minmax(0,1fr)] sm:gap-x-4"}`}
     >
       {/* The type always sits under the name, so every row has the same shape */}
@@ -232,7 +235,7 @@ export function ErrorBox({
           {error.args.length > 0 && (
             <dl className="mt-2 space-y-1 rounded border border-red-200 bg-white/70 p-2 text-gray-900">
               {error.args.map((arg) => (
-                <div key={arg.name} className="sm:grid sm:grid-cols-[15rem_minmax(0,1fr)] sm:gap-x-4">
+                <div key={arg.name} className="sm:grid sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-x-4">
                   <dt>
                     <span className="font-medium">{arg.name}</span>{" "}
                     <span className="font-mono text-xs text-gray-500">{arg.type}</span>
