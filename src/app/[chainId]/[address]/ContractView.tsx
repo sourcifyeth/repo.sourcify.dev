@@ -745,9 +745,6 @@ export default async function ContractView({
         readWrite={
           showInteraction ? (
             <section id="interact" className="mb-8 page-section">
-              <p className="mb-2 text-sm text-gray-700">
-                Call the functions of this contract. Read functions need no wallet.
-              </p>
               <Interaction
                 chainId={chainId}
                 chainName={chainName}

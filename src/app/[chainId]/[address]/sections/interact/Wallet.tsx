@@ -159,7 +159,7 @@ export function WalletProvider({ chainId, children }: { chainId: string; childre
 
 /* ---------------------------------------------------------------- controls */
 
-/** The two lines under every write form (decision D8): the contract is not vetted, and the user signs. */
+/** The two lines at the top of the Read/Write tab (decision D8): the contract is not vetted, and the user signs. */
 export function SafetyLine() {
   return (
     <div className="space-y-1 text-sm">
@@ -170,8 +170,8 @@ export function SafetyLine() {
       <p className="flex items-start gap-1.5 text-gray-500">
         <IoShieldCheckmarkOutline className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
         <span>
-          You sign this in your own wallet, and a sent transaction cannot be undone. Sourcify never holds your keys or
-          funds.{" "}
+          You sign each transaction in your own wallet, and a sent transaction cannot be undone. Sourcify never holds
+          your keys or funds.{" "}
           <Link href={TERMS_PATH} target="_blank" className="whitespace-nowrap underline hover:text-gray-700">
             Terms of use
           </Link>

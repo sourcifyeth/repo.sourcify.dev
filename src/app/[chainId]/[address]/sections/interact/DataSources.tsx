@@ -522,8 +522,10 @@ function SourceDetails({ sources }: { sources: SourceResult[] }) {
 }
 
 /**
- * The line under every read result: where the data came from and whether the
- * sources agree. The details (full URLs, response times, raw answers) open on a click.
+ * The line under every read result: where the data came from and whether the sources agree.
+ * If all is well (two sources agree, and the block is not old), the line says only "2 sources agree":
+ * the block, the hosts, a small difference between the newest blocks, the full URLs, response times and
+ * raw answers open with "Details". If something needs attention, it shows at once.
  */
 export function Provenance({
   check,
@@ -545,6 +547,9 @@ export function Provenance({
   const failedSource = sources.find((source) => !source.ok);
   const hosts = sources.filter((source) => source.ok).map((source) => source.endpoint.host);
   const canSwap = available.filter((endpoint) => endpoint.kind === "public").length > sources.length;
+  // Nothing needs attention: only the short line shows, and the rest is in the details
+  const allGood = check === "agree" && !gap?.large;
+  const showFacts = !allGood || open;
 
   return (
     <div className="border-t border-gray-200 pt-2 text-sm leading-6 text-gray-600">
@@ -559,12 +564,12 @@ export function Provenance({
             <IoWarning className="h-4 w-4 text-yellow-600" /> From 1 source, not cross-checked
           </span>
         )}
-        {block !== undefined && (
+        {showFacts && block !== undefined && (
           <span className="shrink-0">
             · block <span className="font-mono text-[13px]">{groupDigits(String(block))}</span>
           </span>
         )}
-        {hosts.length > 0 && (
+        {showFacts && hosts.length > 0 && (
           <span className="hidden min-w-0 flex-1 truncate font-mono text-xs text-gray-500 sm:inline">
             · {hosts.join(" · ")}
           </span>
@@ -579,7 +584,7 @@ export function Provenance({
         </button>
       </div>
 
-      {gap && block !== undefined && <GapNote gap={gap} block={block} />}
+      {showFacts && gap && block !== undefined && <GapNote gap={gap} block={block} />}
       {check === "one-failed" && failedSource && (
         <p className="text-yellow-900">
           <span className="font-mono text-[13px]">{failedSource.endpoint.host}</span> gave no answer:{" "}
@@ -636,8 +641,9 @@ export function SourcesFailed({ sources, onRetry }: { sources: SourceResult[]; o
 }
 
 /**
- * The two endpoints were at different newest blocks, so the value is from the lower block. Any gap shows:
- * a quiet grey note for a small gap, an amber warning for a large one (an old block, see rpcRead.ts).
+ * The two endpoints were at different newest blocks, so the value is from the lower block. A large gap
+ * (an old block, see rpcRead.ts) is an amber warning that shows at once. A small gap is a quiet grey note:
+ * under a result where the sources agree, it is in the details (see Provenance).
  */
 export function GapNote({ gap, block, className = "" }: { gap: ReadGap; block: number; className?: string }) {
   return (
